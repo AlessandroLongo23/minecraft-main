@@ -1,0 +1,16 @@
+{
+  "id": "minecraft",
+  "name": "Minecraft",
+  "display_name": "Minecraft",
+  "author": ["YourName"],
+  "description": "A Minecraft-themed mod for Balatro with custom boss blinds.",
+  "prefix": "minecraft",
+  "main_file": "main.lua",
+  "priority": 0,
+  "badge_colour": "50C878",
+  "badge_text_colour": "FFFFFF",
+  "version": "0.1.0",
+  "dependencies": [
+    "Steamodded (>=1.0.0~BETA-0301a)"
+  ]
+} 
