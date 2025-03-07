@@ -1,0 +1,3 @@
+___
+Minekreift is a Balatro Mod based on the very best videogame Minecraft.
+Minekreift adds lots of new jokers to the game, along with new decks, blinds, bosses and much more. Every addition to the main game is made to preserve the original feeling of both videogames, so that the vanilla-like feeling of the original Balatro is not compromised and that the Minecraft experience everyone had is portrayed in the new cards and mechanics of this mod.
