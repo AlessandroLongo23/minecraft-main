@@ -3,11 +3,11 @@ return {
         Blind = {
             skeleton = {
                 name = 'The Skeleton',
-                text = { "After scoring, destroy a random card in hand" }
+                text = { "destroy a random card in hand after playing poker hand" }
             },
             spider = {
                 name = 'The Spider',
-                text = { "After scoring, destroy a random card in hand" }
+                text = { "disable all card enhancement" }
             },
             blaze = {
                 name = 'The Blaze',
