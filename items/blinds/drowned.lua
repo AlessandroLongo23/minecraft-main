@@ -1,7 +1,7 @@
 SMODS.Blind {
-    key = 'enderman',
+    key = 'drowned',
     loc_txt = {
-        name = 'The Enderman',
+        name = 'The Drowned',
         text = { 'Enhancements, Seals, and Editions of', 'scored cards are removed after scoring' }
     },
     discovered = true,
@@ -11,8 +11,8 @@ SMODS.Blind {
     },
     pos = {
         x = 0,
-        y = 3
+        y = 6
     },
     atlas = 'blinds',
-    boss_colour = HEX('A400C9')
+    boss_colour = HEX('4D9280')
 }

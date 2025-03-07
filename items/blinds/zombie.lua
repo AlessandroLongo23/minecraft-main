@@ -14,5 +14,5 @@ SMODS.Blind {
         y = 1
     },
     atlas = 'blinds',
-    boss_colour = HEX('D9638D')
+    boss_colour = HEX('4E7D3D')
 }

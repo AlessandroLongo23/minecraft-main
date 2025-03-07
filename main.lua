@@ -106,6 +106,8 @@ local ENABLED_BLINDS = {
     'creeper',
     'enderman',
     'spider',
+    'blaze',
+    'drowned'
 }
 
 sendDebugMessage("Loading Blinds...", 'Minecraft')
