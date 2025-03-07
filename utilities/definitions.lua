@@ -11,18 +11,22 @@ PB_UTIL.ENABLED_BLINDS = {
     -- 'magma_cube',
     -- 'slime',
     -- 'silverfish',
-    -- 'endermite',
-    -- 'wither',
     -- 'wither_skeleton',
-    -- 'zombie_villager',
     -- 'husk',
     -- 'phantom',
-    -- 'zombified_piglin',
     -- 'piglin',
-    -- 'piglin_brute',
-    -- 'zoglin',
-    -- 'zombie_horse',
-    -- 'skeleton_horse',
+    -- 'hoglin',
+    -- 'guardian',
+    -- 'shulker',
+    -- 'stray',
+
+    -- 'ender_dragon',
+    -- 'wither',
+    -- 'elder_guardian',
+    -- 'warden',
+    -- 'raid',
+    -- 'mansion',
+    -- 'four_horsemen'
 }
 
 PB_UTIL.ENABLED_BOOSTERS = {
