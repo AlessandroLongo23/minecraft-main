@@ -24,6 +24,10 @@ SMODS.Back{
                 -- Add eternal Depa Joker
                 joker_add('j_minecraft_depa')
 
+                for _, card in ipairs(G.playing_cards) do
+                    card:set_seal('Purple', true, true)
+                end
+
                 return true
             end
         }))

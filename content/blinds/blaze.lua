@@ -1,8 +1,13 @@
 SMODS.Blind {
     key = 'blaze',
     loc_txt = {
-        name = localize('blaze'),
-        text = { localize('blaze_description') }
+        name = "The Blaze",
+        text = { 
+            "After scoring,",
+            "1 in 5 chance to",
+            "destroy each card",
+            "in played hand"
+        }
     },
     discovered = true,
     boss = {
@@ -14,5 +19,5 @@ SMODS.Blind {
         y = 5
     },
     atlas = 'blinds',
-    boss_colour = HEX('FFC427')
+    boss_colour = HEX('FFC427'),
 }

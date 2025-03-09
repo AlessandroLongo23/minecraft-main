@@ -1,8 +1,12 @@
 SMODS.Blind {
     key = 'drowned',
     loc_txt = {
-        name = localize('drowned'),
-        text = { localize('drowned_description') }
+        name = "The Drowned",
+        text = { 
+            "After discard,",
+            "discard an additional",
+            "random card"
+        }
     },
     discovered = true,
     boss = {

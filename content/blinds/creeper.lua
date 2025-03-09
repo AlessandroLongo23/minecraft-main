@@ -1,8 +1,11 @@
 SMODS.Blind {
     key = 'creeper',
     loc_txt = {
-        name = localize('creeper'),
-        text = { localize('creeper_description') }
+        name = "The Creeper",
+        text = { 
+            "Destroy a random joker,",
+            "if winning at last hand"
+        }
     },
     discovered = true,
     boss = {

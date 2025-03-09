@@ -1,8 +1,12 @@
 SMODS.Blind {
     key = 'enderman',
-    loc_txt = {
-        name = localize('enderman'),
-        text = { localize('enderman_description') }
+    loc_txt = { 
+        name = "The Enderman",
+        text = { 
+            "Before each hand,",
+            "fixes a random joker",
+            "on the left"
+        }
     },
     discovered = true,
     boss = {

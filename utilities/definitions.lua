@@ -43,6 +43,7 @@ PB_UTIL.ENABLED_ENHANCEMENTS = {
 }
 
 PB_UTIL.ENABLED_JOKERS = {
+    'depa',
     -- 'disappointment'
 }
 

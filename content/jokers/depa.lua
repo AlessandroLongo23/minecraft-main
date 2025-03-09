@@ -7,7 +7,6 @@ SMODS.Atlas {
 
 SMODS.Joker {
 	key = "depa",
-	prefix_config = { key = true },
 	loc_txt = {
 		name = "Depa",
 		text = {
