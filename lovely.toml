@@ -17,29 +17,3 @@ payload = '''
     end
 '''
 match_indent = true
-
-# [[patches]]
-# [patches.pattern]
-# target = 'functions/state_events.lua'
-# pattern = '''
-#     local highlighted_count = math.min(#G.hand.highlighted, G.discard.config.card_limit - #G.play.cards)
-#     if highlighted_count > 0 then '''
-# position = 'after'
-# payload = '''
-# print('highlighted_count' .. highlighted_count)
-# '''
-# match_indent = true
-
-# [[patches]]
-# [patches.pattern]
-# target = 'functions/state_events.lua'
-# pattern = '''
-# if G.CONTROLLER.focused.target and G.CONTROLLER.focused.target.area == G.hand then G.card_area_focus_reset = {area = G.hand, rank = G.CONTROLLER.focused.target.rank} end
-#     local highlighted_count = math.min(#G.hand.highlighted, G.discard.config.card_limit - #G.play.cards)'''
-# position = 'after'
-# payload = '''
-#     print(#G.hand.highlighted .. ' ' .. G.discard.config.card_limit .. ' ' .. #G.play.cards .. ' ' .. G.discard.config.card_limit - #G.play.cards .. ' ' .. math.min(#G.hand.highlighted, G.discard.config.card_limit - #G.play.cards))
-# '''
-# match_indent = true
-
-

@@ -19,4 +19,6 @@ SMODS.Blind {
     },
     atlas = 'blinds',
     boss_colour = HEX('4D9280')
+
+    -- effect in lovely.toml because it couldn't be done here due to lack of "press_discard" blind event
 }
