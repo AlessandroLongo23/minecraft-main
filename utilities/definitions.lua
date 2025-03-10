@@ -6,19 +6,19 @@ PB_UTIL.ENABLED_BLINDS = {
     'spider',
     'blaze',
     'drowned',
-    -- 'ghast',
-    -- 'zombie_pigman',
-    -- 'magma_cube',
-    -- 'slime',
+    'ghast',
+    'zombiepigman',
+    'magmacube',
+    'slime',
     -- 'silverfish',
     -- 'wither_skeleton',
-    -- 'husk',
-    -- 'phantom',
+    'husk',
+    'phantom',
     -- 'piglin',
     -- 'hoglin',
     -- 'guardian',
     -- 'shulker',
-    -- 'stray',
+    'stray',
 
     -- 'ender_dragon',
     -- 'wither',
@@ -43,6 +43,7 @@ PB_UTIL.ENABLED_ENHANCEMENTS = {
 }
 
 PB_UTIL.ENABLED_JOKERS = {
+    'depa',
     -- 'disappointment'
 }
 

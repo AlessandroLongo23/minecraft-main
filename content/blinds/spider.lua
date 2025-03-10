@@ -1,8 +1,11 @@
 SMODS.Blind {
     key = 'spider',
     loc_txt = {
-        name = localize('spider'),
-        text = { localize('spider_description') }
+        name = "The Spider",
+        text = { 
+            "Disable all cards",
+            "enhancements",
+        }
     },
     discovered = true,
     boss = {

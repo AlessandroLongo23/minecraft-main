@@ -1,11 +1,11 @@
 SMODS.Blind {
-    key = 'zombie',
+    key = 'ghast',
     loc_txt = {
-        name = "The Zombie",
+        name = "The Ghast",
         text = { 
-            "After beating it,",
-            "makes the leftmost joker",
-            "perishable"
+            "After discard,",
+            "discard an additional",
+            "random card"
         }
     },
     discovered = true,
@@ -15,8 +15,8 @@ SMODS.Blind {
     },
     pos = {
         x = 0,
-        y = 1
+        y = 10
     },
     atlas = 'blinds',
-    boss_colour = HEX('4E7D3D')
+    boss_colour = HEX('F0F0F0')
 }
