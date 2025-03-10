@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "New Bosses.md",
+                "file": "New Jokers.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "New Bosses"
+              "title": "New Jokers"
             }
           }
         ]
@@ -170,9 +170,9 @@
   },
   "active": "40209ea3d68d1436",
   "lastOpenFiles": [
-    "New Jokers.md",
-    "New Bosses.md",
     "New Decks.md",
+    "New Bosses.md",
+    "New Jokers.md",
     "New Vouchers.md"
   ]
 }

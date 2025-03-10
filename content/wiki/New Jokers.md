@@ -42,7 +42,7 @@ ___
 ### Never dies
 ### Baton
 ### Camouflage
-# Portals
+# *Portals*
 ### Nether portal
 | Attribute  | Value                               |
 | ---------- | ----------------------------------- |
@@ -59,7 +59,7 @@ ___
 | Sell value |                                  |
 | Effect     |                                  |
 | Unlock     | Beat Ante 8 with the Nether deck |
-# Mods
+# *Mods*
 ### Disappointment
 | Attribute  | Value         |
 | ---------- | ------------- |
@@ -145,7 +145,7 @@ ___
 \[set biomes]
 \[set day and night]
 \[set flowers]
-# Tools
+# *Tools*
 ### Enderpearl
 ### Fishing rod
 ### Spyglass
