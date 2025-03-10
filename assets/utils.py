@@ -140,7 +140,8 @@ if __name__ == "__main__":
         "Ghast", # 10
         "Zombiepigman", # 11
         "Phantom", # 12
-        "Slime" # 13
+        "Slime", # 13
+        "Silverfish" # 14
     ]
 
     for boss in bosses:

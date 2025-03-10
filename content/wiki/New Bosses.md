@@ -1,14 +1,14 @@
 ## Normal Boss blinds
 ### Overworld
 [ ] ***Creaking***: 
-[ ] ***Creeper***: destroy a random joker after winning on last hand.
+[x] ***Creeper***: destroy a random joker after winning on last hand.
 [x] ***Drowned***: Whenever a discard is used, discard an additional random card.
 [ ] ***Enderman***: before every hand, fixes a random joker on the left.
 [ ] ***Guardian***: Destroys every card that stayed in hand for at least 2 played hands.
 [ ] ***Husk***: 
 [ ] ***Phantom***: 3X if no blind was skipped this ante.
 [x] ***Skeleton***: destroy a random card in hand after playing poker hand. 
-[ ] ***Silverfish***: X1.5 after every hand played.
+[ ] ***Silverfish***: after every hand played, score requirement increases by X1.5.
 [ ] ***Slime***: after beating it, next ante small blind and big blind are X1.5 and X1.25 respectively.
 [ ] ***Spider***: disable all card enhancement.
 [ ] ***Stray***: 

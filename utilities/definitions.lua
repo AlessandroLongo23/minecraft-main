@@ -10,7 +10,7 @@ PB_UTIL.ENABLED_BLINDS = {
     'zombiepigman',
     'magmacube',
     'slime',
-    -- 'silverfish',
+    'silverfish',
     -- 'wither_skeleton',
     'husk',
     'phantom',
