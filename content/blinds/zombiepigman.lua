@@ -1,7 +1,7 @@
 SMODS.Blind {
-    key = 'magmacube',
+    key = 'zombiepigman',
     loc_txt = {
-        name = "The Magma Cube",
+        name = "The Zombie Pigman",
         text = { 
             "after beating it",
             "next ante's small",
@@ -15,8 +15,8 @@ SMODS.Blind {
     },
     pos = {
         x = 0,
-        y = 9
+        y = 11
     },
     atlas = 'blinds',
-    boss_colour = HEX('340800')
+    boss_colour = HEX('F0A6A5')
 }

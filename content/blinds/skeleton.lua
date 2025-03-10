@@ -17,5 +17,16 @@ SMODS.Blind {
         y = 0
     },
     atlas = 'blinds',
-    boss_colour = HEX('494949')
+    boss_colour = HEX('494949'),
+    press_play = function()
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.1,
+            func = function ()
+                local dCard = pseudorandom_element(G.hand.cards, pseudoseed('gluttony'))
+                dCard:start_dissolve()
+                return true
+            end
+        }))
+    end
 }

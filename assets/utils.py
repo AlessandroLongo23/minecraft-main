@@ -127,16 +127,20 @@ if __name__ == "__main__":
     copies = 21
 
     bosses = [
-        "Skeleton",
-        "Zombie",
-        "Creeper",
-        "Enderman",
-        "Spider",
-        "Blaze",
-        "Drowned",
-        "Stray",
-        "Husk",
-        "Magmacube"
+        "Skeleton", # 0
+        "Zombie", # 1
+        "Creeper", # 2
+        "Enderman", # 3
+        "Spider", # 4
+        "Blaze", # 5
+        "Drowned", # 6
+        "Stray", # 7
+        "Husk", # 8
+        "Magmacube", # 9
+        "Ghast", # 10
+        "Zombiepigman", # 11
+        "Phantom", # 12
+        "Slime" # 13
     ]
 
     for boss in bosses:
