@@ -122,10 +122,10 @@ def stack_images_vertically(input_paths, output_path):
         return False
 
 if __name__ == "__main__":
-    input_path = "minecraft-main/assets/1x/menace.png"
+    input_path = "minecraft-main/assets/1x/farlands.png"
     scale_factor = 2
 
-    scale_image(input_path, f"minecraft-main/assets/2x/menace.png", scale_factor)
+    scale_image(input_path, f"minecraft-main/assets/2x/farlands.png", scale_factor)
 
     # copies = 21
 
