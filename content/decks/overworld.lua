@@ -1,6 +1,6 @@
 SMODS.Atlas{
     key = 'overworldDeck',
-    path = 'DepaDeck.png',
+    path = 'OverworldDeck.png',
     px = 71,
     py = 95
 }
@@ -14,19 +14,18 @@ SMODS.Back{
         name = 'Overworld Deck',
         text = {
             'Start with a',
-            '{C:red}Depa Joker{}.'
+            '{C:red}Waterdrop Joker{}.'
         },
     },
 
     apply = function ()
         G.E_MANAGER:add_event(Event({
             func = function ()
-                -- Add eternal Depa Joker
-                joker_add('j_minecraft_depa')
+                joker_add('j_minecraft_waterdrop')
 
-                for _, card in ipairs(G.playing_cards) do
-                    card:set_seal('Purple', true, true)
-                end
+                -- for _, card in ipairs(G.playing_cards) do
+                --     card:set_seal('Purple', true, true)
+                -- end
 
                 return true
             end

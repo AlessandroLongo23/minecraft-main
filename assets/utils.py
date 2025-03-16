@@ -122,38 +122,42 @@ def stack_images_vertically(input_paths, output_path):
         return False
 
 if __name__ == "__main__":
-    input_path = "minecraft-main/assets/1x/bossSingleSkeleton.png"
+    input_path = "minecraft-main/assets/1x/menace.png"
     scale_factor = 2
-    copies = 21
 
-    bosses = [
-        "Skeleton", # 0
-        "Zombie", # 1
-        "Creeper", # 2
-        "Enderman", # 3
-        "Spider", # 4
-        "Blaze", # 5
-        "Drowned", # 6
-        "Stray", # 7
-        "Husk", # 8
-        "Magmacube", # 9
-        "Ghast", # 10
-        "Zombiepigman", # 11
-        "Phantom", # 12
-        "Slime" # 13
-    ]
+    scale_image(input_path, f"minecraft-main/assets/2x/menace.png", scale_factor)
 
-    for boss in bosses:
-        scale_image(f"minecraft-main/assets/1x/boss{boss}Single.png", f"minecraft-main/assets/2x/boss{boss}Single.png", scale_factor)
-        duplicate_image_horizontally(f"minecraft-main/assets/1x/boss{boss}Single.png", f"minecraft-main/assets/1x/boss{boss}.png", copies)
-        duplicate_image_horizontally(f"minecraft-main/assets/2x/boss{boss}Single.png", f"minecraft-main/assets/2x/boss{boss}.png", copies)
+    # copies = 21
 
-    stack_images_vertically(
-        [f"minecraft-main/assets/1x/boss{boss}.png" for boss in bosses],
-        'minecraft-main/assets/1x/blinds.png'
-    )
+    # bosses = [
+    #     "Skeleton", # 0
+    #     "Zombie", # 1
+    #     "Creeper", # 2
+    #     "Enderman", # 3
+    #     "Spider", # 4
+    #     "Blaze", # 5
+    #     "Drowned", # 6
+    #     "Stray", # 7
+    #     "Husk", # 8
+    #     "Magmacube", # 9
+    #     "Ghast", # 10
+    #     "Zombiepigman", # 11
+    #     "Phantom", # 12
+    #     "Slime", # 13
+    #     "Silverfish" # 14
+    # ]
 
-    stack_images_vertically(
-        [f"minecraft-main/assets/2x/boss{boss}.png" for boss in bosses],
-        'minecraft-main/assets/2x/blinds.png'
-    )
+    # for boss in bosses:
+    #     scale_image(f"minecraft-main/assets/1x/boss{boss}Single.png", f"minecraft-main/assets/2x/boss{boss}Single.png", scale_factor)
+    #     duplicate_image_horizontally(f"minecraft-main/assets/1x/boss{boss}Single.png", f"minecraft-main/assets/1x/boss{boss}.png", copies)
+    #     duplicate_image_horizontally(f"minecraft-main/assets/2x/boss{boss}Single.png", f"minecraft-main/assets/2x/boss{boss}.png", copies)
+
+    # stack_images_vertically(
+    #     [f"minecraft-main/assets/1x/boss{boss}.png" for boss in bosses],
+    #     'minecraft-main/assets/1x/blinds.png'
+    # )
+
+    # stack_images_vertically(
+    #     [f"minecraft-main/assets/2x/boss{boss}.png" for boss in bosses],
+    #     'minecraft-main/assets/2x/blinds.png'
+    # )

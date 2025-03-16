@@ -9,8 +9,8 @@ SMODS.Blind {
     },
     discovered = true,
     boss = {
-        min = 1,
-        max = 1
+        min = 2,
+        max = 2
     },
     pos = {
         x = 0,

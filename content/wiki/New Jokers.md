@@ -193,6 +193,7 @@ ___
 | Sell value |                                  |
 | Effect     |                                  |
 | Unlock     | Beat Ante 8 with the Nether deck |
+
 # *Mods*
 ### Disappointment
 | Attribute  | Value         |
@@ -202,6 +203,7 @@ ___
 | Sell value |               |
 | Effect     | Does nothing? |
 | Unlock     | N/A           |
+
 ### Aether portal
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -210,6 +212,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### Biomes O' Plenty
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -218,6 +221,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### JEI
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -226,6 +230,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### Thermal expansion
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -234,6 +239,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### Thaumcraft
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -242,6 +248,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### Buildcraft
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -250,6 +257,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### Applied Energistics
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -258,6 +266,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### Create
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -266,6 +275,7 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
+
 ### IndustrialCraft 2
 | Attribute  | Value                           |
 | ---------- | ------------------------------- |
@@ -279,6 +289,7 @@ ___
 \[set biomes]
 \[set day and night]
 \[set flowers]
+
 # *Tools*
 ### Enderpearl
 ### Fishing rod
