@@ -1,0 +1,3 @@
+___
+Crafting
+Enchanting
