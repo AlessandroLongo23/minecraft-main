@@ -23,7 +23,7 @@ SMODS.Blind {
             trigger = 'after',
             delay = 0.1,
             func = function ()
-                local dCard = pseudorandom_element(G.hand.cards, pseudoseed('gluttony'))
+                local dCard = pseudorandom_element(G.hand.cards, pseudoseed('skeleton'))
                 dCard:start_dissolve()
                 return true
             end

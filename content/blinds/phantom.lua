@@ -3,8 +3,7 @@ SMODS.Blind {
     loc_txt = {
         name = "The Phantom",
         text = { 
-            "Destroy a random card",
-            "in hand after scoring"
+            "x3 if no blind was skipped this ante",
         }
     },
     discovered = true,
@@ -18,18 +17,32 @@ SMODS.Blind {
     },
     atlas = 'blinds',
     boss_colour = HEX('5061AE'),
-    defeat = function()
-        local destructable_cards = {}
-        for i = 1, #G.hand.cards do
-            destructable_cards[#destructable_cards+1] = G.hand.cards[i] 
-        end
-        local card_to_destroy = #destructable_cards > 0 and pseudorandom_element(destructable_cards, pseudoseed('phantom')) or nil
+    set_blind = function(self, reset, silent)
+        if not reset and not G.GAME.blind.disabled and G.GAME.skipped_blinds_this_ante == 0 then
+            local final_chips = G.GAME.blind.chips / G.GAME.blind.mult * 3
 
-        if card_to_destroy then
-            card_to_destroy.getting_sliced = true
-            card_to_destroy:juice_up(0.8, 0.8)
-            card_to_destroy:start_dissolve({G.C.BLACK}, nil, 1.6)
-            play_sound('slice1', 0.96+math.random()*0.08)
+            local chip_mod -- iterate over ~120 ticks
+            if type(G.GAME.blind.chips) ~= 'table' then
+                chip_mod = math.ceil((final_chips - G.GAME.blind.chips) / 120)
+            else
+                chip_mod = ((final_chips - G.GAME.blind.chips) / 120):ceil()
+            end
+            local step = 0
+            G.E_MANAGER:add_event(Event({trigger = 'after', blocking = true, func = function()
+                G.GAME.blind.chips = G.GAME.blind.chips + G.SETTINGS.GAMESPEED * chip_mod
+                if G.GAME.blind.chips < final_chips then
+                    G.GAME.blind.chip_text = number_format(G.GAME.blind.chips)
+                    if step % 5 == 0 then
+                        play_sound('chips1', 0.8 + (step * 0.005))
+                    end
+                    step = step + 1
+                else
+                    G.GAME.blind.chips = final_chips
+                    G.GAME.blind.chip_text = number_format(G.GAME.blind.chips)
+                    G.GAME.blind:wiggle()
+                    return true
+                end
+            end}))
         end
-    end
+    end,
 }

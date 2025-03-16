@@ -17,3 +17,39 @@ payload = '''
     end
 '''
 match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'functions/button_callbacks.lua'
+pattern = 'G.GAME.skips = (G.GAME.skips or 0) + 1'
+position = 'after'
+match_indent = true
+payload = '''
+G.GAME.skipped_blinds_this_ante = G.GAME.skipped_blinds_this_ante + 1
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'game.lua'
+pattern = '''pack_size = 2,
+        skips = 0,'''
+position = 'after'
+match_indent = true
+payload = '''
+skipped_blinds_this_ante = 0,
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'functions/common_events.lua'
+pattern = 'function ease_ante(mod)'
+position = 'after'
+match_indent = true
+payload = '''
+    G.E_MANAGER:add_event(Event({
+      trigger = 'immediate',
+      func = function()
+          G.GAME.skipped_blinds_this_ante = 0
+      end
+    }))
+'''

@@ -13,7 +13,7 @@
 [ ] ***Spider***: Disable all card enhancement.
 [ ] ***Stray***: Cap the Mult at the Mult of the previous played hand
 [ ] ***Witch***: At the start of the round shuffles hands and discards.
-[ ] ***Zombie***: After beating it, makes the leftmost joker perishable.
+[x] ***Zombie***: After beating it, makes the leftmost joker perishable.
 
 ### Nether
 [ ] ***Blaze***: After scoring, each played card has 1 in 5 chance to be destroyed.
