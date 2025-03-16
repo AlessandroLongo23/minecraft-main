@@ -1,4 +1,6 @@
-___
+Progress: 6 / 34
+
+- - -
 # *Core experiences*
 ### 1. Waterdrop
 | Attribute  | Value                                                                                                                                     |
@@ -284,13 +286,101 @@ ___
 | Sell value |                                 |
 | Effect     |                                 |
 | Unlock     | Acquiring the modlauncher joker |
-\[set animals]
-\[set crops]
-\[set biomes]
-\[set day and night]
-\[set flowers]
 
-# *Tools*
+# Animals
+### Pig
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+### Cow
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+### Chicken
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+# Crops
+### Carrot
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+### Onion
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+### Potato
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+# Biomes
+
+# Phases
+### Day
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+### Night
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
+# Flowers
+
+# Items
 ### Enderpearl
-### Fishing rod
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |
+
 ### Spyglass
+| Attribute  | Value                           |
+| ---------- | ------------------------------- |
+| Rarity     |                                 |
+| Cost       |                                 |
+| Sell value |                                 |
+| Effect     |                                 |
+| Unlock     |                                 |

@@ -1,3 +1,6 @@
+Progress: 8 / 28
+
+- - -
 ## Normal Boss blinds
 ### Overworld
 [ ] ***Creaking***: 
@@ -16,7 +19,7 @@
 [x] ***Zombie***: After beating it, makes the leftmost joker perishable.
 
 ### Nether
-[ ] ***Blaze***: After scoring, each played card has 1 in 5 chance to be destroyed.
+[x] ***Blaze***: After scoring, each played card has 1 in 5 chance to be destroyed.
 [ ] ***Ghast***: After scoring, each non-played card has 1 in 2 chance to be destroyed. But playing a straight instantly beats the boss.
 [ ] ***Magma cube***: After beating it, next ante small blind is X2.
 [ ] ***Hoglin***: At the start of round removes 3 from hands and discards randomly.
@@ -28,7 +31,7 @@
 [ ] ***Raid***: 3 phases, first X0.4, second X0.8, third X1.6
 [ ] ***Mansion***: 
 [ ] ***Elder guardian***:
-[ ] ***Four horsemen***: Disables 6 random cards in the deck, -1 hand, -1 discard, destroy all consumables
+[ ] ***Four horsemen***: Debuff 6 random cards in the deck, -1 hand, -1 discard, destroy all consumables
 [ ] ***Warden***: 
 [ ] ***Wither***: 
 [ ] ***Ender Dragon***: 
