@@ -27,8 +27,6 @@ SMODS.Joker {
 	rarity = 1,
 	atlas = "menace",
 	pos = { x = 0, y = 0 },
-	cost = 4,
-	value = 8,
 	
 	pools = {
 		Common = true,
