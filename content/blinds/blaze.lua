@@ -11,8 +11,8 @@ SMODS.Blind {
     },
     discovered = true,
     boss = {
-        min = 2,
-        max = 2
+        min = 1,
+        max = 1
     },
     pos = {
         x = 0,
@@ -20,4 +20,22 @@ SMODS.Blind {
     },
     atlas = 'blinds',
     boss_colour = HEX('FFC427'),
+    press_play = function()
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.1,
+            func = function ()
+                for i = 1, #G.hand.cards do
+                    local rand = pseudorandom('blaze')
+                    if rand < 0.2 then
+                        local dCard = G.hand.cards[i]
+                        dCard:start_dissolve()
+                    end
+                end
+                return true
+            end
+        }))
+    end
 }
+
+-- 71VQ33YA

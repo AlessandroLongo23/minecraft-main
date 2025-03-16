@@ -5,7 +5,7 @@
 [x] ***Drowned***: Whenever a discard is used, discard an additional random card.
 [ ] ***Enderman***: Before every hand, fixes a random joker on the left.
 [ ] ***Guardian***: Destroys every card that stayed in hand for at least 2 played hands.
-[ ] ***Husk***: Lose 2$ for each discard
+[x] ***Husk***: Lose 2$ for each discard
 [x] ***Phantom***: 3X if no blind was skipped this ante.
 [x] ***Skeleton***: After scoring, destroy a random card left in hand. 
 [x] ***Silverfish***: After every hand played, score requirement increases by X1.5.
