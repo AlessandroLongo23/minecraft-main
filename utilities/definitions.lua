@@ -47,6 +47,8 @@ PB_UTIL.ENABLED_JOKERS = {
     'waterdrop',
     'elytra',
     'itshome',
+    'crackedknuckles',
+    '0164',
     -- 'disappointment'
 }
 

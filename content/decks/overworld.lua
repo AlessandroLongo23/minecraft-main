@@ -21,7 +21,7 @@ SMODS.Back{
     apply = function ()
         G.E_MANAGER:add_event(Event({
             func = function ()
-                joker_add('j_minecraft_itshome')
+                joker_add('j_minecraft_0164')
                 
                 -- for _, card in ipairs(G.playing_cards) do
                 --     card:set_seal('Purple', true, true)
