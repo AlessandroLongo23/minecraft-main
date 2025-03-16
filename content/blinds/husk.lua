@@ -3,14 +3,13 @@ SMODS.Blind {
     loc_txt = {
         name = "The Husk",
         text = { 
-            "Disable all cards",
-            "enhancements",
+            "Lose {C:money}2${} for each discard",
         }
     },
     discovered = true,
     boss = {
-        min = 2,
-        max = 2
+        min = 1,
+        max = 1
     },
     pos = {
         x = 0,

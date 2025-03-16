@@ -20,6 +20,23 @@ match_indent = true
 
 [[patches]]
 [patches.pattern]
+target = 'functions/state_events.lua'
+pattern = '''
+if G.GAME.modifiers.discard_cost then
+    ease_dollars(-G.GAME.modifiers.discard_cost)
+end
+ease_discard(-1)
+'''
+position = 'after'
+payload = '''
+    if G.GAME.blind.name == 'bl_minecraft_husk' and not G.GAME.blind.disabled then
+        ease_dollars(-2)
+    end
+'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
 target = 'functions/button_callbacks.lua'
 pattern = 'G.GAME.skips = (G.GAME.skips or 0) + 1'
 position = 'after'
@@ -42,14 +59,9 @@ skipped_blinds_this_ante = 0,
 [[patches]]
 [patches.pattern]
 target = 'functions/common_events.lua'
-pattern = 'function ease_ante(mod)'
+pattern = 'G.GAME.round_resets.ante = G.GAME.round_resets.ante + mod'
 position = 'after'
 match_indent = true
 payload = '''
-    G.E_MANAGER:add_event(Event({
-      trigger = 'immediate',
-      func = function()
-          G.GAME.skipped_blinds_this_ante = 0
-      end
-    }))
+    G.GAME.skipped_blinds_this_ante = 0
 '''
