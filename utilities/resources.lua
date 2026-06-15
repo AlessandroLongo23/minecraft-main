@@ -43,8 +43,13 @@ function PB_UTIL.add_resource(id, amount)
     return new
 end
 
--- Per-blind themed overrides (opt-in). Keyed by blind.name (the prefixed key string,
--- e.g. 'bl_minecraft_creeper'). Anything without an entry uses the tier-roll fallback.
+-- Per-blind themed overrides (opt-in). Keyed by blind.name.
+-- NOTE: for SMODS boss blinds, blind.name IS the prefixed key (e.g. 'bl_minecraft_creeper'),
+-- because SMODS sets a blind center's name to `self.name or self.key` (game_object.lua) and our
+-- blinds only define loc_txt.name. (Vanilla small/big blinds use display names like 'Small Blind',
+-- but we only key minecraft bosses here, so the lookup matches.) The mod's lovely.toml relies on
+-- this same fact (it checks `G.GAME.blind.name == 'bl_minecraft_drowned'`).
+-- Anything without an entry uses the tier-roll fallback.
 PB_UTIL.BLIND_DROPS = {
     bl_minecraft_creeper  = { id = 'coal',   amount = 2 },
     bl_minecraft_skeleton = { id = 'iron',   amount = 1 },
