@@ -121,6 +121,7 @@ No custom save/load code. Counts are plain integers on `G.GAME` → serialized w
 | `utilities/resource_ui.lua` | `build_resources_panel` (34×34 icons + ref-bound counts), `attach_resources_panel` (Weak bond), `Game:update` show/hide |
 | `assets/{1x,2x}/resource_cards.png` | 71×95 card sheet, 6 ores on a 3×2 grid → 213×190 (1x) / 426×380 (2x); used in the pack |
 | `assets/{1x,2x}/resource_icons.png` | 34×34 hotbar block-icon sheet, 6 ores on a 3×2 grid → 102×68 (1x) / 204×136 (2x); used in the panel |
+| `assets/gen_resources.py` | Procedural PIL generator that draws the 6 ores and writes both 1× sheets (see §11) |
 
 **Edited files** (all following existing modular-loader house style)
 | File | Change |
@@ -135,7 +136,7 @@ No custom save/load code. Counts are plain integers on `G.GAME` → serialized w
 
 0. **Loader wiring (no behavior):** config toggle + `ENABLED_RESOURCES` + `main.lua` branch + ui toggle. Verify mod still loads with empty stubs.
 1. **State + helpers:** `init_game_object` wrapper + `add_resource`/`get_resource_count`/`set_resource` (number-coerced, nil-guarded). Smoke test: console `add_resource`, confirm persistence across save/quit/resume and reset on new run.
-2. **Registry + atlas:** `registry.lua` + `resources.png`. Confirm each ore sprite draws.
+2. **Registry + atlas:** write `assets/gen_resources.py`, run it + `utils.py` to produce both 1×/2× sheets, then author `registry.lua` (the two `SMODS.Atlas` registrations). Confirm each ore sprite draws from both atlases.
 3. **Inventory panel:** `resource_ui.lua` (ref-bound counts, Weak bond, `Game:update` show/hide). Verify it sits below consumables and live-updates. Re-verify with Cartomancer + JokerDisplay + Cryptid loaded.
 4. **Boss drops:** `blind_defeated` listener + `grant_blind_drop` with tier-roll fallback + a couple of `BLIND_DROPS` entries. Defeat blinds, confirm increments.
 5. **Resource booster:** hidden ConsumableType + 6 ores + `resource_pack` booster. Buy/open in shop; confirm one pick grants one resource, nothing lands in consumables, skip leaves counts unchanged.
@@ -174,3 +175,9 @@ Grid order (both sheets): row 0 = Wood, Cobblestone, Coal · row 1 = Iron, Gold,
 4. `SMODS.Atlas` `px`/`py` always reference the **1×** cell size (71×95 / 34×34); SMODS auto-selects 1×/2× from the player's texture setting.
 
 The 6 source block textures needed: Wood (oak log/planks), Cobblestone, Coal (ore or lump), Iron (ingot or ore), Gold (ingot or ore), Diamond (gem or ore). Exact motif (ore block vs refined item) is a cosmetic choice; the icon should read clearly at 34×34.
+
+**Production route (chosen): procedural generation.** A new self-contained script `assets/gen_resources.py` (PIL, same dependency as `utils.py`) draws each ore from a fixed palette — a stone base with colored ore speckles for Coal/Iron/Gold/Diamond, vertical grain for Wood, a blocky pattern for Cobblestone — and composes them into the two 1× sheets:
+- `assets/1x/resource_icons.png` — 34×34 cells, the bare block on a subtle slot background.
+- `assets/1x/resource_cards.png` — 71×95 cells, the block centered on a tier-tinted card face.
+
+It writes deterministic output (no RNG, or fixed-seed) so regenerating is stable, then the 2× sheets are produced via `utils.py`'s `scale_image(..., scale_factor=2)`. Art is fully owned/copyright-clean and can be replaced by hand-drawn pixel art later with **no code change** (atlas keys and the 3×2 layout are fixed). Aim for "genuinely decent", not flat placeholders.
