@@ -42,3 +42,45 @@ function PB_UTIL.add_resource(id, amount)
     end
     return new
 end
+
+-- Per-blind themed overrides (opt-in). Keyed by blind.name (the prefixed key string,
+-- e.g. 'bl_minecraft_creeper'). Anything without an entry uses the tier-roll fallback.
+PB_UTIL.BLIND_DROPS = {
+    bl_minecraft_creeper  = { id = 'coal',   amount = 2 },
+    bl_minecraft_skeleton = { id = 'iron',   amount = 1 },
+    bl_minecraft_zombie   = { id = 'wood',   amount = 2 },
+}
+
+-- Returns a random ore id of exactly `tier` (run-seeded deterministic).
+local function random_ore_of_tier(tier, seed_key)
+    local pool = {}
+    for _, r in ipairs(PB_UTIL.RESOURCES) do
+        if r.tier == tier then pool[#pool + 1] = r.id end
+    end
+    if #pool == 0 then return PB_UTIL.RESOURCES[1].id end
+    return pseudorandom_element(pool, pseudoseed(seed_key))
+end
+
+-- Grant resources for defeating `blind`. PLACEHOLDER BALANCE (shape is fixed, numbers tunable).
+function PB_UTIL.grant_blind_drop(blind)
+    if not blind then return end
+    local spec = blind.name and PB_UTIL.BLIND_DROPS[blind.name]
+    if spec then
+        PB_UTIL.add_resource(spec.id, spec.amount)
+        return
+    end
+    local ante = (G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante) or 1
+    local is_boss = blind.boss and true or false
+    local max_tier = (ante >= 6 and 3) or (ante >= 3 and 2) or 1
+    -- bosses bias toward the highest unlocked tier; others toward tier 1
+    local tier = is_boss and max_tier or 1
+    local amount = is_boss and 2 or 1
+    PB_UTIL.add_resource(random_ore_of_tier(tier, 'mc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
+end
+
+-- Wrap Blind:defeat (same technique Steamodded uses) so drops fire on every blind win.
+local _blind_defeat = Blind.defeat
+function Blind:defeat(silent)
+    _blind_defeat(self, silent)
+    pcall(PB_UTIL.grant_blind_drop, self)
+end
