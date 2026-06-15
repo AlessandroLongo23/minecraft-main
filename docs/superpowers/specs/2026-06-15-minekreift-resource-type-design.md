@@ -57,17 +57,20 @@ end
 
 ```lua
 -- content/resources/registry.lua
+-- pos = shared 3x2 grid index, used the SAME in BOTH atlases below.
 PB_UTIL.RESOURCES = {
   { key='minecraft_wood',        tier=1, pos={x=0,y=0} },
   { key='minecraft_cobblestone', tier=1, pos={x=1,y=0} },
   { key='minecraft_coal',        tier=1, pos={x=2,y=0} },
   { key='minecraft_iron',        tier=2, pos={x=0,y=1} },
   { key='minecraft_gold',        tier=2, pos={x=1,y=1} },
-  { key='minecraft_diamond',     tier=3, pos={x=0,y=2} },
+  { key='minecraft_diamond',     tier=3, pos={x=2,y=1} },
 }
--- + SMODS.Atlas{ key='minecraft_resources', path='resources.png', px=34, py=34 }
+-- Two atlases (see §11 Art), both laid out on the same 3x2 grid so one `pos` indexes both:
+-- SMODS.Atlas{ key='minecraft_resource_cards', path='resource_cards.png', px=71, py=95 } -- pack cards
+-- SMODS.Atlas{ key='minecraft_resource_icons', path='resource_icons.png', px=34, py=34 } -- hotbar panel
 ```
-Single source of truth for names/tiers/sprite positions; consumed by the panel, the booster, and the drop logic. Display names come from localization keyed by `.key` (house style).
+Single source of truth for names/tiers/sprite positions; consumed by the panel, the booster, and the drop logic. `tier` is metadata only (not a sprite coordinate). Display names come from localization keyed by `.key` (house style).
 
 ### 3.3 Mutation funnel
 
@@ -80,7 +83,7 @@ PB_UTIL.set_resource(key, amount)
 
 ## 4. Inventory panel
 
-- A **self-owned UIBox** (global handle e.g. `G.minecraft_resources_panel`), built from `PB_UTIL.RESOURCES`: a fixed grid of all 6 ore cells (on-screen arrangement is cosmetic, e.g. two rows of three), each cell = a sprite from the `minecraft_resources` atlas + a count text node. (Note: `pos={x,y}` in the registry is the sprite's location **in the atlas sheet**, independent of the panel's on-screen arrangement.)
+- A **self-owned UIBox** (global handle e.g. `G.minecraft_resources_panel`), built from `PB_UTIL.RESOURCES`: a fixed **hotbar-style** grid of all 6 ore slots (square cells, e.g. two rows of three), each cell = a **34×34 block icon** from the `minecraft_resource_icons` atlas + a count text node. (Note: `pos={x,y}` is the sprite's location **in the atlas sheet**; the panel's on-screen arrangement is independent and cosmetic.)
 - Count text is **dynamically bound**: `{ n=G.UIT.T, config={ ref_table=G.GAME.minecraft.resources, ref_value='minecraft_wood', ... } }`. This is the base game's standard dynamic-text idiom (also used by the booster's pack-choices counter), so counts update live with **no per-frame UIBox rebuild and no custom draw loop**.
 - Positioned with `config={ align='cm', offset={x=0,y=<below>}, major=G.consumeables, bond='Weak' }` — same pattern the base game uses to hang the booster pack off `G.hand`. The `Weak` bond makes the panel track `G.consumeables.T` wherever it lives, so no absolute coordinates.
 - **Always shows all 6 ores**; ones with count 0 render **grayed/dimmed**. Because the slot set never changes, the panel only ever **rebinds** counts (never rebuilds for count changes).
@@ -98,7 +101,7 @@ Both sources funnel through `PB_UTIL.add_resource(key, amount)`.
   - **Fallback tier roll** (placeholder balance): `amount = 1 + math.floor(G.GAME.round_resets.ante / 3)`; tier weighted by ante band; choose a random ore of that tier from `PB_UTIL.RESOURCES`, seeded via `pseudorandom(pseudoseed('minecraft_drop'..ante))` for run-deterministic results.
 
 ### 5.2 Resource booster pack
-- `content/resources/resource_consumabletype.lua`: a **hidden** `SMODS.ConsumableType{ key='minecraft_resource', no_collection=true }` and 6 hidden `SMODS.Consumable` ores (`set='minecraft_resource'`, `no_collection=true`, kept out of shop/soul/normal pools, `in_pool=false`). Each ore's `use = function(self, card) PB_UTIL.add_resource(<orekey>, 1); card:start_dissolve() end`.
+- `content/resources/resource_consumabletype.lua`: a **hidden** `SMODS.ConsumableType{ key='minecraft_resource', no_collection=true }` and 6 hidden `SMODS.Consumable` ores (`set='minecraft_resource'`, `atlas='minecraft_resource_cards'`, `no_collection=true`, kept out of shop/soul/normal pools, `in_pool=false`). Each ore's `use = function(self, card) PB_UTIL.add_resource(<orekey>, 1); card:start_dissolve() end`.
 - `content/boosters/resource_pack.lua`: `SMODS.Booster{ key='resource_pack', config={ choose=1, extra=6 } }` with **no `select_card`**. `create_card` spawns the 6 ore consumables into `G.pack_cards` via `SMODS.create_card{ key=..., area=G.pack_cards, skip_materialize=true }`. Normal shop weight, cost ~4.
 - Because neither the pack nor the ores define `select_card`, the base game (`button_callbacks.lua`) routes the chosen pack card through `card:use_consumeable(area)` + `SMODS.calculate_context({using_consumeable=true})`. `choose=1` enforces "pick one of six". **Nothing is ever added to `G.consumeables`** — the hidden ConsumableType is purely a vehicle for the pack pick.
 
@@ -111,12 +114,13 @@ No custom save/load code. Counts are plain integers on `G.GAME` → serialized w
 **New files**
 | File | Responsibility |
 |---|---|
-| `content/resources/registry.lua` | `PB_UTIL.RESOURCES` (6 ores) + `SMODS.Atlas` for `resources.png` |
-| `content/resources/resource_consumabletype.lua` | Hidden `SMODS.ConsumableType` + 6 hidden ore `SMODS.Consumable`s (pack-only; `use` → `add_resource` → dissolve) |
+| `content/resources/registry.lua` | `PB_UTIL.RESOURCES` (6 ores) + the two `SMODS.Atlas` registrations (cards 71×95, icons 34×34) |
+| `content/resources/resource_consumabletype.lua` | Hidden `SMODS.ConsumableType` + 6 hidden ore `SMODS.Consumable`s (`atlas='minecraft_resource_cards'`, pack-only; `use` → `add_resource` → dissolve) |
 | `content/boosters/resource_pack.lua` | `SMODS.Booster` (no `select_card`) spawning the 6 ores into `G.pack_cards` |
 | `utilities/resources.lua` | `init_game_object` wrapper; `add_resource`/`get_resource_count`/`set_resource`; `grant_blind_drop`; `blind_defeated` listener |
-| `utilities/resource_ui.lua` | `build_resources_panel` (ref-bound counts), `attach_resources_panel` (Weak bond), `Game:update` show/hide |
-| `assets/{1x,2x}/resources.png` | 34×34 sprite sheet (6 ores), matching the existing blinds-atlas convention |
+| `utilities/resource_ui.lua` | `build_resources_panel` (34×34 icons + ref-bound counts), `attach_resources_panel` (Weak bond), `Game:update` show/hide |
+| `assets/{1x,2x}/resource_cards.png` | 71×95 card sheet, 6 ores on a 3×2 grid → 213×190 (1x) / 426×380 (2x); used in the pack |
+| `assets/{1x,2x}/resource_icons.png` | 34×34 hotbar block-icon sheet, 6 ores on a 3×2 grid → 102×68 (1x) / 204×136 (2x); used in the panel |
 
 **Edited files** (all following existing modular-loader house style)
 | File | Change |
@@ -150,3 +154,23 @@ No custom save/load code. Counts are plain integers on `G.GAME` → serialized w
 
 - Zero-count ores → **always show all 6, grayed when 0** (fixed-size panel).
 - Pack pick → **hidden ore consumables** (accepted; inert, `no_collection`, pack-only).
+- Art → **two sheets** (authentic hotbar): 71×95 cards for the pack + 34×34 block icons for the panel.
+
+## 11. Art / atlas pipeline
+
+Two sprite sheets, both laid out on the **same 3×2 grid** (so one registry `pos` indexes both):
+
+| Sheet | Cell (1x) | Grid | 1x size | 2x size | Atlas key | Used by |
+|---|---|---|---|---|---|---|
+| `resource_cards.png` | 71×95 | 3×2 | 213×190 | 426×380 | `minecraft_resource_cards` | hidden ore consumables in the booster pack |
+| `resource_icons.png` | 34×34 | 3×2 | 102×68 | 204×136 | `minecraft_resource_icons` | inventory hotbar panel |
+
+Grid order (both sheets): row 0 = Wood, Cobblestone, Coal · row 1 = Iron, Gold, Diamond.
+
+**Pipeline (matches the existing mod workflow):**
+1. Author each ore from its **16×16 Minecraft block texture** — center/frame it onto a 71×95 card for the card sheet, and place it (optionally on a slot background) onto a 34×34 cell for the icon sheet.
+2. Compose the **1×** sheets in `assets/1x/`.
+3. Generate the **2×** sheets with `assets/utils.py` → `scale_image(input, output, scale_factor=2)` (nearest-neighbor pixel duplication → crisp pixel art), saving to `assets/2x/`.
+4. `SMODS.Atlas` `px`/`py` always reference the **1×** cell size (71×95 / 34×34); SMODS auto-selects 1×/2× from the player's texture setting.
+
+The 6 source block textures needed: Wood (oak log/planks), Cobblestone, Coal (ore or lump), Iron (ingot or ore), Gold (ingot or ore), Diamond (gem or ore). Exact motif (ore block vs refined item) is a cosmetic choice; the icon should read clearly at 34×34.
