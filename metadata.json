@@ -3,7 +3,7 @@
   "name": "Minecraft",
   "display_name": "Minecraft",
   "author": ["Lohengrin, Falesteo"],
-  "description": "A Minecraft-themed mod for Balatro with custom boss blinds.",
+  "description": "A Minecraft-themed content mod for Balatro: boss blinds, jokers, decks, and a Resource gathering system.",
   "prefix": "minecraft",
   "main_file": "main.lua",
   "priority": 0,

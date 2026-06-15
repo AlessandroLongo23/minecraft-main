@@ -22,6 +22,7 @@ function PB_UTIL.build_resources_panel()
         local count = store[r.id] or 0
         local owned = count > 0
         local spr = Sprite(0, 0, 0.5, 0.5, atlas, r.pos)
+        if not owned and spr.set_alpha then spr:set_alpha(0.35) end
         cells[#cells + 1] = {
             n = G.UIT.C, config = { align = 'cm', padding = 0.04 },
             nodes = {
