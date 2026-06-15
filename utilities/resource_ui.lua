@@ -1,6 +1,7 @@
 -- Resource inventory hotbar panel: a self-owned UIBox bonded Weak to G.consumeables.
 
 -- States in which the panel should be visible.
+-- Built at load time; G.STATES is populated before mod files run (SMODS load order).
 PB_UTIL.PANEL_STATES = {
     [G.STATES.SELECTING_HAND] = true,
     [G.STATES.DRAW_TO_HAND]   = true,
@@ -29,6 +30,8 @@ function PB_UTIL.build_resources_panel()
                 } },
                 { n = G.UIT.R, config = { align = 'cm' }, nodes = {
                     { n = G.UIT.T, config = {
+                        -- static colour: the panel is rebuilt via _panel_dirty on a
+                        -- 0 -> >0 transition, which is exactly when this needs to flip.
                         ref_table = store, ref_value = r.id, scale = 0.32,
                         colour = owned and G.C.WHITE or G.C.UI.TEXT_INACTIVE,
                     } },
@@ -56,19 +59,24 @@ function PB_UTIL.attach_resources_panel()
     if G.minecraft_resources_panel and not G.minecraft_resources_panel.REMOVED then
         G.minecraft_resources_panel:remove()
     end
-    G.GAME.minecraft._panel_dirty = false
     G.minecraft_resources_panel = UIBox {
         definition = PB_UTIL.build_resources_panel(),
         config = { align = 'cm', offset = { x = 0, y = 1.5 }, major = G.consumeables, bond = 'Weak' },
     }
+    -- Record the backing store so we can detect a rotated table (e.g. new run) and rebuild.
+    G.minecraft_resources_panel.mc_store = G.GAME.minecraft and G.GAME.minecraft.resources
+    G.GAME.minecraft._panel_dirty = false
 end
 
 -- Per-frame: create/refresh/hide based on game state.
 function PB_UTIL.update_resources_panel()
     local can_show = G.STATE and PB_UTIL.PANEL_STATES[G.STATE]
         and G.consumeables and G.GAME and G.GAME.minecraft
+        and PB_UTIL.icon_atlas and G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
     if can_show then
         if not G.minecraft_resources_panel or G.minecraft_resources_panel.REMOVED then
+            PB_UTIL.attach_resources_panel()
+        elseif G.minecraft_resources_panel.mc_store ~= G.GAME.minecraft.resources then
             PB_UTIL.attach_resources_panel()
         elseif G.GAME.minecraft._panel_dirty then
             PB_UTIL.attach_resources_panel()
