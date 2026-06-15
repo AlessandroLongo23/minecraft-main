@@ -58,3 +58,8 @@ PB_UTIL.ENABLED_TAGS = {
 PB_UTIL.ENABLED_VOUCHERS = {
     -- 'modlauncher'
 }
+
+PB_UTIL.ENABLED_RESOURCES = {
+    'registry',
+    'resource_consumabletype',
+}

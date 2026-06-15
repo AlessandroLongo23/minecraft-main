@@ -6,5 +6,6 @@ return {
     jokers_enabled = true,
     tags_enabled = true,
     vouchers_enabled = true,
+    resources_enabled = true,
 }
   

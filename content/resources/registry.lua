@@ -1,0 +1,1 @@
+-- Resource registry + atlases (filled in Task 2)

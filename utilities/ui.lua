@@ -49,6 +49,11 @@ SMODS.current_mod.config_tab = function()
 								ref_table = PB_UTIL.config,
 								ref_value = 'decks_enabled',
 							},
+							create_toggle {
+								label = "Resources",
+								ref_table = PB_UTIL.config,
+								ref_value = 'resources_enabled',
+							},
 						}
 					},
 					{

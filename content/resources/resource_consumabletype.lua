@@ -1,0 +1,1 @@
+-- Hidden resource ConsumableType + ore consumables (filled in Task 5)

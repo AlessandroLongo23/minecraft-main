@@ -1,0 +1,1 @@
+-- Resource inventory panel (filled in Task 3)

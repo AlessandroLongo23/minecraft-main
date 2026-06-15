@@ -9,6 +9,12 @@ if PB_UTIL.config.blinds_enabled then
     PB_UTIL.load_blinds(PB_UTIL.ENABLED_BLINDS)
 end
 
+if PB_UTIL.config.resources_enabled then
+    SMODS.load_file("utilities/resources.lua")()
+    SMODS.load_file("utilities/resource_ui.lua")()
+    PB_UTIL.register_items(PB_UTIL.ENABLED_RESOURCES, "resources")
+end
+
 if PB_UTIL.config.boosters_enabled then
     PB_UTIL.register_items(PB_UTIL.ENABLED_BOOSTERS, "boosters")
 end
