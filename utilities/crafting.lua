@@ -17,13 +17,18 @@ function PB_UTIL.can_afford(recipe)
 end
 
 function PB_UTIL.has_joker_room()
-    return G.jokers and (#G.jokers.cards < G.jokers.config.card_limit)
+    if not G.jokers then return false end
+    return #G.jokers.cards < G.jokers.config.card_limit
 end
 
 function PB_UTIL.can_craft(recipe)
     if not recipe then return false end
+    if recipe.output.type == 'joker' then
+        -- the joker center must exist (else joker_add no-ops and ingredients are lost)
+        if not G.P_CENTERS[recipe.output.id] then return false end
+        if not PB_UTIL.has_joker_room() then return false end
+    end
     if not PB_UTIL.can_afford(recipe) then return false end
-    if recipe.output.type == 'joker' and not PB_UTIL.has_joker_room() then return false end
     return true
 end
 
