@@ -50,7 +50,10 @@ PB_UTIL.ENABLED_JOKERS = {
     'itshome',
     'crackedknuckles',
     '0164',
-    -- 'disappointment'
+    -- 'disappointment',
+    'stone_pickaxe',
+    'iron_sword',
+    'iron_shovel',
 }
 
 PB_UTIL.ENABLED_TAGS = {

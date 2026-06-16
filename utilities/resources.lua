@@ -73,9 +73,12 @@ end
 -- Grant resources for defeating `blind`. PLACEHOLDER BALANCE (shape is fixed, numbers tunable).
 function PB_UTIL.grant_blind_drop(blind)
     if not blind then return end
+    local bonus = PB_UTIL.has_joker('j_minecraft_stone_pickaxe') and 1 or 0
+    if PB_UTIL.has_joker('j_minecraft_iron_shovel') then ease_dollars(3) end
+
     local spec = blind.name and PB_UTIL.BLIND_DROPS[blind.name]
     if spec then
-        PB_UTIL.add_resource(spec.id, spec.amount)
+        PB_UTIL.add_resource(spec.id, spec.amount + bonus)
         return
     end
     local ante = (G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante) or 1
@@ -83,7 +86,7 @@ function PB_UTIL.grant_blind_drop(blind)
     local max_tier = (ante >= 6 and 3) or (ante >= 3 and 2) or 1
     -- bosses bias toward the highest unlocked tier; others toward tier 1
     local tier = is_boss and max_tier or 1
-    local amount = is_boss and 2 or 1
+    local amount = (is_boss and 2 or 1) + bonus
     PB_UTIL.add_resource(random_ore_of_tier(tier, 'mc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
 end
 
