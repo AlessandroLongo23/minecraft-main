@@ -14,6 +14,7 @@ if PB_UTIL.config.resources_enabled then
     SMODS.load_file("utilities/resource_ui.lua")()
     SMODS.load_file("utilities/crafting.lua")()
     SMODS.load_file("utilities/crafting_match.lua")()
+    SMODS.load_file("utilities/crafting_grid.lua")()
     SMODS.load_file("utilities/crafting_ui.lua")()
     PB_UTIL.register_items(PB_UTIL.ENABLED_RESOURCES, "resources")
 end
