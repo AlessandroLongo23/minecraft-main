@@ -63,4 +63,5 @@ PB_UTIL.ENABLED_VOUCHERS = {
 PB_UTIL.ENABLED_RESOURCES = {
     'registry',
     'resource_consumabletype',
+    'recipes',
 }
