@@ -97,11 +97,12 @@ end
 
 -- ---- Tile lifecycle (always go through these so reserve accounting is exact) ----
 
--- Return a tile to the player: credit +1, destroy. card:remove() self-detaches from
--- its area (card.lua:5244). It does NOT null G.CONTROLLER.dragging -- callers that
--- return a MID-DRAG tile must also null C.dragging.target/prev_target themselves (see
--- destroy_craft_cells and the L_cursor_release wrap). (No explicit remove_card needed
--- before card:remove.)
+-- Return a tile to the player: credit +1, destroy. card:remove() self-detaches from its
+-- area (card.lua:5244) and nulls G.CONTROLLER.dragging.target if this card IS the drag
+-- target (node.lua:355), but it does NOT null dragging.prev_target -- callers returning a
+-- MID-DRAG tile must null C.dragging.prev_target themselves (see destroy_craft_cells and
+-- the L_cursor_release wrap; that prev_target null is MANDATORY, not redundant).
+-- (No explicit remove_card needed before card:remove.)
 local function return_tile(card)
     if not card then return end
     local rid = PB_UTIL.tile_resource(card)

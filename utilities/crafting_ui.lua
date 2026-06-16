@@ -4,20 +4,7 @@
 
 PB_UTIL.crafting_selected = PB_UTIL.crafting_selected or nil
 
--- A 0.34-scale icon sprite for a resource id (or an empty slot for `false`).
-local function cell_node(cell)
-    if not cell then
-        return { n = G.UIT.C, config = { minw = 0.34, minh = 0.34, r = 0.05, padding = 0.02, colour = G.C.UI.TRANSPARENT_DARK } }
-    end
-    local r = PB_UTIL.RESOURCE_BY_ID[cell]
-    if not r then
-        return { n = G.UIT.C, config = { minw = 0.34, minh = 0.34, r = 0.05, padding = 0.02, colour = G.C.RED } }
-    end
-    local spr = Sprite(0, 0, 0.34, 0.34, G.ASSET_ATLAS[PB_UTIL.icon_atlas.key], r.pos)
-    return { n = G.UIT.C, config = { align = 'cm' }, nodes = { { n = G.UIT.O, config = { object = spr } } } }
-end
-
--- (pattern_preview removed -- replaced by PB_UTIL.build_grid_node in crafting_grid.lua)
+-- (cell_node + pattern_preview removed -- the live grid is PB_UTIL.build_grid_node in crafting_grid.lua)
 
 -- One clickable recipe row in the left list.
 local function recipe_row(recipe)
