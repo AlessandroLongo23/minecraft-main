@@ -9,6 +9,9 @@ local function cell_node(cell)
         return { n = G.UIT.C, config = { minw = 0.34, minh = 0.34, r = 0.05, padding = 0.02, colour = G.C.UI.TRANSPARENT_DARK } }
     end
     local r = PB_UTIL.RESOURCE_BY_ID[cell]
+    if not r then
+        return { n = G.UIT.C, config = { minw = 0.34, minh = 0.34, r = 0.05, padding = 0.02, colour = G.C.RED } }
+    end
     local spr = Sprite(0, 0, 0.34, 0.34, G.ASSET_ATLAS[PB_UTIL.icon_atlas.key], r.pos)
     return { n = G.UIT.C, config = { align = 'cm' }, nodes = { { n = G.UIT.O, config = { object = spr } } } }
 end
@@ -84,13 +87,16 @@ function PB_UTIL.build_crafting_modal()
 end
 
 function PB_UTIL.open_crafting_table()
+    PB_UTIL.crafting_selected = nil
     G.FUNCS.overlay_menu { definition = PB_UTIL.build_crafting_modal() }
 end
 
 -- Re-render the open modal after a selection/craft.
 local function refresh_modal()
     if G.OVERLAY_MENU then
+        G.NO_MOD_CURSOR_STACK = true
         G.FUNCS.overlay_menu { definition = PB_UTIL.build_crafting_modal() }
+        G.NO_MOD_CURSOR_STACK = nil
     end
 end
 
