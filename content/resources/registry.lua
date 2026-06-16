@@ -14,7 +14,7 @@ PB_UTIL.RESOURCES = {
 PB_UTIL.RESOURCE_BY_ID = {}
 for _, r in ipairs(PB_UTIL.RESOURCES) do PB_UTIL.RESOURCE_BY_ID[r.id] = r end
 
--- Card sheet (71x95) for the booster pack; icon sheet (34x34) for the panel.
+-- Card sheet (71x95, 3x3 grid) for the booster pack; icon sheet (34x34, 3x3 grid) for the panel.
 PB_UTIL.card_atlas = SMODS.Atlas {
     key = 'bc_resource_cards', path = 'resource_cards.png', px = 71, py = 95,
 }

@@ -2,15 +2,15 @@
 
 Outputs (1x):
   assets/1x/resource_icons.png  -> 34x34 cells, 3x3 grid (102x102)
-  assets/1x/resource_cards.png  -> 71x95 cells, 3x2 grid (213x190)
+  assets/1x/resource_cards.png  -> 71x95 cells, 3x3 grid (213x285)
 Run `utils.py` afterwards to produce the 2x sheets.
-Ore order (row-major): wood, cobblestone, coal, iron, gold, diamond, sticks (icons only).
+Ore order (row-major): wood, cobblestone, coal, iron, gold, diamond, sticks.
 """
 from PIL import Image
 
 ICON = 34
 CARD_W, CARD_H = 71, 95
-COLS, ROWS = 3, 2
+COLS, ROWS = 3, 3
 ICON_ROWS = 3
 
 # Palette
@@ -107,8 +107,8 @@ def build_icons():
 
 def build_cards():
     sheet = Image.new("RGBA", (CARD_W * COLS, CARD_H * ROWS), (0, 0, 0, 0))
-    tiers = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond": 3}
-    for i, (_id, tex) in enumerate(ORES):
+    tiers = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond": 3, "sticks": 1}
+    for i, (_id, tex) in enumerate(ICONS):
         cx, cy = (i % COLS) * CARD_W, (i // COLS) * CARD_H
         face = Image.new("RGBA", (CARD_W, CARD_H), CARD_BG)
         tint = TIER_TINT[tiers[_id]]
