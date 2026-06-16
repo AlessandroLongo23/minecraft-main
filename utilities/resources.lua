@@ -5,19 +5,19 @@
 local _init_game_object = Game.init_game_object
 function Game:init_game_object()
     local t = _init_game_object(self)
-    t.minecraft = t.minecraft or {}
-    t.minecraft.resources = {}
+    t.balacraft = t.balacraft or {}
+    t.balacraft.resources = {}
     for _, r in ipairs(PB_UTIL.RESOURCES or {}) do
-        t.minecraft.resources[r.id] = 0
+        t.balacraft.resources[r.id] = 0
     end
     return t
 end
 
 -- Defensive accessor: guarantees the table exists before read/write.
 local function ensure_store()
-    G.GAME.minecraft = G.GAME.minecraft or {}
-    G.GAME.minecraft.resources = G.GAME.minecraft.resources or {}
-    return G.GAME.minecraft.resources
+    G.GAME.balacraft = G.GAME.balacraft or {}
+    G.GAME.balacraft.resources = G.GAME.balacraft.resources or {}
+    return G.GAME.balacraft.resources
 end
 
 function PB_UTIL.get_resource_count(id)
@@ -29,7 +29,7 @@ function PB_UTIL.set_resource(id, amount)
     local prev = store[id] or 0
     store[id] = math.max(0, math.floor(tonumber(amount) or 0))
     if (prev == 0) ~= (store[id] == 0) then
-        G.GAME.minecraft._panel_dirty = true
+        G.GAME.balacraft._panel_dirty = true
     end
     return store[id]
 end
@@ -42,22 +42,22 @@ function PB_UTIL.add_resource(id, amount)
     local new = math.max(0, prev + (math.floor(tonumber(amount) or 0)))
     store[id] = new
     if (prev == 0) ~= (new == 0) then
-        G.GAME.minecraft._panel_dirty = true
+        G.GAME.balacraft._panel_dirty = true
     end
     return new
 end
 
 -- Per-blind themed overrides (opt-in). Keyed by blind.name.
--- NOTE: for SMODS boss blinds, blind.name IS the prefixed key (e.g. 'bl_minecraft_creeper'),
+-- NOTE: for SMODS boss blinds, blind.name IS the prefixed key (e.g. 'bl_balacraft_creeper'),
 -- because SMODS sets a blind center's name to `self.name or self.key` (game_object.lua) and our
 -- blinds only define loc_txt.name. (Vanilla small/big blinds use display names like 'Small Blind',
--- but we only key minecraft bosses here, so the lookup matches.) The mod's lovely.toml relies on
--- this same fact (it checks `G.GAME.blind.name == 'bl_minecraft_drowned'`).
+-- but we only key balacraft bosses here, so the lookup matches.) The mod's lovely.toml relies on
+-- this same fact (it checks `G.GAME.blind.name == 'bl_balacraft_drowned'`).
 -- Anything without an entry uses the tier-roll fallback.
 PB_UTIL.BLIND_DROPS = {
-    bl_minecraft_creeper  = { id = 'coal',   amount = 2 },
-    bl_minecraft_skeleton = { id = 'iron',   amount = 1 },
-    bl_minecraft_zombie   = { id = 'wood',   amount = 2 },
+    bl_balacraft_creeper  = { id = 'coal',   amount = 2 },
+    bl_balacraft_skeleton = { id = 'iron',   amount = 1 },
+    bl_balacraft_zombie   = { id = 'wood',   amount = 2 },
 }
 
 -- Returns a random ore id of exactly `tier` (run-seeded deterministic).
@@ -73,8 +73,8 @@ end
 -- Grant resources for defeating `blind`. PLACEHOLDER BALANCE (shape is fixed, numbers tunable).
 function PB_UTIL.grant_blind_drop(blind)
     if not blind then return end
-    local bonus = PB_UTIL.has_joker('j_minecraft_stone_pickaxe') and 1 or 0
-    if PB_UTIL.has_joker('j_minecraft_iron_shovel') then ease_dollars(3) end
+    local bonus = PB_UTIL.has_joker('j_balacraft_stone_pickaxe') and 1 or 0
+    if PB_UTIL.has_joker('j_balacraft_iron_shovel') then ease_dollars(3) end
 
     local spec = blind.name and PB_UTIL.BLIND_DROPS[blind.name]
     if spec then
@@ -87,7 +87,7 @@ function PB_UTIL.grant_blind_drop(blind)
     -- bosses bias toward the highest unlocked tier; others toward tier 1
     local tier = is_boss and max_tier or 1
     local amount = (is_boss and 2 or 1) + bonus
-    PB_UTIL.add_resource(random_ore_of_tier(tier, 'mc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
+    PB_UTIL.add_resource(random_ore_of_tier(tier, 'bc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
 end
 
 -- Wrap Blind:defeat (same technique Steamodded uses) so drops fire on every blind win.

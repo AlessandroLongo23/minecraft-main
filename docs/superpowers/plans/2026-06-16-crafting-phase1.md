@@ -22,10 +22,10 @@ No automated test harness (the mod runs inside Balatro; `luajit`/`lua` not insta
 |---|---|
 | Crafted resource id | `sticks` (`kind='crafted'`) |
 | Recipe registry | `PB_UTIL.RECIPES` (list); empty grid cells are **`false`**, never `nil` (avoids Lua array holes) |
-| Tool-Joker keys | `stone_pickaxe`, `iron_sword`, `iron_shovel` → centers `j_minecraft_<key>` |
+| Tool-Joker keys | `stone_pickaxe`, `iron_sword`, `iron_shovel` → centers `j_balacraft_<key>` |
 | Craft funnel | `PB_UTIL.craft(recipe)`; selection in `PB_UTIL.crafting_selected` (recipe key string) |
 | Modal opener | `PB_UTIL.open_crafting_table()` |
-| Button callbacks | `G.FUNCS.mc_open_crafting`, `G.FUNCS.mc_select_recipe`, `G.FUNCS.mc_do_craft` |
+| Button callbacks | `G.FUNCS.bc_open_crafting`, `G.FUNCS.bc_select_recipe`, `G.FUNCS.bc_do_craft` |
 
 ## File structure
 
@@ -108,7 +108,7 @@ def build_icons():
         block = nn(tex, 2)
         slot.alpha_composite(block, (1, 1))
         sheet.alpha_composite(slot, (cx, cy))
-    sheet.save("minecraft-main/assets/1x/resource_icons.png")
+    sheet.save("BalaCraft/assets/1x/resource_icons.png")
     print("wrote resource_icons.png", sheet.size)
 ```
 
@@ -117,13 +117,13 @@ def build_icons():
 - [ ] **Step 3: Regenerate the icon sheets**
 
 ```bash
-cd "/Users/alessandro/Library/Application Support/Balatro/Mods" && python3 minecraft-main/assets/gen_resources.py && python3 - <<'PY'
-import sys; sys.path.insert(0, "minecraft-main/assets")
+cd "/Users/alessandro/Library/Application Support/Balatro/Mods" && python3 BalaCraft/assets/gen_resources.py && python3 - <<'PY'
+import sys; sys.path.insert(0, "BalaCraft/assets")
 from utils import scale_image
-scale_image("minecraft-main/assets/1x/resource_icons.png", "minecraft-main/assets/2x/resource_icons.png", 2)
+scale_image("BalaCraft/assets/1x/resource_icons.png", "BalaCraft/assets/2x/resource_icons.png", 2)
 PY
 ```
-Expected: `wrote resource_icons.png (102, 102)` and a scaled line. Verify icons are 102×102 (1x) / 204×204 (2x): `python3 -c "from PIL import Image; print(Image.open('minecraft-main/assets/1x/resource_icons.png').size, Image.open('minecraft-main/assets/2x/resource_icons.png').size)"`. (The card sheet is untouched — still 213×190.)
+Expected: `wrote resource_icons.png (102, 102)` and a scaled line. Verify icons are 102×102 (1x) / 204×204 (2x): `python3 -c "from PIL import Image; print(Image.open('BalaCraft/assets/1x/resource_icons.png').size, Image.open('BalaCraft/assets/2x/resource_icons.png').size)"`. (The card sheet is untouched — still 213×190.)
 
 - [ ] **Step 4: Guard drops to gathered resources + fix the dirty-flag boundary**
 
@@ -138,13 +138,13 @@ In `utilities/resources.lua`, in `random_ore_of_tier`, change the pool filter to
 And in `add_resource`, change the dirty-flag condition so the panel rebuilds when a resource crosses the 0 boundary in EITHER direction (so a crafted resource's cell appears at 0→>0 and disappears at >0→0). Replace:
 ```lua
     if prev == 0 and new > 0 then
-        G.GAME.minecraft._panel_dirty = true
+        G.GAME.balacraft._panel_dirty = true
     end
 ```
 with:
 ```lua
     if (prev == 0) ~= (new == 0) then
-        G.GAME.minecraft._panel_dirty = true
+        G.GAME.balacraft._panel_dirty = true
     end
 ```
 
@@ -215,7 +215,7 @@ PB_UTIL.RECIPES = {
     {
         key = 'stone_pickaxe',
         name = 'Stone Pickaxe',
-        output = { type = 'joker', id = 'j_minecraft_stone_pickaxe', amount = 1 },
+        output = { type = 'joker', id = 'j_balacraft_stone_pickaxe', amount = 1 },
         pattern = {
             { 'cobblestone', 'cobblestone', 'cobblestone' },
             { false,         'sticks',      false },
@@ -225,7 +225,7 @@ PB_UTIL.RECIPES = {
     {
         key = 'iron_sword',
         name = 'Iron Sword',
-        output = { type = 'joker', id = 'j_minecraft_iron_sword', amount = 1 },
+        output = { type = 'joker', id = 'j_balacraft_iron_sword', amount = 1 },
         pattern = {
             { false, 'iron',   false },
             { false, 'iron',   false },
@@ -235,7 +235,7 @@ PB_UTIL.RECIPES = {
     {
         key = 'iron_shovel',
         name = 'Iron Shovel',
-        output = { type = 'joker', id = 'j_minecraft_iron_shovel', amount = 1 },
+        output = { type = 'joker', id = 'j_balacraft_iron_shovel', amount = 1 },
         pattern = {
             { false, 'iron',   false },
             { false, 'sticks', false },
@@ -277,7 +277,7 @@ PB_UTIL.ENABLED_RESOURCES = {
 
 - [ ] **Step 3: In-game — verify the registry loads**
 
-In-game: start a run. Console: `#PB_UTIL.RECIPES` → `4`. `local n = PB_UTIL.recipe_ingredients(PB_UTIL.recipe_by_key('stone_pickaxe')); sendDebugMessage(n.cobblestone..'/'..n.sticks, 'Minecraft')` → `3/2`.
+In-game: start a run. Console: `#PB_UTIL.RECIPES` → `4`. `local n = PB_UTIL.recipe_ingredients(PB_UTIL.recipe_by_key('stone_pickaxe')); sendDebugMessage(n.cobblestone..'/'..n.sticks, 'BalaCraft')` → `3/2`.
 
 - [ ] **Step 4: Commit**
 
@@ -372,7 +372,7 @@ git commit -m "feat(crafting): craft action (afford/slot checks, spend + produce
 
 **Files:** Create `content/jokers/stone_pickaxe.lua`, `content/jokers/iron_sword.lua`, `content/jokers/iron_shovel.lua`; Modify `utilities/definitions.lua`, `utilities/resources.lua`
 
-Tool art is a **placeholder** — the three jokers reuse cells of the existing `mc_resource_cards` atlas (dedicated tool art is a later follow-up).
+Tool art is a **placeholder** — the three jokers reuse cells of the existing `bc_resource_cards` atlas (dedicated tool art is a later follow-up).
 
 - [ ] **Step 1: Stone Pickaxe joker** (effect lives in `grant_blind_drop`, so no `calculate`)
 
@@ -387,7 +387,7 @@ SMODS.Joker {
     unlocked = true, discovered = true,
     blueprint_compat = false, eternal_compat = true,
     rarity = 2,
-    atlas = 'mc_resource_cards', pos = { x = 1, y = 0 }, -- placeholder (cobblestone cell)
+    atlas = 'bc_resource_cards', pos = { x = 1, y = 0 }, -- placeholder (cobblestone cell)
     cost = 5,
 }
 ```
@@ -405,7 +405,7 @@ SMODS.Joker {
     unlocked = true, discovered = true,
     blueprint_compat = true, eternal_compat = true,
     rarity = 2,
-    atlas = 'mc_resource_cards', pos = { x = 0, y = 1 }, -- placeholder (iron cell)
+    atlas = 'bc_resource_cards', pos = { x = 0, y = 1 }, -- placeholder (iron cell)
     cost = 6,
     calculate = function(self, card, context)
         if context.joker_main and G.GAME.blind and G.GAME.blind.boss then
@@ -428,7 +428,7 @@ SMODS.Joker {
     unlocked = true, discovered = true,
     blueprint_compat = false, eternal_compat = true,
     rarity = 1,
-    atlas = 'mc_resource_cards', pos = { x = 0, y = 1 }, -- placeholder (iron cell)
+    atlas = 'bc_resource_cards', pos = { x = 0, y = 1 }, -- placeholder (iron cell)
     cost = 4,
 }
 ```
@@ -448,8 +448,8 @@ In `utilities/resources.lua`, modify `PB_UTIL.grant_blind_drop` so the pickaxe a
 ```lua
 function PB_UTIL.grant_blind_drop(blind)
     if not blind then return end
-    local bonus = PB_UTIL.has_joker('j_minecraft_stone_pickaxe') and 1 or 0
-    if PB_UTIL.has_joker('j_minecraft_iron_shovel') then ease_dollars(3) end
+    local bonus = PB_UTIL.has_joker('j_balacraft_stone_pickaxe') and 1 or 0
+    if PB_UTIL.has_joker('j_balacraft_iron_shovel') then ease_dollars(3) end
 
     local spec = blind.name and PB_UTIL.BLIND_DROPS[blind.name]
     if spec then
@@ -461,7 +461,7 @@ function PB_UTIL.grant_blind_drop(blind)
     local max_tier = (ante >= 6 and 3) or (ante >= 3 and 2) or 1
     local tier = is_boss and max_tier or 1
     local amount = (is_boss and 2 or 1) + bonus
-    PB_UTIL.add_resource(random_ore_of_tier(tier, 'mc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
+    PB_UTIL.add_resource(random_ore_of_tier(tier, 'bc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
 end
 ```
 (`PB_UTIL.has_joker` is defined in `utilities/crafting.lua`, which loads before content registration, so it exists when a blind is defeated. `ease_dollars` is a base function.)
@@ -469,9 +469,9 @@ end
 - [ ] **Step 6: In-game — verify tool effects**
 
 In-game:
-- Console `joker_add('j_minecraft_iron_shovel')`, then beat a blind → you gain **$3**.
-- `joker_add('j_minecraft_stone_pickaxe')`, beat a blind → the resource drop is **+1** larger than normal.
-- `joker_add('j_minecraft_iron_sword')`, play a hand during a **Boss Blind** → mult is **×2** (and not on non-boss blinds).
+- Console `joker_add('j_balacraft_iron_shovel')`, then beat a blind → you gain **$3**.
+- `joker_add('j_balacraft_stone_pickaxe')`, beat a blind → the resource drop is **+1** larger than normal.
+- `joker_add('j_balacraft_iron_sword')`, play a hand during a **Boss Blind** → mult is **×2** (and not on non-boss blinds).
 
 - [ ] **Step 7: Commit**
 
@@ -529,7 +529,7 @@ local function recipe_row(recipe)
         config = {
             align = 'cl', padding = 0.06, r = 0.08, minw = 3,
             colour = selected and G.C.GREEN or (craftable and G.C.UI.TRANSPARENT_DARK or G.C.UI.TRANSPARENT_LIGHT),
-            button = 'mc_select_recipe', ref_table = { key = recipe.key },
+            button = 'bc_select_recipe', ref_table = { key = recipe.key },
             hover = true, shadow = true,
         },
         nodes = {
@@ -551,7 +551,7 @@ function PB_UTIL.build_crafting_modal()
         config = {
             align = 'cm', padding = 0.1, r = 0.1, minw = 2,
             colour = can and G.C.GREEN or G.C.UI.TRANSPARENT_LIGHT,
-            button = can and 'mc_do_craft' or nil, hover = can, shadow = can,
+            button = can and 'bc_do_craft' or nil, hover = can, shadow = can,
         },
         nodes = { { n = G.UIT.T, config = { text = 'Craft', scale = 0.5, colour = G.C.UI.TEXT_LIGHT } } },
     }
@@ -588,16 +588,16 @@ local function refresh_modal()
     end
 end
 
-G.FUNCS.mc_open_crafting = function(e)
+G.FUNCS.bc_open_crafting = function(e)
     PB_UTIL.open_crafting_table()
 end
 
-G.FUNCS.mc_select_recipe = function(e)
+G.FUNCS.bc_select_recipe = function(e)
     PB_UTIL.crafting_selected = e.config.ref_table.key
     refresh_modal()
 end
 
-G.FUNCS.mc_do_craft = function(e)
+G.FUNCS.bc_do_craft = function(e)
     local recipe = PB_UTIL.crafting_selected and PB_UTIL.recipe_by_key(PB_UTIL.crafting_selected)
     if recipe and PB_UTIL.craft(recipe) then refresh_modal() end
 end
@@ -618,7 +618,7 @@ In `utilities/resource_ui.lua`, in `build_resources_panel`, append a button row 
         n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = {
             { n = G.UIT.C, config = {
                 align = 'cm', padding = 0.06, r = 0.08, minw = 1.6,
-                colour = G.C.GREEN, button = 'mc_open_crafting', hover = true, shadow = true,
+                colour = G.C.GREEN, button = 'bc_open_crafting', hover = true, shadow = true,
             }, nodes = {
                 { n = G.UIT.T, config = { text = 'Crafting Table', scale = 0.28, colour = G.C.UI.TEXT_LIGHT } },
             } },
@@ -647,7 +647,7 @@ git add utilities/crafting_ui.lua main.lua utilities/resource_ui.lua
 git commit -m "feat(crafting): Crafting Table modal + hotbar button (click-to-craft)"
 ```
 
-**Fallback (if the two-column modal misbehaves):** drop the `pattern_preview`/right column and make each recipe row craft directly — give each `recipe_row` `button = 'mc_do_craft_row'` with `ref_table={key=...}`, and `G.FUNCS.mc_do_craft_row` crafts that row's recipe and refreshes. A plain vertical list of "Stone Pickaxe — 3 Cobble, 2 Stick [Craft]" rows is the guaranteed-working minimum and still satisfies Phase 1.
+**Fallback (if the two-column modal misbehaves):** drop the `pattern_preview`/right column and make each recipe row craft directly — give each `recipe_row` `button = 'bc_do_craft_row'` with `ref_table={key=...}`, and `G.FUNCS.bc_do_craft_row` crafts that row's recipe and refreshes. A plain vertical list of "Stone Pickaxe — 3 Cobble, 2 Stick [Craft]" rows is the guaranteed-working minimum and still satisfies Phase 1.
 
 ---
 
@@ -682,5 +682,5 @@ Manual drag-and-drop: draggable palette tiles, drop targets in the 3×3, reserve
 
 - **Spec coverage:** Sticks crafted resource + kind + drop guard (Task 1), recipe registry/tree (Task 2), craft action with afford/slot gating (Task 3), tool-jokers + effects (Task 4), mid-blind modal + button (Task 5), persistence/regression (Task 6). Shaped-matching/drag is explicitly Phase 2. Inventory-via-`I` documented as roadmap.
 - **Empty-cell convention:** patterns use `false` (not `nil`) everywhere, and `recipe_ingredients`/`pattern_preview` iterate `1..3` explicitly — no Lua array holes.
-- **Naming consistency:** recipe keys, `j_minecraft_<tool>` center keys, `PB_UTIL.craft/can_craft/recipe_by_key/recipe_ingredients/has_joker`, and `G.FUNCS.mc_*` callbacks are used identically across tasks.
+- **Naming consistency:** recipe keys, `j_balacraft_<tool>` center keys, `PB_UTIL.craft/can_craft/recipe_by_key/recipe_ingredients/has_joker`, and `G.FUNCS.bc_*` callbacks are used identically across tasks.
 - **Known risk:** Task 5 (modal UIBox) needs in-game tuning; it has an explicit list-only fallback. Tool art is intentional placeholder (reused ore-card cells).

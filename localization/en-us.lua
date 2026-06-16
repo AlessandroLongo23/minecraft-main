@@ -1,31 +1,31 @@
 -- return {
 --     descriptions = {
 --         Blind = {
---             bl_minecraft_skeleton = {
+--             bl_balacraft_skeleton = {
 --                 name = 'The Skeleton',
 --                 text = { "destroy a random card in hand after playing poker hand" }
 --             },
---             bl_minecraft_spider = {
+--             bl_balacraft_spider = {
 --                 name = 'The Spider',
 --                 text = { "disable all card enhancement" }
 --             },
---             bl_minecraft_blaze = {
+--             bl_balacraft_blaze = {
 --                 name = 'The Blaze',
 --                 text = { "After scoring, destroy a random card in hand" }
 --             },
---             bl_minecraft_creeper = {
+--             bl_balacraft_creeper = {
 --                 name = 'The Creeper',
 --                 text = { 'destroy a random card in hand after playing poker hand' }
 --             },
---             bl_minecraft_drowned = {
+--             bl_balacraft_drowned = {
 --                 name = 'The Drowned',
 --                 text = { 'destroy a random card in hand after playing poker hand' }
 --             },
---             bl_minecraft_enderman = {
+--             bl_balacraft_enderman = {
 --                 name = 'The Enderman',
 --                 text = { 'destroy a random card in hand after playing poker hand' }
 --             },
---             bl_minecraft_zombie = {
+--             bl_balacraft_zombie = {
 --                 name = 'The Zombie',
 --                 text = { 'destroy a random card in hand after playing poker hand' }
 --             }

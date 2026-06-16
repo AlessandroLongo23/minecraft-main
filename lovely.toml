@@ -11,7 +11,7 @@ G.FUNCS.discard_cards_from_highlighted = function(e, hook)
 '''
 position = 'after'
 payload = '''
-    if G.GAME.blind.name == 'bl_minecraft_drowned' and not G.GAME.blind.disabled then
+    if G.GAME.blind.name == 'bl_balacraft_drowned' and not G.GAME.blind.disabled then
         PB_UTIL.drowned_effect(e, hook)
         return
     end
@@ -29,7 +29,7 @@ ease_discard(-1)
 '''
 position = 'after'
 payload = '''
-    if G.GAME.blind.name == 'bl_minecraft_husk' and not G.GAME.blind.disabled then
+    if G.GAME.blind.name == 'bl_balacraft_husk' and not G.GAME.blind.disabled then
         ease_dollars(-2)
     end
 '''

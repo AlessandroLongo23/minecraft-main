@@ -2,13 +2,13 @@
 -- These never appear in the collection, shop, or normal pools.
 
 SMODS.ConsumableType {
-    key = 'minecraft_resource',
+    key = 'balacraft_resource',
     primary_colour = HEX('6b5840'),
     secondary_colour = HEX('8b7765'),
     collection_rows = { 3, 3 },
     shop_rate = 0,
     no_collection = true,
-    default = 'c_minecraft_res_wood',
+    default = 'c_balacraft_res_wood',
     loc_txt = { name = 'Resource', collection = 'Resources' },
 }
 
@@ -27,8 +27,8 @@ for _, r in ipairs(PB_UTIL.RESOURCES) do
         local id = r.id
         SMODS.Consumable {
             key = 'res_' .. id,
-            set = 'minecraft_resource',
-            atlas = 'mc_resource_cards',
+            set = 'balacraft_resource',
+            atlas = 'bc_resource_cards',
             pos = r.pos,
             cost = 0,
             discovered = true,

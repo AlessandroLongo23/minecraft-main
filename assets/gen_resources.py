@@ -102,7 +102,7 @@ def build_icons():
         block = nn(tex, 2)
         slot.alpha_composite(block, (1, 1))
         sheet.alpha_composite(slot, (cx, cy))
-    sheet.save("minecraft-main/assets/1x/resource_icons.png")
+    sheet.save("BalaCraft/assets/1x/resource_icons.png")
     print("wrote resource_icons.png", sheet.size)
 
 def build_cards():
@@ -118,7 +118,7 @@ def build_cards():
         block = nn(tex, 3)  # 16 -> 48
         face.alpha_composite(block, ((CARD_W - 48) // 2, (CARD_H - 48) // 2 - 4))
         sheet.alpha_composite(face, (cx, cy))
-    sheet.save("minecraft-main/assets/1x/resource_cards.png")
+    sheet.save("BalaCraft/assets/1x/resource_cards.png")
     print("wrote resource_cards.png", sheet.size)
 
 if __name__ == "__main__":

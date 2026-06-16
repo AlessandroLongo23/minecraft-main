@@ -16,18 +16,18 @@ function PB_UTIL.register_items(items, folder)
 end
 
 function PB_UTIL.load_blinds(items)
-    sendDebugMessage("Loading Blinds...", 'Minecraft')
+    sendDebugMessage("Loading Blinds...", 'BalaCraft')
     for i = 1, #items do
         local status, err = pcall(function()
             return NFS.load(SMODS.current_mod.path .. 'content/blinds/' .. items[i] .. '.lua')()
         end)
-        sendDebugMessage("Loaded blind: " .. items[i], 'Minecraft')
+        sendDebugMessage("Loaded blind: " .. items[i], 'BalaCraft')
 
         if not status then
             error(items[i] .. ": " .. err)
         end
     end
-    sendDebugMessage("", 'Minecraft')
+    sendDebugMessage("", 'BalaCraft')
 
     SMODS.Atlas(
         {

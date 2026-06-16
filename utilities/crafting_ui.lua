@@ -38,7 +38,7 @@ local function recipe_row(recipe)
         config = {
             align = 'cl', padding = 0.06, r = 0.08, minw = 3,
             colour = selected and G.C.GREEN or (craftable and G.C.UI.TRANSPARENT_DARK or G.C.UI.TRANSPARENT_LIGHT),
-            button = 'mc_select_recipe', ref_table = { key = recipe.key },
+            button = 'bc_select_recipe', ref_table = { key = recipe.key },
             hover = true, shadow = true,
         },
         nodes = {
@@ -60,7 +60,7 @@ function PB_UTIL.build_crafting_modal()
         config = {
             align = 'cm', padding = 0.1, r = 0.1, minw = 2,
             colour = can and G.C.GREEN or G.C.UI.TRANSPARENT_LIGHT,
-            button = can and 'mc_do_craft' or nil, hover = can, shadow = can,
+            button = can and 'bc_do_craft' or nil, hover = can, shadow = can,
         },
         nodes = { { n = G.UIT.T, config = { text = 'Craft', scale = 0.5, colour = G.C.UI.TEXT_LIGHT } } },
     }
@@ -100,16 +100,16 @@ local function refresh_modal()
     end
 end
 
-G.FUNCS.mc_open_crafting = function(e)
+G.FUNCS.bc_open_crafting = function(e)
     PB_UTIL.open_crafting_table()
 end
 
-G.FUNCS.mc_select_recipe = function(e)
+G.FUNCS.bc_select_recipe = function(e)
     PB_UTIL.crafting_selected = e.config.ref_table.key
     refresh_modal()
 end
 
-G.FUNCS.mc_do_craft = function(e)
+G.FUNCS.bc_do_craft = function(e)
     local recipe = PB_UTIL.crafting_selected and PB_UTIL.recipe_by_key(PB_UTIL.crafting_selected)
     if recipe and PB_UTIL.craft(recipe) then refresh_modal() end
 end

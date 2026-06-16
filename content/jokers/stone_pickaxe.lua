@@ -7,6 +7,6 @@ SMODS.Joker {
     unlocked = true, discovered = true,
     blueprint_compat = false, eternal_compat = true,
     rarity = 2,
-    atlas = 'mc_resource_cards', pos = { x = 1, y = 0 }, -- placeholder (cobblestone cell)
+    atlas = 'bc_resource_cards', pos = { x = 1, y = 0 }, -- placeholder (cobblestone cell)
     cost = 5,
 }

@@ -7,7 +7,7 @@ SMODS.Joker {
     unlocked = true, discovered = true,
     blueprint_compat = true, eternal_compat = true,
     rarity = 2,
-    atlas = 'mc_resource_cards', pos = { x = 0, y = 1 }, -- placeholder (iron cell)
+    atlas = 'bc_resource_cards', pos = { x = 0, y = 1 }, -- placeholder (iron cell)
     cost = 6,
     calculate = function(self, card, context)
         if context.joker_main and G.GAME.blind and G.GAME.blind.boss then

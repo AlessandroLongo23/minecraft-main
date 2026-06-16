@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a Minecraft "Resource" content type to the Minekreift mod: 6 ores stored as persistent counts on `G.GAME`, shown in an always-visible hotbar panel below the consumables, gathered via blind-defeat drops and a resource booster pack.
+**Goal:** Add a Minecraft "Resource" content type to the Balacraft mod: 6 ores stored as persistent counts on `G.GAME`, shown in an always-visible hotbar panel below the consumables, gathered via blind-defeat drops and a resource booster pack.
 
-**Architecture:** Counts are the single source of truth (`G.GAME.minecraft.resources`, plain integers, auto-saved/reset via a `Game:init_game_object` Lua wrapper). A data registry (`PB_UTIL.RESOURCES`) drives a procedurally-generated two-sheet atlas, a self-owned `Weak`-bonded UIBox panel, blind-drop logic, and a booster that spawns hidden ore consumables. No crafting/grid/ore-mining in this slice.
+**Architecture:** Counts are the single source of truth (`G.GAME.balacraft.resources`, plain integers, auto-saved/reset via a `Game:init_game_object` Lua wrapper). A data registry (`PB_UTIL.RESOURCES`) drives a procedurally-generated two-sheet atlas, a self-owned `Weak`-bonded UIBox panel, blind-drop logic, and a booster that spawns hidden ore consumables. No crafting/grid/ore-mining in this slice.
 
 **Tech Stack:** Lua (LuaJIT, Balatro/LÖVE2D) · Steamodded (SMODS) · Lovely · Python 3 + Pillow (art generation).
 
@@ -27,16 +27,16 @@ The work happens on branch `feature/resource-type` (already created).
 
 | Thing | Value |
 |---|---|
-| Mod prefix | `minecraft` |
+| Mod prefix | `balacraft` |
 | Resource ids (count keys + registry ids) | `wood`, `cobblestone`, `coal`, `iron`, `gold`, `diamond` |
 | Registry global | `PB_UTIL.RESOURCES` = ordered list of `{ id, tier, pos={x,y} }` |
-| Counts table | `G.GAME.minecraft.resources[id]` (integer) |
-| Card atlas | `SMODS.Atlas` key `mc_resource_cards` (px=71, py=95) |
-| Icon atlas | `SMODS.Atlas` key `mc_resource_icons` (px=34, py=34) |
-| ConsumableType | key `minecraft_resource` (manual prefix, per Ortalab), `no_collection` |
-| Hidden ore consumables | `SMODS.Consumable` key `res_<id>` → center `c_minecraft_res_<id>`, `set='minecraft_resource'` |
-| Booster | `SMODS.Booster` key `resource_pack` → `p_minecraft_resource_pack` |
-| Panel UIBox handle | `G.minecraft_resources_panel` |
+| Counts table | `G.GAME.balacraft.resources[id]` (integer) |
+| Card atlas | `SMODS.Atlas` key `bc_resource_cards` (px=71, py=95) |
+| Icon atlas | `SMODS.Atlas` key `bc_resource_icons` (px=34, py=34) |
+| ConsumableType | key `balacraft_resource` (manual prefix, per Ortalab), `no_collection` |
+| Hidden ore consumables | `SMODS.Consumable` key `res_<id>` → center `c_balacraft_res_<id>`, `set='balacraft_resource'` |
+| Booster | `SMODS.Booster` key `resource_pack` → `p_balacraft_resource_pack` |
+| Panel UIBox handle | `G.balacraft_resources_panel` |
 | Config flag | `resources_enabled` |
 | Enabled list | `PB_UTIL.ENABLED_RESOURCES = {'registry','resource_consumabletype'}` |
 
@@ -151,7 +151,7 @@ create_toggle {
 
 - [ ] **Step 6: In-game — verify clean load**
 
-In-game: enable the Minecraft mod, launch Balatro. Expected: the game loads with **no crash/error popup**, the mod's config tab shows a new "Resources" toggle. (Stubs do nothing yet.)
+In-game: enable the BalaCraft mod, launch Balatro. Expected: the game loads with **no crash/error popup**, the mod's config tab shows a new "Resources" toggle. (Stubs do nothing yet.)
 
 - [ ] **Step 7: Commit**
 
@@ -179,19 +179,19 @@ Replace the contents of `utilities/resources.lua` with:
 local _init_game_object = Game.init_game_object
 function Game:init_game_object()
     local t = _init_game_object(self)
-    t.minecraft = t.minecraft or {}
-    t.minecraft.resources = {}
+    t.balacraft = t.balacraft or {}
+    t.balacraft.resources = {}
     for _, r in ipairs(PB_UTIL.RESOURCES or {}) do
-        t.minecraft.resources[r.id] = 0
+        t.balacraft.resources[r.id] = 0
     end
     return t
 end
 
 -- Defensive accessor: guarantees the table exists before read/write.
 local function ensure_store()
-    G.GAME.minecraft = G.GAME.minecraft or {}
-    G.GAME.minecraft.resources = G.GAME.minecraft.resources or {}
-    return G.GAME.minecraft.resources
+    G.GAME.balacraft = G.GAME.balacraft or {}
+    G.GAME.balacraft.resources = G.GAME.balacraft.resources or {}
+    return G.GAME.balacraft.resources
 end
 
 function PB_UTIL.get_resource_count(id)
@@ -212,7 +212,7 @@ function PB_UTIL.add_resource(id, amount)
     local new = math.max(0, prev + (math.floor(tonumber(amount) or 0)))
     store[id] = new
     if prev == 0 and new > 0 then
-        G.GAME.minecraft._panel_dirty = true
+        G.GAME.balacraft._panel_dirty = true
     end
     return new
 end
@@ -225,7 +225,7 @@ In-game (with the Steamodded debug console, or a temporary `sendDebugMessage`):
 2. Save & quit to menu, then "Continue" the run; `PB_UTIL.get_resource_count('wood')` → expect `5` (persisted).
 3. Start a **new** run; `PB_UTIL.get_resource_count('wood')` → expect `0` (reset).
 
-If you cannot open the console, add this temporary line at the end of `add_resource` and watch the log: `sendDebugMessage('wood='..tostring(PB_UTIL.get_resource_count('wood')), 'Minecraft')`, then remove it before commit.
+If you cannot open the console, add this temporary line at the end of `add_resource` and watch the log: `sendDebugMessage('wood='..tostring(PB_UTIL.get_resource_count('wood')), 'BalaCraft')`, then remove it before commit.
 
 - [ ] **Step 3: Commit**
 
@@ -340,7 +340,7 @@ def build_icons():
         block = nn(tex, 2)  # 16 -> 32
         slot.alpha_composite(block, (1, 1))
         sheet.alpha_composite(slot, (cx, cy))
-    sheet.save("minecraft-main/assets/1x/resource_icons.png")
+    sheet.save("BalaCraft/assets/1x/resource_icons.png")
     print("wrote resource_icons.png", sheet.size)
 
 def build_cards():
@@ -356,7 +356,7 @@ def build_cards():
         block = nn(tex, 3)  # 16 -> 48
         face.alpha_composite(block, ((CARD_W - 48) // 2, (CARD_H - 48) // 2 - 4))
         sheet.alpha_composite(face, (cx, cy))
-    sheet.save("minecraft-main/assets/1x/resource_cards.png")
+    sheet.save("BalaCraft/assets/1x/resource_cards.png")
     print("wrote resource_cards.png", sheet.size)
 
 if __name__ == "__main__":
@@ -366,9 +366,9 @@ if __name__ == "__main__":
 
 - [ ] **Step 2: Generate the 1x sheets**
 
-Run (from the Mods directory, so the hardcoded `minecraft-main/assets/...` paths resolve):
+Run (from the Mods directory, so the hardcoded `BalaCraft/assets/...` paths resolve):
 ```bash
-cd "/Users/alessandro/Library/Application Support/Balatro/Mods" && python3 minecraft-main/assets/gen_resources.py
+cd "/Users/alessandro/Library/Application Support/Balatro/Mods" && python3 BalaCraft/assets/gen_resources.py
 ```
 Expected output:
 ```
@@ -380,10 +380,10 @@ wrote resource_cards.png (213, 190)
 
 ```bash
 cd "/Users/alessandro/Library/Application Support/Balatro/Mods" && python3 - <<'PY'
-import sys; sys.path.insert(0, "minecraft-main/assets")
+import sys; sys.path.insert(0, "BalaCraft/assets")
 from utils import scale_image
-scale_image("minecraft-main/assets/1x/resource_icons.png", "minecraft-main/assets/2x/resource_icons.png", 2)
-scale_image("minecraft-main/assets/1x/resource_cards.png", "minecraft-main/assets/2x/resource_cards.png", 2)
+scale_image("BalaCraft/assets/1x/resource_icons.png", "BalaCraft/assets/2x/resource_icons.png", 2)
+scale_image("BalaCraft/assets/1x/resource_cards.png", "BalaCraft/assets/2x/resource_cards.png", 2)
 PY
 ```
 Expected: two "Image scaled and saved" lines; `assets/2x/resource_icons.png` is 204×136 and `assets/2x/resource_cards.png` is 426×380.
@@ -410,10 +410,10 @@ for _, r in ipairs(PB_UTIL.RESOURCES) do PB_UTIL.RESOURCE_BY_ID[r.id] = r end
 
 -- Card sheet (71x95) for the booster pack; icon sheet (34x34) for the panel.
 PB_UTIL.card_atlas = SMODS.Atlas {
-    key = 'mc_resource_cards', path = 'resource_cards.png', px = 71, py = 95,
+    key = 'bc_resource_cards', path = 'resource_cards.png', px = 71, py = 95,
 }
 PB_UTIL.icon_atlas = SMODS.Atlas {
-    key = 'mc_resource_icons', path = 'resource_icons.png', px = 34, py = 34,
+    key = 'bc_resource_icons', path = 'resource_icons.png', px = 34, py = 34,
 }
 ```
 
@@ -421,9 +421,9 @@ PB_UTIL.icon_atlas = SMODS.Atlas {
 
 In-game: start a run. In the console run:
 ```lua
-sendDebugMessage(tostring(PB_UTIL.icon_atlas and PB_UTIL.icon_atlas.key)..' / '..tostring(G.ASSET_ATLAS[PB_UTIL.icon_atlas.key] ~= nil), 'Minecraft')
+sendDebugMessage(tostring(PB_UTIL.icon_atlas and PB_UTIL.icon_atlas.key)..' / '..tostring(G.ASSET_ATLAS[PB_UTIL.icon_atlas.key] ~= nil), 'BalaCraft')
 ```
-Expected: a non-nil key and `true` (atlas present in `G.ASSET_ATLAS`). No load error popup. (If the boolean is `false`, note the actual key by dumping `for k in pairs(G.ASSET_ATLAS) do sendDebugMessage(k,'Minecraft') end` — used in Task 3.)
+Expected: a non-nil key and `true` (atlas present in `G.ASSET_ATLAS`). No load error popup. (If the boolean is `false`, note the actual key by dumping `for k in pairs(G.ASSET_ATLAS) do sendDebugMessage(k,'BalaCraft') end` — used in Task 3.)
 
 - [ ] **Step 6: Commit**
 
@@ -462,7 +462,7 @@ local PER_ROW = 3
 
 -- Build the UIBox definition from the registry + current counts.
 function PB_UTIL.build_resources_panel()
-    local store = (G.GAME.minecraft and G.GAME.minecraft.resources) or {}
+    local store = (G.GAME.balacraft and G.GAME.balacraft.resources) or {}
     local atlas = G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
     local cells = {}
     for _, r in ipairs(PB_UTIL.RESOURCES) do
@@ -501,11 +501,11 @@ end
 
 -- (Re)create the panel UIBox, bonded below the consumables area.
 function PB_UTIL.attach_resources_panel()
-    if G.minecraft_resources_panel and not G.minecraft_resources_panel.REMOVED then
-        G.minecraft_resources_panel:remove()
+    if G.balacraft_resources_panel and not G.balacraft_resources_panel.REMOVED then
+        G.balacraft_resources_panel:remove()
     end
-    G.GAME.minecraft._panel_dirty = false
-    G.minecraft_resources_panel = UIBox {
+    G.GAME.balacraft._panel_dirty = false
+    G.balacraft_resources_panel = UIBox {
         definition = PB_UTIL.build_resources_panel(),
         config = { align = 'cm', offset = { x = 0, y = 1.5 }, major = G.consumeables, bond = 'Weak' },
     }
@@ -514,16 +514,16 @@ end
 -- Per-frame: create/refresh/hide based on game state.
 function PB_UTIL.update_resources_panel()
     local can_show = G.STATE and PB_UTIL.PANEL_STATES[G.STATE]
-        and G.consumeables and G.GAME and G.GAME.minecraft
+        and G.consumeables and G.GAME and G.GAME.balacraft
     if can_show then
-        if not G.minecraft_resources_panel or G.minecraft_resources_panel.REMOVED then
+        if not G.balacraft_resources_panel or G.balacraft_resources_panel.REMOVED then
             PB_UTIL.attach_resources_panel()
-        elseif G.GAME.minecraft._panel_dirty then
+        elseif G.GAME.balacraft._panel_dirty then
             PB_UTIL.attach_resources_panel()
         end
-    elseif G.minecraft_resources_panel and not G.minecraft_resources_panel.REMOVED then
-        G.minecraft_resources_panel:remove()
-        G.minecraft_resources_panel = nil
+    elseif G.balacraft_resources_panel and not G.balacraft_resources_panel.REMOVED then
+        G.balacraft_resources_panel:remove()
+        G.balacraft_resources_panel = nil
     end
 end
 
@@ -531,7 +531,7 @@ local _game_update = Game.update
 function Game:update(dt)
     _game_update(self, dt)
     local ok, err = pcall(PB_UTIL.update_resources_panel)
-    if not ok then sendDebugMessage('panel error: ' .. tostring(err), 'Minecraft') end
+    if not ok then sendDebugMessage('panel error: ' .. tostring(err), 'BalaCraft') end
 end
 ```
 
@@ -554,7 +554,7 @@ git add utilities/resource_ui.lua
 git commit -m "feat(resources): always-visible hotbar inventory panel"
 ```
 
-**Fallback (only if the Weak bond misbehaves):** replace the `config` in `attach_resources_panel` with an unbonded box, and reposition each frame in `update_resources_panel` by setting `G.minecraft_resources_panel.T.x = G.consumeables.T.x` and `.T.y = G.consumeables.T.y + 1.5` after ensuring it exists. Same visual result, explicit coordinates.
+**Fallback (only if the Weak bond misbehaves):** replace the `config` in `attach_resources_panel` with an unbonded box, and reposition each frame in `update_resources_panel` by setting `G.balacraft_resources_panel.T.x = G.consumeables.T.x` and `.T.y = G.consumeables.T.y + 1.5` after ensuring it exists. Same visual result, explicit coordinates.
 
 ---
 
@@ -569,11 +569,11 @@ Append to `utilities/resources.lua`:
 
 ```lua
 -- Per-blind themed overrides (opt-in). Keyed by blind.name (the prefixed key string,
--- e.g. 'bl_minecraft_creeper'). Anything without an entry uses the tier-roll fallback.
+-- e.g. 'bl_balacraft_creeper'). Anything without an entry uses the tier-roll fallback.
 PB_UTIL.BLIND_DROPS = {
-    bl_minecraft_creeper  = { id = 'coal',   amount = 2 },
-    bl_minecraft_skeleton = { id = 'iron',   amount = 1 },
-    bl_minecraft_zombie   = { id = 'wood',   amount = 2 },
+    bl_balacraft_creeper  = { id = 'coal',   amount = 2 },
+    bl_balacraft_skeleton = { id = 'iron',   amount = 1 },
+    bl_balacraft_zombie   = { id = 'wood',   amount = 2 },
 }
 
 -- Returns a random ore id of exactly `tier` (run-seeded deterministic).
@@ -600,7 +600,7 @@ function PB_UTIL.grant_blind_drop(blind)
     -- bosses bias toward the highest unlocked tier; others toward tier 1
     local tier = is_boss and max_tier or 1
     local amount = is_boss and 2 or 1
-    PB_UTIL.add_resource(random_ore_of_tier(tier, 'mc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
+    PB_UTIL.add_resource(random_ore_of_tier(tier, 'bc_drop_' .. ante .. '_' .. tostring(blind.name)), amount)
 end
 
 -- Wrap Blind:defeat (same technique Steamodded uses) so drops fire on every blind win.
@@ -642,13 +642,13 @@ Replace `content/resources/resource_consumabletype.lua` with:
 -- These never appear in the collection, shop, or normal pools.
 
 SMODS.ConsumableType {
-    key = 'minecraft_resource',
+    key = 'balacraft_resource',
     primary_colour = HEX('6b5840'),
     secondary_colour = HEX('8b7765'),
     collection_rows = { 3, 3 },
     shop_rate = 0,
     no_collection = true,
-    default = 'c_minecraft_res_wood',
+    default = 'c_balacraft_res_wood',
     loc_txt = { name = 'Resource', collection = 'Resources' },
 }
 
@@ -666,8 +666,8 @@ for _, r in ipairs(PB_UTIL.RESOURCES) do
     local id = r.id
     SMODS.Consumable {
         key = 'res_' .. id,
-        set = 'minecraft_resource',
-        atlas = 'mc_resource_cards',
+        set = 'balacraft_resource',
+        atlas = 'bc_resource_cards',
         pos = r.pos,
         cost = 0,
         discovered = true,
@@ -689,15 +689,15 @@ end
 
 In-game: start a run. In console:
 ```lua
-sendDebugMessage(tostring(G.P_CENTERS['c_minecraft_res_diamond'] ~= nil), 'Minecraft')
+sendDebugMessage(tostring(G.P_CENTERS['c_balacraft_res_diamond'] ~= nil), 'BalaCraft')
 ```
 Expected: `true`. Then open the **collection** menu (Tarot/Planet/etc.) and confirm there is **no** "Resources" tab/section, and resources do not appear in the shop's consumable slot.
 
 - [ ] **Step 3: In-game — verify `use` adds a resource**
 
-In console: `G.P_CENTERS['c_minecraft_res_gold'].use(nil, nil, nil, nil)` is not how to call it; instead create + use a card:
+In console: `G.P_CENTERS['c_balacraft_res_gold'].use(nil, nil, nil, nil)` is not how to call it; instead create + use a card:
 ```lua
-local c = SMODS.create_card({ key = 'c_minecraft_res_gold', area = G.consumeables, skip_materialize = true })
+local c = SMODS.create_card({ key = 'c_balacraft_res_gold', area = G.consumeables, skip_materialize = true })
 c:use_consumeable(G.consumeables)
 ```
 Expected: gold count increases by 1 in the panel. (The card is then removed by the base use flow.)
@@ -736,7 +736,7 @@ Create `content/boosters/resource_pack.lua`:
 
 SMODS.Booster {
     key = 'resource_pack',
-    atlas = 'mc_resource_cards',
+    atlas = 'bc_resource_cards',
     pos = { x = 2, y = 1 }, -- diamond cell as placeholder pack art
     config = { choose = 1, extra = 6 },
     cost = 4,
@@ -747,8 +747,8 @@ SMODS.Booster {
     },
     create_card = function(self, card, i)
         local ore = PB_UTIL.RESOURCES[i] or PB_UTIL.RESOURCES[1]
-        return create_card('minecraft_resource', G.pack_cards, nil, nil, true, true,
-            'c_minecraft_res_' .. ore.id, 'mc_respack')
+        return create_card('balacraft_resource', G.pack_cards, nil, nil, true, true,
+            'c_balacraft_res_' .. ore.id, 'bc_respack')
     end,
 }
 ```
@@ -810,12 +810,12 @@ git commit -m "feat(resources): polish — icon dimming + metadata; regression p
 
 ## Forward seam (no implementation here)
 
-The later 3×3 crafting grid will: read `G.GAME.minecraft.resources` to know what the player has; render draggable tiles (it can reuse `PB_UTIL.icon_atlas`); and on craft, call `PB_UTIL.add_resource(id, -n)` to spend, then create the output (tool/joker/consumable). This slice deliberately leaves counts as that clean handoff point.
+The later 3×3 crafting grid will: read `G.GAME.balacraft.resources` to know what the player has; render draggable tiles (it can reuse `PB_UTIL.icon_atlas`); and on craft, call `PB_UTIL.add_resource(id, -n)` to spend, then create the output (tool/joker/consumable). This slice deliberately leaves counts as that clean handoff point.
 
 ---
 
 ## Self-review notes
 
 - **Spec coverage:** counts/state (Task 1), registry+atlas (Task 2), always-visible grayed panel (Task 3), blind drops (Task 4), hidden type/consumables (Task 5), booster pack (Task 6), save/load (verified across Tasks 1/4/6, no custom code by design), forward seam (documented). All spec sections map to a task.
-- **Naming consistency:** ore ids (`wood`…`diamond`), center keys (`c_minecraft_res_<id>`), atlas keys (`mc_resource_cards`/`mc_resource_icons`), and `G.GAME.minecraft.resources` are used identically in every task.
+- **Naming consistency:** ore ids (`wood`…`diamond`), center keys (`c_balacraft_res_<id>`), atlas keys (`bc_resource_cards`/`bc_resource_icons`), and `G.GAME.balacraft.resources` are used identically in every task.
 - **Known risk:** Task 3 (UIBox placement) and Task 7 Step 1 (`set_alpha`) are the only steps requiring in-game iteration; both have explicit fallbacks. The atlas-key lookup (`G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]`) has a debug-dump escape hatch in Task 2 Step 5.

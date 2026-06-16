@@ -3,7 +3,7 @@
 
 SMODS.Booster {
     key = 'resource_pack',
-    atlas = 'mc_resource_cards',
+    atlas = 'bc_resource_cards',
     pos = { x = 2, y = 1 }, -- diamond cell as placeholder pack art
     config = { choose = 1, extra = 6 },
     cost = 4,
@@ -14,7 +14,7 @@ SMODS.Booster {
     },
     create_card = function(self, card, i)
         local ore = PB_UTIL.RESOURCES[i] or PB_UTIL.RESOURCES[1]
-        return create_card('minecraft_resource', G.pack_cards, nil, nil, true, true,
-            'c_minecraft_res_' .. ore.id, 'mc_respack')
+        return create_card('balacraft_resource', G.pack_cards, nil, nil, true, true,
+            'c_balacraft_res_' .. ore.id, 'bc_respack')
     end,
 }

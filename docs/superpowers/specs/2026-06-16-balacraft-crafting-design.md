@@ -1,9 +1,9 @@
-# Minekreift — Crafting System (v1) — Design Spec
+# Balacraft — Crafting System (v1) — Design Spec
 
 **Date:** 2026-06-16
-**Mod:** Minekreift (`minecraft-main`), Balatro + Steamodded (SMODS) + Lovely
+**Mod:** Balacraft (`BalaCraft`), Balatro + Steamodded (SMODS) + Lovely
 **Status:** Approved for implementation planning
-**Builds on:** the Resource content type (`docs/superpowers/specs/2026-06-15-minekreift-resource-type-design.md`, implemented on `feature/resource-type`). Crafting consumes the resource counts that system already maintains.
+**Builds on:** the Resource content type (`docs/superpowers/specs/2026-06-15-Balacraft-resource-type-design.md`, implemented on `feature/resource-type`). Crafting consumes the resource counts that system already maintains.
 
 ---
 
@@ -29,7 +29,7 @@ Add a Minecraft-style **crafting system**: a mid-blind **Crafting Table** modal 
 
 ## 3. Resource model changes (extends the existing system)
 
-The existing resource type stores integer counts at `G.GAME.minecraft.resources[id]` (seeded by an `init_game_object` wrapper) and mutates them only through `PB_UTIL.add_resource(id, amount)` (clamps ≥ 0). Crafting reuses this verbatim: **spend = `add_resource(id, -n)`**, **produce-resource = `add_resource(id, +n)`**.
+The existing resource type stores integer counts at `G.GAME.balacraft.resources[id]` (seeded by an `init_game_object` wrapper) and mutates them only through `PB_UTIL.add_resource(id, amount)` (clamps ≥ 0). Crafting reuses this verbatim: **spend = `add_resource(id, -n)`**, **produce-resource = `add_resource(id, +n)`**.
 
 `PB_UTIL.RESOURCES` entries gain a **`kind`** field:
 ```lua
@@ -54,7 +54,7 @@ The existing resource type stores integer counts at `G.GAME.minecraft.resources[
 ```lua
 {
   key = 'stone_pickaxe',
-  output = { type = 'joker', id = 'j_minecraft_stone_pickaxe', amount = 1 },
+  output = { type = 'joker', id = 'j_balacraft_stone_pickaxe', amount = 1 },
   -- 3x3 pattern, row-major; nil = empty cell, otherwise a resource id.
   pattern = {
     { 'cobblestone', 'cobblestone', 'cobblestone' },
@@ -82,7 +82,7 @@ The existing resource type stores integer counts at `G.GAME.minecraft.resources[
 | **Iron Sword** | ×2 Mult on Boss Blinds. |
 | **Iron Shovel** | +$3 each time you defeat a blind. |
 
-Effects are deliberately simple/placeholder; refine in-game. Tools are regular `SMODS.Joker`s (keys `j_minecraft_<tool>`), using the resource card atlas or their own art.
+Effects are deliberately simple/placeholder; refine in-game. Tools are regular `SMODS.Joker`s (keys `j_balacraft_<tool>`), using the resource card atlas or their own art.
 
 ## 5. The Crafting Table modal
 

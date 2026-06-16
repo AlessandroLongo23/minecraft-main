@@ -122,10 +122,10 @@ def stack_images_vertically(input_paths, output_path):
         return False
 
 if __name__ == "__main__":
-    input_path = "minecraft-main/assets/1x/farlands.png"
+    input_path = "BalaCraft/assets/1x/farlands.png"
     scale_factor = 2
 
-    scale_image(input_path, f"minecraft-main/assets/2x/farlands.png", scale_factor)
+    scale_image(input_path, f"BalaCraft/assets/2x/farlands.png", scale_factor)
 
     # copies = 21
 
@@ -148,16 +148,16 @@ if __name__ == "__main__":
     # ]
 
     # for boss in bosses:
-    #     scale_image(f"minecraft-main/assets/1x/boss{boss}Single.png", f"minecraft-main/assets/2x/boss{boss}Single.png", scale_factor)
-    #     duplicate_image_horizontally(f"minecraft-main/assets/1x/boss{boss}Single.png", f"minecraft-main/assets/1x/boss{boss}.png", copies)
-    #     duplicate_image_horizontally(f"minecraft-main/assets/2x/boss{boss}Single.png", f"minecraft-main/assets/2x/boss{boss}.png", copies)
+    #     scale_image(f"BalaCraft/assets/1x/boss{boss}Single.png", f"BalaCraft/assets/2x/boss{boss}Single.png", scale_factor)
+    #     duplicate_image_horizontally(f"BalaCraft/assets/1x/boss{boss}Single.png", f"BalaCraft/assets/1x/boss{boss}.png", copies)
+    #     duplicate_image_horizontally(f"BalaCraft/assets/2x/boss{boss}Single.png", f"BalaCraft/assets/2x/boss{boss}.png", copies)
 
     # stack_images_vertically(
-    #     [f"minecraft-main/assets/1x/boss{boss}.png" for boss in bosses],
-    #     'minecraft-main/assets/1x/blinds.png'
+    #     [f"BalaCraft/assets/1x/boss{boss}.png" for boss in bosses],
+    #     'BalaCraft/assets/1x/blinds.png'
     # )
 
     # stack_images_vertically(
-    #     [f"minecraft-main/assets/2x/boss{boss}.png" for boss in bosses],
-    #     'minecraft-main/assets/2x/blinds.png'
+    #     [f"BalaCraft/assets/2x/boss{boss}.png" for boss in bosses],
+    #     'BalaCraft/assets/2x/blinds.png'
     # )

@@ -15,7 +15,7 @@ PB_UTIL.RECIPES = {
     {
         key = 'stone_pickaxe',
         name = 'Stone Pickaxe',
-        output = { type = 'joker', id = 'j_minecraft_stone_pickaxe', amount = 1 },
+        output = { type = 'joker', id = 'j_balacraft_stone_pickaxe', amount = 1 },
         pattern = {
             { 'cobblestone', 'cobblestone', 'cobblestone' },
             { false,         'sticks',      false },
@@ -25,7 +25,7 @@ PB_UTIL.RECIPES = {
     {
         key = 'iron_sword',
         name = 'Iron Sword',
-        output = { type = 'joker', id = 'j_minecraft_iron_sword', amount = 1 },
+        output = { type = 'joker', id = 'j_balacraft_iron_sword', amount = 1 },
         pattern = {
             { false, 'iron',   false },
             { false, 'iron',   false },
@@ -35,7 +35,7 @@ PB_UTIL.RECIPES = {
     {
         key = 'iron_shovel',
         name = 'Iron Shovel',
-        output = { type = 'joker', id = 'j_minecraft_iron_shovel', amount = 1 },
+        output = { type = 'joker', id = 'j_balacraft_iron_shovel', amount = 1 },
         pattern = {
             { false, 'iron',   false },
             { false, 'sticks', false },

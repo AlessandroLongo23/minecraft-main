@@ -16,7 +16,7 @@ SMODS.current_mod.config_tab = function()
 					{ 
 						n = G.UIT.T, 
 						config = { 
-							text = "Minecraft", 
+							text = "BalaCraft", 
 							colour = G.C.RED, 
 							scale = 0.5 
 						} 

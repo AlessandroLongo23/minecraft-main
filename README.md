@@ -9,7 +9,7 @@ This is a simple mod for Balatro that adds a new Joker card called "Depa".
 ## Installation
 
 1. Ensure you have [Lovely Injector](https://github.com/ethangreen-dev/lovely-injector) and [Steamodded](https://github.com/Steamopollys/Steamodded) installed.
-2. Place the `minecraft-main` folder in your Balatro mods directory:
+2. Place the `BalaCraft` folder in your Balatro mods directory:
    - Windows: `%AppData%\Balatro\Mods`
 3. Launch Balatro and enable the mod from the Mods menu.
 
