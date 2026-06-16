@@ -40,14 +40,14 @@ end
 
 -- One state table living for the modal's lifetime. output_label is ALWAYS a string
 -- ('' when no match) so the bound output T-node renders blank (tostring(nil)=='nil').
-G.GAME.craft_state = G.GAME.craft_state or { output_label = '', can_craft = false }
+PB_UTIL.craft_state = PB_UTIL.craft_state or { output_label = '', can_craft = false }
 
 -- Per-frame func on the Craft button: ONLY changes colour from craft_state. Runs every
 -- frame via UIElement:update (ui.lua:1024-1027). It must NOT toggle config.button --
 -- the button is built with a non-nil button so collide/click are already enabled; the
 -- bc_grid_craft callback self-guards on an invalid grid, so always-clickable is safe.
 G.FUNCS.bc_can_craft_btn = function(e)
-    e.config.colour = G.GAME.craft_state.can_craft and G.C.GREEN or G.C.UI.TRANSPARENT_LIGHT
+    e.config.colour = PB_UTIL.craft_state.can_craft and G.C.GREEN or G.C.UI.TRANSPARENT_LIGHT
 end
 
 -- Data-only half: compute match -> craft_state, NO UIElement lookups. Safe to call
@@ -62,8 +62,8 @@ function PB_UTIL.refresh_craft_state_data()
             can = true
         end
     end
-    G.GAME.craft_state.can_craft = can
-    G.GAME.craft_state.output_label = recipe and (recipe.name or recipe.key) or ''   -- '' not nil
+    PB_UTIL.craft_state.can_craft = can
+    PB_UTIL.craft_state.output_label = recipe and (recipe.name or recipe.key) or ''   -- '' not nil
 end
 
 -- Recompute the match and reflect it IN PLACE (no overlay rebuild). Call after EVERY
@@ -80,6 +80,10 @@ function PB_UTIL.refresh_craft_state()
         if out and out.type == 'resource' then
             local r = PB_UTIL.RESOURCE_BY_ID[out.id]
             if r then icon.config.object:set_sprite_pos(r.pos) end
+        else
+            -- non-resource (joker) match or no match: reset to the build-time placeholder
+            -- so a stale resource icon doesn't linger (the label carries the joker name).
+            icon.config.object:set_sprite_pos(PB_UTIL.RESOURCE_BY_ID['wood'].pos)
         end
     end
 end
@@ -103,7 +107,7 @@ function PB_UTIL.build_crafting_modal()
             { n = G.UIT.R, config = { align = 'cm' }, nodes = {
                 { n = G.UIT.T, config = {
                     id = 'bc_craft_output_label',
-                    ref_table = G.GAME.craft_state, ref_value = 'output_label',  -- bound (ui.lua:657)
+                    ref_table = PB_UTIL.craft_state, ref_value = 'output_label',  -- bound (ui.lua:657)
                     scale = 0.34, colour = G.C.WHITE } },
             } },
         },
@@ -150,9 +154,9 @@ end
 
 function PB_UTIL.open_crafting_table()
     PB_UTIL.crafting_selected = nil
-    G.GAME.craft_state = G.GAME.craft_state or { output_label = '', can_craft = false }
-    G.GAME.craft_state.output_label = ''
-    G.GAME.craft_state.can_craft = false
+    PB_UTIL.craft_state = PB_UTIL.craft_state or { output_label = '', can_craft = false }
+    PB_UTIL.craft_state.output_label = ''
+    PB_UTIL.craft_state.can_craft = false
     PB_UTIL.build_craft_cells()                          -- nine live cell-areas (build once)
     PB_UTIL.craft_on_change = PB_UTIL.refresh_craft_state  -- grid changes mutate in place
     G.FUNCS.overlay_menu { definition = PB_UTIL.build_crafting_modal() }  -- ONCE; never again while open
