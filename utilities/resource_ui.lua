@@ -48,6 +48,16 @@ function PB_UTIL.build_resources_panel()
         end
         rows[#rows + 1] = row
     end
+    rows[#rows + 1] = {
+        n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = {
+            { n = G.UIT.C, config = {
+                align = 'cm', padding = 0.06, r = 0.08, minw = 1.6,
+                colour = G.C.GREEN, button = 'mc_open_crafting', hover = true, shadow = true,
+            }, nodes = {
+                { n = G.UIT.T, config = { text = 'Crafting Table', scale = 0.28, colour = G.C.UI.TEXT_LIGHT } },
+            } },
+        },
+    }
     return {
         n = G.UIT.ROOT,
         config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK, emboss = 0.05 },
