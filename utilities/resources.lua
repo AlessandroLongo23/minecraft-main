@@ -26,7 +26,11 @@ end
 
 function PB_UTIL.set_resource(id, amount)
     local store = ensure_store()
+    local prev = store[id] or 0
     store[id] = math.max(0, math.floor(tonumber(amount) or 0))
+    if (prev == 0) ~= (store[id] == 0) then
+        G.GAME.minecraft._panel_dirty = true
+    end
     return store[id]
 end
 

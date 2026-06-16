@@ -23,23 +23,25 @@ local ORE_LOC = {
 }
 
 for _, r in ipairs(PB_UTIL.RESOURCES) do
-    local id = r.id
-    SMODS.Consumable {
-        key = 'res_' .. id,
-        set = 'minecraft_resource',
-        atlas = 'mc_resource_cards',
-        pos = r.pos,
-        cost = 0,
-        discovered = true,
-        no_collection = true,
-        loc_txt = {
-            name = ORE_LOC[id],
-            text = { 'Adds {C:attention}1{} ' .. ORE_LOC[id], 'to your resources.' },
-        },
-        can_use = function(self, card) return true end,
-        use = function(self, card, area, copier)
-            PB_UTIL.add_resource(id, 1)
-        end,
-        in_pool = function(self, args) return false end,
-    }
+    if r.kind == 'gathered' then
+        local id = r.id
+        SMODS.Consumable {
+            key = 'res_' .. id,
+            set = 'minecraft_resource',
+            atlas = 'mc_resource_cards',
+            pos = r.pos,
+            cost = 0,
+            discovered = true,
+            no_collection = true,
+            loc_txt = {
+                name = ORE_LOC[id],
+                text = { 'Adds {C:attention}1{} ' .. ORE_LOC[id], 'to your resources.' },
+            },
+            can_use = function(self, card) return true end,
+            use = function(self, card, area, copier)
+                PB_UTIL.add_resource(id, 1)
+            end,
+            in_pool = function(self, args) return false end,
+        }
+    end
 end

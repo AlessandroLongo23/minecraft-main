@@ -1,16 +1,17 @@
 """Procedurally generate the resource sprite sheets (deterministic, no RNG).
 
 Outputs (1x):
-  assets/1x/resource_icons.png  -> 34x34 cells, 3x2 grid (102x68)
+  assets/1x/resource_icons.png  -> 34x34 cells, 3x3 grid (102x102)
   assets/1x/resource_cards.png  -> 71x95 cells, 3x2 grid (213x190)
 Run `utils.py` afterwards to produce the 2x sheets.
-Ore order (row-major): wood, cobblestone, coal, iron, gold, diamond.
+Ore order (row-major): wood, cobblestone, coal, iron, gold, diamond, sticks (icons only).
 """
 from PIL import Image
 
 ICON = 34
 CARD_W, CARD_H = 71, 95
 COLS, ROWS = 3, 2
+ICON_ROWS = 3
 
 # Palette
 STONE      = (124, 124, 124, 255)
@@ -90,7 +91,7 @@ def nn(img, factor):
     return img.resize((img.width * factor, img.height * factor), Image.NEAREST)
 
 def build_icons():
-    sheet = Image.new("RGBA", (ICON * COLS, ICON * 3), (0, 0, 0, 0))
+    sheet = Image.new("RGBA", (ICON * COLS, ICON * ICON_ROWS), (0, 0, 0, 0))
     for i, (_id, tex) in enumerate(ICONS):
         cx, cy = (i % COLS) * ICON, (i // COLS) * ICON
         slot = Image.new("RGBA", (ICON, ICON), (20, 22, 26, 255))
