@@ -32,12 +32,11 @@ function PB_UTIL.can_craft(recipe)
     return true
 end
 
--- Returns true on success. Spends ingredients, then produces the output.
-function PB_UTIL.craft(recipe)
-    if not PB_UTIL.can_craft(recipe) then return false end
-    for id, n in pairs(PB_UTIL.recipe_ingredients(recipe)) do
-        PB_UTIL.add_resource(id, -n)
-    end
+-- Produce the recipe's output (no spending). Resource -> add_resource; joker ->
+-- joker_add. Plays the craft sound. Both craft paths share this so the produce
+-- logic lives in one place: Phase 1 click-craft (spend then produce) and Phase 2
+-- grid-craft (consume already-reserved tiles, then produce -- no second spend).
+function PB_UTIL.produce_output(recipe)
     local out = recipe.output
     if out.type == 'resource' then
         PB_UTIL.add_resource(out.id, out.amount or 1)
@@ -45,5 +44,14 @@ function PB_UTIL.craft(recipe)
         joker_add(out.id)
     end
     play_sound('timpani', 0.8)
+end
+
+-- Returns true on success. Spends ingredients, then produces the output.
+function PB_UTIL.craft(recipe)
+    if not PB_UTIL.can_craft(recipe) then return false end
+    for id, n in pairs(PB_UTIL.recipe_ingredients(recipe)) do
+        PB_UTIL.add_resource(id, -n)
+    end
+    PB_UTIL.produce_output(recipe)
     return true
 end
