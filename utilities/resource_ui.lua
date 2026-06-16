@@ -20,25 +20,25 @@ function PB_UTIL.build_resources_panel()
     local cells = {}
     for _, r in ipairs(PB_UTIL.RESOURCES) do
         local count = store[r.id] or 0
-        local owned = count > 0
-        local spr = Sprite(0, 0, 0.5, 0.5, atlas, r.pos)
-        if not owned and spr.set_alpha then spr:set_alpha(0.35) end
-        cells[#cells + 1] = {
-            n = G.UIT.C, config = { align = 'cm', padding = 0.04 },
-            nodes = {
-                { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-                    { n = G.UIT.O, config = { object = spr } },
-                } },
-                { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-                    { n = G.UIT.T, config = {
-                        -- static colour: the panel is rebuilt via _panel_dirty on a
-                        -- 0 -> >0 transition, which is exactly when this needs to flip.
-                        ref_table = store, ref_value = r.id, scale = 0.32,
-                        colour = owned and G.C.WHITE or G.C.UI.TEXT_INACTIVE,
+        if r.kind == 'gathered' or count > 0 then
+            local owned = count > 0
+            local spr = Sprite(0, 0, 0.5, 0.5, atlas, r.pos)
+            if not owned and spr.set_alpha then spr:set_alpha(0.35) end
+            cells[#cells + 1] = {
+                n = G.UIT.C, config = { align = 'cm', padding = 0.04 },
+                nodes = {
+                    { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+                        { n = G.UIT.O, config = { object = spr } },
                     } },
-                } },
-            },
-        }
+                    { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+                        { n = G.UIT.T, config = {
+                            ref_table = store, ref_value = r.id, scale = 0.32,
+                            colour = owned and G.C.WHITE or G.C.UI.TEXT_INACTIVE,
+                        } },
+                    } },
+                },
+            }
+        end
     end
     local rows = {}
     for i = 1, #cells, PER_ROW do

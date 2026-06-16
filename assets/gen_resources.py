@@ -64,6 +64,17 @@ def cobblestone():
         px[x, y] = COBBLE_HI
     return img
 
+def sticks():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for (x, y) in [(6, 2), (7, 3), (6, 4), (7, 5), (6, 6), (7, 7), (6, 8), (7, 9), (6, 10), (7, 11)]:
+        px[x, y] = WOOD
+        px[x + 1, y] = WOOD_LINE
+    for (x, y) in [(9, 4), (10, 5), (9, 6), (10, 7), (9, 8), (10, 9), (9, 10), (10, 11), (9, 12), (10, 13)]:
+        px[x, y] = WOOD
+        px[x + 1, y] = WOOD_LINE
+    return img
+
 ORES = [
     ("wood", wood()),
     ("cobblestone", cobblestone()),
@@ -73,20 +84,21 @@ ORES = [
     ("diamond", ore(DIAMOND)),
 ]
 
+ICONS = ORES + [("sticks", sticks())]
+
 def nn(img, factor):
     return img.resize((img.width * factor, img.height * factor), Image.NEAREST)
 
 def build_icons():
-    sheet = Image.new("RGBA", (ICON * COLS, ICON * ROWS), (0, 0, 0, 0))
-    for i, (_id, tex) in enumerate(ORES):
+    sheet = Image.new("RGBA", (ICON * COLS, ICON * 3), (0, 0, 0, 0))
+    for i, (_id, tex) in enumerate(ICONS):
         cx, cy = (i % COLS) * ICON, (i // COLS) * ICON
-        # dark slot background + 1px border
         slot = Image.new("RGBA", (ICON, ICON), (20, 22, 26, 255))
         for x in range(ICON):
             slot.putpixel((x, 0), (70, 74, 82, 255)); slot.putpixel((x, ICON - 1), (70, 74, 82, 255))
         for y in range(ICON):
             slot.putpixel((0, y), (70, 74, 82, 255)); slot.putpixel((ICON - 1, y), (70, 74, 82, 255))
-        block = nn(tex, 2)  # 16 -> 32
+        block = nn(tex, 2)
         slot.alpha_composite(block, (1, 1))
         sheet.alpha_composite(slot, (cx, cy))
     sheet.save("minecraft-main/assets/1x/resource_icons.png")

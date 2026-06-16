@@ -37,7 +37,7 @@ function PB_UTIL.add_resource(id, amount)
     local prev = store[id] or 0
     local new = math.max(0, prev + (math.floor(tonumber(amount) or 0)))
     store[id] = new
-    if prev == 0 and new > 0 then
+    if (prev == 0) ~= (new == 0) then
         G.GAME.minecraft._panel_dirty = true
     end
     return new
@@ -60,7 +60,7 @@ PB_UTIL.BLIND_DROPS = {
 local function random_ore_of_tier(tier, seed_key)
     local pool = {}
     for _, r in ipairs(PB_UTIL.RESOURCES) do
-        if r.tier == tier then pool[#pool + 1] = r.id end
+        if r.kind == 'gathered' and r.tier == tier then pool[#pool + 1] = r.id end
     end
     if #pool == 0 then return PB_UTIL.RESOURCES[1].id end
     return pseudorandom_element(pool, pseudoseed(seed_key))

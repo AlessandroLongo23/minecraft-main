@@ -1,12 +1,13 @@
 -- Resource registry + atlases.
 
 PB_UTIL.RESOURCES = {
-    { id = 'wood',        tier = 1, pos = { x = 0, y = 0 } },
-    { id = 'cobblestone', tier = 1, pos = { x = 1, y = 0 } },
-    { id = 'coal',        tier = 1, pos = { x = 2, y = 0 } },
-    { id = 'iron',        tier = 2, pos = { x = 0, y = 1 } },
-    { id = 'gold',        tier = 2, pos = { x = 1, y = 1 } },
-    { id = 'diamond',     tier = 3, pos = { x = 2, y = 1 } },
+    { id = 'wood',        kind = 'gathered', tier = 1, pos = { x = 0, y = 0 } },
+    { id = 'cobblestone', kind = 'gathered', tier = 1, pos = { x = 1, y = 0 } },
+    { id = 'coal',        kind = 'gathered', tier = 1, pos = { x = 2, y = 0 } },
+    { id = 'iron',        kind = 'gathered', tier = 2, pos = { x = 0, y = 1 } },
+    { id = 'gold',        kind = 'gathered', tier = 2, pos = { x = 1, y = 1 } },
+    { id = 'diamond',     kind = 'gathered', tier = 3, pos = { x = 2, y = 1 } },
+    { id = 'sticks',      kind = 'crafted',            pos = { x = 0, y = 2 } },
 }
 
 -- Lookup by id (used by drops/UI).
