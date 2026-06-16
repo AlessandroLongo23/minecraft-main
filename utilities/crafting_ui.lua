@@ -1,10 +1,12 @@
 -- Crafting Table: a "Crafting Table" button under the hotbar opens a centered
--- overlay listing recipes (left) with a live 3x3 grid + palette + output slot (right).
+-- overlay listing recipes (left) with a live 3x3 grid + inventory row + output slot +
+-- Back button (right). Minecraft-faithful layout:
+--   [3x3 grid]  →  [output slot]  [Craft]
+--   [inventory row of draggable source icons]
+--   [Back button]
 -- Build-once / mutate-in-place: overlay_menu is called EXACTLY ONCE (in open_crafting_table).
 
 PB_UTIL.crafting_selected = PB_UTIL.crafting_selected or nil
-
--- (cell_node + pattern_preview removed -- the live grid is PB_UTIL.build_grid_node in crafting_grid.lua)
 
 -- One clickable recipe row in the left list.
 local function recipe_row(recipe)
@@ -82,9 +84,9 @@ function PB_UTIL.build_crafting_modal()
     local list = {}
     for _, r in ipairs(PB_UTIL.RECIPES) do list[#list + 1] = recipe_row(r) end
 
-    -- Output slot: an icon (resource outputs) + a live text label bound to craft_state.
+    -- Output slot: a small icon (resource outputs) + a live text label bound to craft_state.
     local output_node = {
-        n = G.UIT.C, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK, minw = 1.2, minh = 0.9 },
+        n = G.UIT.C, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK, minw = 0.9, minh = 0.9 },
         nodes = {
             { n = G.UIT.R, config = { align = 'cm' }, nodes = {
                 { n = G.UIT.O, config = { id = 'bc_craft_output_icon',
@@ -95,7 +97,7 @@ function PB_UTIL.build_crafting_modal()
                 { n = G.UIT.T, config = {
                     id = 'bc_craft_output_label',
                     ref_table = PB_UTIL.craft_state, ref_value = 'output_label',  -- bound (ui.lua:657)
-                    scale = 0.34, colour = G.C.WHITE } },
+                    scale = 0.28, colour = G.C.WHITE } },
             } },
         },
     }
@@ -107,13 +109,30 @@ function PB_UTIL.build_crafting_modal()
         n = G.UIT.C,
         config = {
             id = 'bc_craft_button',
-            align = 'cm', padding = 0.1, r = 0.1, minw = 2,
+            align = 'cm', padding = 0.1, r = 0.1, minw = 1.6,
             colour = G.C.UI.TRANSPARENT_LIGHT,   -- initial; func overwrites on frame 1
             button = 'bc_grid_craft',            -- NON-nil at build (enables collide/click once)
             func = 'bc_can_craft_btn',           -- runs every frame (ui.lua:1024-1027), colour only
             hover = true, shadow = true,
         },
-        nodes = { { n = G.UIT.T, config = { text = 'Craft', scale = 0.5, colour = G.C.UI.TEXT_LIGHT } } },
+        nodes = { { n = G.UIT.T, config = { text = 'Craft', scale = 0.45, colour = G.C.UI.TEXT_LIGHT } } },
+    }
+
+    -- Arrow node between grid and output.
+    local arrow_node = {
+        n = G.UIT.C, config = { align = 'cm', padding = 0.08 },
+        nodes = { { n = G.UIT.T, config = { text = '>', scale = 0.6, colour = G.C.WHITE } } },
+    }
+
+    -- Back button (classic Balatro yellow/orange). exit_overlay_menu is already wrapped
+    -- by _craft_exit_hooked, which credits all tiles before closing.
+    local back_btn = {
+        n = G.UIT.R,
+        config = {
+            align = 'cm', minw = 2.5, padding = 0.1, r = 0.1, hover = true,
+            colour = G.C.ORANGE, button = 'exit_overlay_menu', shadow = true,
+        },
+        nodes = { { n = G.UIT.T, config = { text = 'Back', scale = 0.5, colour = G.C.WHITE } } },
     }
 
     return {
@@ -126,13 +145,30 @@ function PB_UTIL.build_crafting_modal()
                     { n = G.UIT.R, nodes = { { n = G.UIT.T, config = { text = 'Recipes', scale = 0.5, colour = G.C.UI.TEXT_LIGHT } } } },
                     { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = { { n = G.UIT.C, nodes = list } } },
                 } },
-                -- RIGHT: live grid + palette + output + craft (built ONCE; mutated in place)
+                -- RIGHT: Minecraft layout (built ONCE; mutated in place)
                 { n = G.UIT.C, config = { align = 'cm', padding = 0.1 }, nodes = {
-                    PB_UTIL.build_grid_node(),
-                    { n = G.UIT.R, config = { align = 'cm', minh = 0.15 }, nodes = {} },
-                    PB_UTIL.build_palette_node(),
-                    { n = G.UIT.R, config = { align = 'cm', minh = 0.15 }, nodes = {} },
-                    { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = { output_node, craft_btn } },
+                    -- Top row: [3x3 grid] → [output slot] [Craft button]
+                    { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = {
+                        PB_UTIL.build_grid_node(),
+                        arrow_node,
+                        { n = G.UIT.C, config = { align = 'cm', padding = 0.04 }, nodes = {
+                            output_node,
+                            { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }, nodes = {} },
+                            craft_btn,
+                        } },
+                    } },
+                    -- Spacer
+                    { n = G.UIT.R, config = { align = 'cm', minh = 0.12 }, nodes = {} },
+                    -- Inventory label
+                    { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+                        { n = G.UIT.T, config = { text = 'Inventory', scale = 0.38, colour = G.C.UI.TEXT_LIGHT } },
+                    } },
+                    -- Inventory draggable source row
+                    PB_UTIL.build_inventory_node(),
+                    -- Spacer
+                    { n = G.UIT.R, config = { align = 'cm', minh = 0.12 }, nodes = {} },
+                    -- Back button
+                    back_btn,
                 } },
             } },
         },
@@ -144,22 +180,14 @@ function PB_UTIL.open_crafting_table()
     PB_UTIL.craft_state = PB_UTIL.craft_state or { output_label = '', can_craft = false }
     PB_UTIL.craft_state.output_label = ''
     PB_UTIL.craft_state.can_craft = false
-    PB_UTIL.build_craft_cells()                          -- nine live cell-areas (build once)
+    PB_UTIL.build_craft_cells()                          -- nine live grid cell-areas (build once)
+    PB_UTIL.build_inventory()                            -- one source area per visible resource
     PB_UTIL.craft_on_change = PB_UTIL.refresh_craft_state  -- grid changes mutate in place
     G.FUNCS.overlay_menu { definition = PB_UTIL.build_crafting_modal() }  -- ONCE; never again while open
 end
 
 G.FUNCS.bc_open_crafting = function(e)
     PB_UTIL.open_crafting_table()
-end
-
--- Palette source click: spawn a tile into the first empty cell (native button path).
-G.FUNCS.bc_palette_pick = function(e)
-    local id = e.config.ref_table and e.config.ref_table.id
-    if id and PB_UTIL.spawn_tile_to_cell(id) then
-        play_sound('cardSlide1')
-        PB_UTIL.refresh_craft_state()
-    end
 end
 
 -- Grid Craft: placed tiles are already reserved. SELF-GUARD on an invalid grid / no
@@ -218,7 +246,7 @@ if not PB_UTIL._craft_exit_hooked then
     local _orig_exit = G.FUNCS.exit_overlay_menu
     G.FUNCS.exit_overlay_menu = function(...)
         if PB_UTIL.craft_cells then
-            PB_UTIL.destroy_craft_cells()   -- credit + destroy all tiles + areas
+            PB_UTIL.destroy_craft_cells()   -- credit + destroy all tiles + areas + inv
             PB_UTIL.craft_on_change = nil
         end
         return _orig_exit(...)
