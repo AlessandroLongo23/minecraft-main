@@ -2,7 +2,7 @@ SMODS.Joker {
     key = 'iron_sword',
     loc_txt = {
         name = 'Iron Sword',
-        text = { '{C:red}X2{} Mult while fighting', 'a {C:attention}Boss Blind{}.' },
+        text = { '{X:mult,C:white}X2{} Mult while fighting', 'a {C:attention}Boss Blind{}.' },
     },
     unlocked = true, discovered = true,
     blueprint_compat = true, eternal_compat = true,
