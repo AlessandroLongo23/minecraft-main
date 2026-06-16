@@ -113,3 +113,11 @@ I.e. Phase 2 Craft reuses `PB_UTIL.craft`'s **produce** half but **not** its spe
 ## 9. Verification model
 
 Same as Phases past: no automated harness (mod runs only in Balatro; the human runs in-game checks). Static checks: balanced Lua, referenced globals exist, `match`/`normalize` reasoned through by hand on sample grids. The `crafting_match.lua` logic is pure and should be exercised with console calls (`PB_UTIL.match_grid` on hand-built tables) before trusting the UI. In-game: drag→place→match→craft, drag-out/right-click return, modal-close return, auto-fill, and a save/quit/continue + new-run resource-integrity pass.
+
+## 10. Amendment — UI revised to Minecraft small-icon style (2026-06-16, post in-game review)
+
+After seeing the first build in-game, the user reversed the "real 71×95 card tiles" decision (§2): card-sized cells were too large. The crafting UI is now **Minecraft-faithful**:
+- **Tiles are small square ICONS** drawn from the 34×34 `bc_resource_icons` atlas (not the 71×95 card atlas), sized to a small square (`TILE_SZ`, currently 0.55) in small square grid slots (`CELL_W/H`, currently 0.7). These are tunable constants.
+- **The bottom is an Inventory row of draggable source cards** (one single-slot `CardArea` per visible resource, holding an inert `bc_source` handle with a live count label) — replacing the old click-to-place palette. Dragging a source onto a grid cell **deposits a reserved tile** (the only debit) and the source **snaps home**; sources never touch resource counts.
+- **Layout:** recipe list (left); `[3×3 grid] → [output][Craft]` (top-right); Inventory row (below); a classic Balatro **yellow Back button** (`G.C.ORANGE`, `button = 'exit_overlay_menu'`) that closes via the credit-everything cleanup wrap.
+- The reserve/return ledger, shaped matcher, build-once/no-rebuild model, and controller drop-hook from §3–§6 are **unchanged** — only tile size/sprite, the inventory mechanism, slot sizing, the layout, and the Back button changed. Implemented in commit `b794ec1`. Exact pixel sizing + the icon sprite scale remain in-game-tunable.
