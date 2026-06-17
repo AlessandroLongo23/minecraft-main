@@ -239,3 +239,52 @@ PB_UTIL.drowned_effect = function(e, hook)
         G.hand:unhighlight_all()
     end
 end
+
+-- ── Resource booster packs ────────────────────────────────────────────────
+-- Tier-weighted distinct-ore sampling shared by all three Loot Chest sizes.
+-- tier 1 : 2 : 3 appearance weight = 4 : 2 : 1, so common ores are favored and
+-- bigger packs (more cards) improve the odds of surfacing a rare ore.
+local RESPACK_TIER_WEIGHT = { [1] = 4, [2] = 2, [3] = 1 }
+
+-- Sample `n` DISTINCT gathered ores, weighted by tier, run-seeded deterministic.
+-- Returns a list of ore ids. Only kind == 'gathered' ores are eligible (the 6 ores);
+-- crafted resources (e.g. sticks) are excluded, matching the drop-pool guard.
+function PB_UTIL.sample_pack_ores(n)
+    local remaining = {}
+    for _, r in ipairs(PB_UTIL.RESOURCES) do
+        if r.kind == 'gathered' then
+            remaining[#remaining + 1] = { id = r.id, weight = RESPACK_TIER_WEIGHT[r.tier] or 1 }
+        end
+    end
+    local picked = {}
+    n = math.min(n or 1, #remaining)
+    for _ = 1, n do
+        -- Expand remaining ores into a weighted index pool, draw one, drop that ore.
+        local pool = {}
+        for idx, e in ipairs(remaining) do
+            for _ = 1, e.weight do pool[#pool + 1] = idx end
+        end
+        local chosen = pseudorandom_element(pool, pseudoseed('bc_respack'))
+        picked[#picked + 1] = remaining[chosen].id
+        table.remove(remaining, chosen)
+    end
+    return picked
+end
+
+-- create_card body shared by the three resource boosters. Samples the pack's ore
+-- set once (cached on the opened booster `card`), then returns the i-th ore card.
+-- `n` is the booster's nominal size (config.extra); the engine can request more
+-- cards when a booster_size_mod is active (card.lua Card:open), so size the sample
+-- to the same total. Sampling clamps to the 6 distinct ores; if a modifier pushes
+-- the count past 6, overflow slots fall back to the first ore (no crash).
+function PB_UTIL.create_resource_pack_card(card, i, n)
+    if not card.balacraft_pack_ores then
+        local size_mod = (G.GAME and G.GAME.modifiers and G.GAME.modifiers.booster_size_mod) or 0
+        card.balacraft_pack_ores = PB_UTIL.sample_pack_ores((n or 1) + size_mod)
+    end
+    local id = card.balacraft_pack_ores[i]
+        or card.balacraft_pack_ores[1]
+        or PB_UTIL.RESOURCES[1].id
+    return create_card('balacraft_resource', G.pack_cards, nil, nil, true, true,
+        'c_balacraft_res_' .. id, 'bc_respack')
+end

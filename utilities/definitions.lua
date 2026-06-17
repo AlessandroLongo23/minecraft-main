@@ -31,6 +31,8 @@ PB_UTIL.ENABLED_BLINDS = {
 
 PB_UTIL.ENABLED_BOOSTERS = {
     'resource_pack',
+    'resource_pack_jumbo',
+    'resource_pack_mega',
 }
 
 PB_UTIL.ENABLED_DECKS = {
