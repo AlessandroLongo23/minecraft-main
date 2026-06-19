@@ -65,7 +65,19 @@ already frames the row as "gathered ores fit on one row"). The row is consumable
 fitting a 7th icon **may need a small in-game width/scale tweak** — only the user can verify this
 in-game. Update the inline comment to say 7.
 
-### 4. Drops / Loot Chests / Cash Out — **no code changes**
+### 4. Pack consumable registration — `content/resources/resource_consumabletype.lua`
+This file registers one `SMODS.Consumable { key = 'res_<id>' }` per gathered ore (creating the
+`c_balacraft_res_<id>` centers used by the Loot Chest pack and as the tile base center). The loop
+already iterates gathered ores, so emerald is picked up — **except** it reads the display name from
+a hardcoded local `ORE_LOC` table that has no emerald entry. Left unfixed, the tooltip text builds
+`'Adds ... ' .. nil` → a **load-time crash**.
+
+Fix (DRY): the registry entry already carries `name = 'Emerald'`, so replace the `ORE_LOC[id]`
+lookups with `r.name` and delete the now-redundant `ORE_LOC` table. This is behaviour-preserving
+for the existing ores (their registry names already match the table) and auto-correct for emerald
+and any future ore.
+
+### 5. Drops / Loot Chests / Cash Out — **no code changes**
 - `random_ore_of_tier(2, ...)` (`utilities/resources.lua`) already builds its pool by filtering
   `kind == 'gathered' and r.tier == tier`, so emerald joins the tier-2 roll automatically.
   Result: emerald rolls from **boss** drops at **ante 3–5** (tier 2 is the boss `max_tier` then),
@@ -75,7 +87,7 @@ in-game. Update the inline comment to say 7.
 - The Cash Out summary (`utilities/cashout_ui.lua`) renders each `last_drop` entry generically
   using the resource's icon at `r.pos`, so emerald drops show up with no change.
 
-### 5. Wiki — `content/wiki/Resources/`
+### 6. Wiki — `content/wiki/Resources/`
 - `Resources.md`: bump header `Implemented: 7` → `8`; change "Gathered ores **(6)**" → **(7)**;
   add an emerald row to the resource table:
   `| ![[icon_emerald.png\|24]] [[Emerald]] | 2 | gathered | Villager trading — *coming soon* |`
