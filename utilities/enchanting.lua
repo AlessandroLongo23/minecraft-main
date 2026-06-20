@@ -302,3 +302,35 @@ function PB_UTIL.apply_enchant_target(t)
     if t.mode == 'tool' then return PB_UTIL.apply_enchant(t.tool, t.book) end
     return PB_UTIL.apply_card_enchant(t.card, t.book)
 end
+
+-- ── Unbreaking protection (Durability's card side) ─────────────────────────
+-- One-time wraps (the mod's standard pattern -- see the add_to_highlighted wrap above). A card
+-- carrying e_balacraft_unbreaking:
+--   * is never debuffed by a boss blind (Blind:debuff_card forces it un-debuffed),
+--   * never shatters if it's a Glass card (SMODS.shatters returns false for it).
+local function is_unbreaking(card)
+    return card and card.edition and card.edition.key == 'e_balacraft_unbreaking'
+end
+
+if not PB_UTIL._unbreaking_wrapped then
+    PB_UTIL._unbreaking_wrapped = true
+
+    -- blind.lua:682 -- the single point where boss debuffs are applied to a card.
+    local _debuff_card = Blind.debuff_card
+    function Blind:debuff_card(card, from_blind)
+        if is_unbreaking(card) then
+            card:set_debuff(false)
+            return
+        end
+        return _debuff_card(self, card, from_blind)
+    end
+
+    -- smods utils.lua:1072 -- the single predicate gating Glass-style shatter on score.
+    if SMODS and SMODS.shatters then
+        local _shatters = SMODS.shatters
+        function SMODS.shatters(card)
+            if is_unbreaking(card) then return false end
+            return _shatters(card)
+        end
+    end
+end
