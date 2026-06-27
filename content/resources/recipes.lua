@@ -236,15 +236,16 @@ if PB_UTIL.config and PB_UTIL.config.sheets_enabled then
 end
 
 -- ── Potions: brewing-ingredient sub-crafts (Crafting Table) ─────────────────
--- The MC sub-crafts that feed the Brewing Stand. The bottle-fill + potion brews themselves happen
--- at the Brewing Stand (PB_UTIL.BREW_RECIPES, utilities/brewing.lua); these are the Crafting-Table
--- intermediates. Gated on potions_enabled (the output resources/centers must exist; can_craft also
--- re-checks at craft time). Single-cell shapes (Sugar, Blaze Powder) are distinguished by cell id.
+-- The MC sub-crafts that feed the Brewing Stand (Water Bottles + the base ingredients). The brews
+-- themselves happen at the Brewing Stand's sequential transition engine (utilities/brewing.lua);
+-- these are the Crafting-Table intermediates. Gated on potions_enabled (the output resources must
+-- exist; can_craft re-checks at craft time). Single-cell shapes (Sugar, Blaze Powder) by cell id.
 if PB_UTIL.config and PB_UTIL.config.potions_enabled then
-    -- Glass Bottle: MC's V of 3 Glass -> 3 bottles. Glass is furnace-only (smelt Sand).
+    -- Water Bottle: MC's V of 3 Glass -> 3 bottles, already filled with water (we skip the empty
+    -- Glass Bottle + separate fill step; the Brewing Stand wants Water Bottles). Glass is furnace-only.
     PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
-        key = 'glass_bottle', name = 'Glass Bottle',
-        output = { type = 'resource', id = 'glass_bottle', amount = 3 },
+        key = 'water_bottle', name = 'Water Bottle',
+        output = { type = 'resource', id = 'water_bottle', amount = 3 },
         pattern = { { 'glass', false, 'glass' }, { false, 'glass', false }, { false, false, false } },
     }
     -- Sugar: 1 Sugar Cane -> 1 Sugar.
@@ -299,6 +300,35 @@ PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
         { 'cobblestone', 'cobblestone', 'cobblestone' },
     },
 }
+
+-- ── Enchanting book chain (gated on enhancements_enabled, like brewing is on potions_enabled) ──
+-- Paper/Book/Enchanting Table only matter to the enchant system, so don't surface them when
+-- enhancements are off (otherwise you could craft a table whose in-frame UI never loaded).
+if PB_UTIL.config and PB_UTIL.config.enhancements_enabled then
+    -- Paper: MC's 3 Sugar Cane in a row -> 3 Paper. Book: 3 Paper + 1 Leather (MC book; cells are
+    -- cosmetic since ingredients derive from the pattern multiset).
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'paper', name = 'Paper',
+        output = { type = 'resource', id = 'paper', amount = 3 },
+        pattern = { { false, false, false }, { 'sugar_cane', 'sugar_cane', 'sugar_cane' }, { false, false, false } },
+    }
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'book', name = 'Book',
+        output = { type = 'resource', id = 'book', amount = 1 },
+        pattern = { { 'paper', 'paper', 'paper' }, { false, 'leather', false }, { false, false, false } },
+    }
+    -- Enchanting Table station: faithful MC recipe (1 Book over 2 Diamond + 4 Obsidian). output.type=
+    -- 'station' flips PB_UTIL.station_built('enchanting_table') on (utilities/crafting.lua).
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'enchanting_table', name = 'Enchanting Table',
+        output = { type = 'station', id = 'enchanting_table', amount = 1 },
+        pattern = {
+            { false,      'book',     false },
+            { 'diamond',  'obsidian', 'diamond' },
+            { 'obsidian', 'obsidian', 'obsidian' },
+        },
+    }
+end
 
 -- Chest: the MC ring of 8 (planks -> Wood here). A PASSIVE station: once built it EXPANDS the
 -- inventory's capacity by PB_UTIL.CHEST_SLOTS (utilities/inventory_model.lua inv_capacity). Same

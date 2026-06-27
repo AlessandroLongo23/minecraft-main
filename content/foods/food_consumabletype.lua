@@ -24,15 +24,17 @@ for _, f in ipairs(PB_UTIL.FOODS) do
             name = food.name,
             text = {
                 'Restores {C:attention}' .. food.hunger .. '{} hunger',
-                '{C:inactive}(keeps you fed; well-fed heals)',
+                '{C:inactive}(over-eat to bank saturation -> heals)',
             },
         },
-        -- Can't eat at full hunger (Minecraft-style); avoids wasting a card for nothing.
+        -- Edible unless BOTH hunger and saturation are full -- over-eating banks the extra as
+        -- saturation (gold drumsticks), which heals you each blind. Mirrors Minecraft.
         can_use = function(self, card)
             return PB_UTIL.get_hunger() < PB_UTIL.get_max_hunger()
+                or PB_UTIL.get_saturation() < PB_UTIL.get_max_saturation()
         end,
         use = function(self, card, area, copier)
-            PB_UTIL.add_hunger(food.hunger)
+            PB_UTIL.feed(food.hunger)
         end,
     }
 end

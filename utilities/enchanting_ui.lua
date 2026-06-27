@@ -24,44 +24,7 @@ end
 -- ---- Definition ----
 
 local function build_enchant_bar(target)
-    local cost  = PB_UTIL.enchant_target_cost(target)
-    local label = (target.mode == 'card') and 'Enchant Card' or 'Enchant'
-
-    -- Single cost row: "Cost N Lv  + M [lapis]". The lapis part is appended only when a lapis
-    -- cost applies AND its bare atlas is loaded -- a frameless 16x16 sprite, same style/size as
-    -- the villager shop's emerald. Inert (level-only) when resources are off.
-    local cost_nodes = {
-        { n = G.UIT.T, config = { text = 'Cost ', scale = 0.26, colour = G.C.UI.TEXT_LIGHT } },
-        { n = G.UIT.T, config = { text = cost .. ' Lv', scale = 0.3, colour = G.C.BLUE } },
-    }
-    local lcost  = PB_UTIL.enchant_target_lapis_cost and PB_UTIL.enchant_target_lapis_cost(target) or 0
-    local latlas = PB_UTIL.lapis_atlas and G.ASSET_ATLAS[PB_UTIL.lapis_atlas.key]
-    if lcost > 0 and latlas then
-        cost_nodes[#cost_nodes + 1] = { n = G.UIT.T, config = {
-            text = '  + ' .. lcost .. ' ', scale = 0.3, colour = G.C.UI.TEXT_LIGHT } }
-        cost_nodes[#cost_nodes + 1] = { n = G.UIT.O, config = {
-            object = Sprite(0, 0, 0.3, 0.3, latlas, { x = 0, y = 0 }) } }
-    end
-
-    -- Mob-material reagent (tool enchants only): "+ N [icon]" using the resource icon sheet.
-    local mat    = PB_UTIL.enchant_target_material_cost and PB_UTIL.enchant_target_material_cost(target)
-    local matlas = mat and PB_UTIL.icon_atlas and G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
-    local mres   = mat and PB_UTIL.RESOURCE_BY_ID and PB_UTIL.RESOURCE_BY_ID[mat.id]
-    if mat and matlas and mres then
-        cost_nodes[#cost_nodes + 1] = { n = G.UIT.T, config = {
-            text = '  + ' .. mat.amount .. ' ', scale = 0.3, colour = G.C.UI.TEXT_LIGHT } }
-        cost_nodes[#cost_nodes + 1] = { n = G.UIT.O, config = {
-            object = Sprite(0, 0, 0.32, 0.32, matlas, mres.pos) } }
-    end
-
-    local col_nodes = {
-        { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-            { n = G.UIT.T, config = { text = label, scale = 0.38,
-                colour = G.C.UI.TEXT_LIGHT, shadow = true } },
-        } },
-        { n = G.UIT.R, config = { align = 'cm' }, nodes = cost_nodes },
-    }
-
+    -- Cards-only, free apply: a single "Enchant Card" button (no cost line).
     return {
         n = G.UIT.ROOT,
         config = { align = 'cm', padding = 0, colour = G.C.CLEAR },
@@ -71,7 +34,11 @@ local function build_enchant_bar(target)
                 colour = ENCHANT_COLOUR, hover = true, shadow = true, one_press = true,
                 button = 'bc_enchant', func = 'bc_can_enchant',
                 ref_table = { target = target },
-              }, nodes = col_nodes },
+              }, nodes = {
+                { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+                    { n = G.UIT.T, config = { text = 'Enchant Card', scale = 0.38,
+                        colour = G.C.UI.TEXT_LIGHT, shadow = true } } } },
+              } },
         } } },
     }
 end
@@ -141,24 +108,10 @@ end
 
 -- ---- Button FUNCs ----
 
--- Re-evaluated each frame: enable (purple) when the target is valid AND affordable, else grey.
+-- Re-evaluated each frame: enable (purple) when the target is valid, else grey.
 G.FUNCS.bc_can_enchant = function(e)
     local target = e.config.ref_table and e.config.ref_table.target
     local ok = target and PB_UTIL.enchant_target_valid(target)
-        and PB_UTIL.can_spend_level
-        and PB_UTIL.can_spend_level(PB_UTIL.enchant_target_cost(target))
-    -- Also require enough Lapis (skipped when resources are off / cost is 0).
-    local lcost = (target and PB_UTIL.enchant_target_lapis_cost
-        and PB_UTIL.enchant_target_lapis_cost(target)) or 0
-    if ok and PB_UTIL.get_resource_count and lcost > 0 then
-        ok = PB_UTIL.get_resource_count('lapis') >= lcost
-    end
-    -- And the mob-material reagent (tool enchants only; skipped when none applies / resources off).
-    local mat = target and PB_UTIL.enchant_target_material_cost
-        and PB_UTIL.enchant_target_material_cost(target)
-    if ok and mat and PB_UTIL.get_resource_count then
-        ok = PB_UTIL.get_resource_count(mat.id) >= mat.amount
-    end
     if ok then
         e.config.colour = ENCHANT_COLOUR
         e.config.button = 'bc_enchant'

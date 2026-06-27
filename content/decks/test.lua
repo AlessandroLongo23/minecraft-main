@@ -10,16 +10,15 @@
 local DOLLARS     = 999                                    -- extra starting cash (0 = skip)
 local LEVEL       = 100                                    -- starting XP level (0 = skip)
 local RESOURCES   = 16                                     -- set EVERY resource id to this (0 = skip); 16 = one full PB_UTIL.STACK_MAX stack
-local RES_FIRST   = { 'blaze_rod' }                        -- grant these resource ids FIRST so they always make the 18-slot cut
-local RES_SKIP    = { glow_ink_sac = true }                -- resource ids to NEVER grant (only 18 inv slots; frees room for RES_FIRST)
+local FREE_SLOTS  = 8                                      -- spare inventory slots left over after a stack of every resource fits
 local JOKERS      = {}                                     -- joker keys, e.g. 'j_balacraft_elytra'
 local CONSUMABLES = {}                                     -- consumable keys (none: start with no consumables)
 local VOUCHERS    = {                                      -- vouchers to force-redeem
     'v_balacraft_enchanting_table',
     'v_balacraft_sorcerers_tome',
     -- Dimensions are no longer voucher-warped: reach the Nether by lighting a Ruined Portal blind
-    -- with Flint & Steel + Obsidian, and the End via the Eye-of-Ender trail. RESOURCES=99 (below)
-    -- already stocks Obsidian / Ender Pearl / Blaze Powder; craft Flint & Steel and Eyes of Ender
+    -- with Flint & Steel + Obsidian, and the End via the Eye-of-Ender trail. The resource grant
+    -- (below) already stocks Obsidian / Ender Pearl / Blaze Powder; craft Flint & Steel and Eyes of Ender
     -- in the Crafting Table to test, or add 'c_balacraft_flint_and_steel'/'c_balacraft_ender_eye'
     -- to CONSUMABLES above.
 }
@@ -64,22 +63,20 @@ SMODS.Back {
                     G.GAME.balacraft.xp = 0
                 end
 
-                -- Resources: every id (gathered + crafted — it's a sandbox), one stack each. The
-                -- inventory only has PB_UTIL.INV_BASE_SLOTS (18) slots and add_resource enforces that
-                -- capacity, so the loop fills in registry order until full and the rest silently drop.
-                -- RES_FIRST is granted up front (so those ids always make the cut) and RES_SKIP ids are
-                -- never granted (freeing their slot). PB_UTIL.RESOURCES is an ARRAY of {id=...} defs, so
-                -- iterate with ipairs and read r.id (matching init_game_object seeding in resources.lua).
+                -- Resources: every id (gathered + crafted — it's a sandbox), one stack each.
+                -- add_resource enforces inventory capacity, and the base 18 slots can't hold a stack
+                -- of every resource, so FIRST enlarge capacity via the run-scoped inv_bonus_slots
+                -- (see PB_UTIL.inv_capacity): size it so all #PB_UTIL.RESOURCES stacks fit with
+                -- FREE_SLOTS to spare. THEN grant every resource. PB_UTIL.RESOURCES is an ARRAY of
+                -- {id=...} defs, so iterate with ipairs and read r.id (matching init_game_object
+                -- seeding in resources.lua).
                 if RESOURCES ~= 0 and PB_UTIL.RESOURCES then
-                    local granted = {}
-                    for _, id in ipairs(RES_FIRST) do
-                        PB_UTIL.add_resource(id, RESOURCES)
-                        granted[id] = true
-                    end
+                    G.GAME.balacraft = G.GAME.balacraft or {}
+                    local target = #PB_UTIL.RESOURCES + FREE_SLOTS
+                    G.GAME.balacraft.inv_bonus_slots =
+                        math.max(0, target - PB_UTIL.INV_BASE_SLOTS)
                     for _, r in ipairs(PB_UTIL.RESOURCES) do
-                        if not RES_SKIP[r.id] and not granted[r.id] then
-                            PB_UTIL.add_resource(r.id, RESOURCES)
-                        end
+                        PB_UTIL.add_resource(r.id, RESOURCES)
                     end
                 end
 

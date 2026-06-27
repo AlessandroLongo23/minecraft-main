@@ -8,6 +8,20 @@
 -- Tunable size constant -- small square to match Minecraft slot aesthetic.
 local TILE_SZ = 0.55   -- both width and height in Balatro world-units; tune in-game
 
+-- Give a tile a hover tooltip showing just the resource's NAME (tiles set no_ui=true, so the native
+-- card popup is suppressed; this replaces it with a one-line name popup). Skipped while dragging.
+-- Resources/intermediates only -- consumables live in the consumable area with their own card popup.
+local function attach_name_tooltip(card, rid)
+    function card:hover()
+        if self.states and self.states.drag.is then return end
+        local r = PB_UTIL.RESOURCE_BY_ID[rid]
+        self.config.h_popup = create_popup_UIBox_tooltip({ text = { (r and r.name) or rid } })
+        self.config.h_popup_config = self.align_h_popup and self:align_h_popup()
+            or { align = 'cm', offset = { x = 0, y = -0.1 }, parent = self }
+        Node.hover(self)
+    end
+end
+
 -- Build an inert, draggable tile Card for resource id `rid` (e.g. 'wood', 'sticks').
 -- Uses the 34x34 icon atlas for a flat square icon look (not the 71x95 card art).
 -- Returns the Card, or nil if the resource id or base center is missing.
@@ -38,6 +52,7 @@ function PB_UTIL.make_resource_tile(rid, x, y)
     card.balacraft_resource = rid
     if card.ability then card.ability.balacraft_resource = rid end
     card.no_ui = true
+    attach_name_tooltip(card, rid)
     return card
 end
 
@@ -69,6 +84,7 @@ function PB_UTIL.make_resource_source(rid, x, y)
     if card.ability then card.ability.balacraft_resource = rid end
     card.no_ui = true
     card.bc_source = true   -- inert handle: never reserved, snaps home after drag
+    attach_name_tooltip(card, rid)
     return card
 end
 

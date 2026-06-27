@@ -26,8 +26,8 @@ local TEXT = {
         '{C:inactive}(drink outside a blind)',
     },
     strength = {
-        'Pull this blind\'s {C:blue}Chips{} and',
-        '{C:red}Mult{} {C:attention}10%{} toward their average',
+        'Balance {C:attention}10%{} of this blind\'s',
+        '{C:blue}Chips{} and {C:red}Mult{}',
         '{C:inactive}(drink in a blind)',
     },
     instant_health = {

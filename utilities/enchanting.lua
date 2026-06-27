@@ -191,36 +191,15 @@ function PB_UTIL.set_tool_enchant(card, etype, tier)
     end
 end
 
--- Apply `book` to `tool`: spend levels, write the enchant, re-scale durability, consume the
--- book, refresh the sprite. Returns true on success (false if invalid or unaffordable).
+-- Apply `book` to `tool`: write the enchant, re-scale durability, consume the book, refresh the
+-- sprite. Applying is FREE -- the cost was paid at the Enchanting Table when the book was generated.
+-- Returns true on success (false if invalid).
 function PB_UTIL.apply_enchant(tool, book)
     if not PB_UTIL.enchant_is_valid(tool, book) then return false end
-    local cost = PB_UTIL.enchant_cost(tool, book)
-    -- Lapis is spent ALONGSIDE the level cost. Check affordability up front (before spending
-    -- anything) so neither resource can be half-committed. Guarded on get_resource_count so
-    -- enabling enhancements WITHOUT resources falls back to level-only (no crash).
-    local lcost = PB_UTIL.enchant_lapis_cost(tool, book)
-    if PB_UTIL.get_resource_count and lcost > 0
-        and PB_UTIL.get_resource_count('lapis') < lcost then return false end
-    -- Mob-material reagent (Sharpness/Fortune II-III). Same check-before-spend as lapis so nothing
-    -- is half-committed; guarded so it's inert when resources are off / no material applies.
-    local mat = PB_UTIL.enchant_material_cost(book)
-    if mat and PB_UTIL.get_resource_count
-        and PB_UTIL.get_resource_count(mat.id) < mat.amount then return false end
-    -- Needs the level system (xp.lua). Guarded so enabling enhancements without xp can't crash.
-    if not (PB_UTIL.spend_level and PB_UTIL.spend_level(cost)) then return false end
-    -- Levels are now committed; spend the lapis + material (no-op if resources are off).
-    if PB_UTIL.add_resource and lcost > 0 then PB_UTIL.add_resource('lapis', -lcost) end
-    if mat and PB_UTIL.add_resource then PB_UTIL.add_resource(mat.id, -mat.amount) end
-
-    -- Write the enchant (+ durability rescale + sprite refresh) via the shared cost-free helper.
+    -- Applying is FREE: the cost was paid at the Enchanting Table when the book was generated.
     local etype, tier = book.ability.extra.etype, book.ability.extra.tier
     PB_UTIL.set_tool_enchant(tool, etype, tier)
-
-    -- Consume the book (Card:remove handles area removal + cleanup).
     book:remove()
-
-    -- Visual feedback.
     if tool.juice_up then tool:juice_up(0.3, 0.5) end
     if G.bc_mc_consumeables and G.bc_mc_consumeables.unhighlight_all then G.bc_mc_consumeables:unhighlight_all() end
     pcall(play_sound, 'tarot1', 1.0, 0.6)
@@ -308,22 +287,15 @@ function PB_UTIL.enchant_card_lapis_cost(book)
     return e.tier or 1
 end
 
--- Apply a book's edition to a playing card: spend levels, set the edition, consume the book.
+-- Apply a book's edition to a playing card: set the edition, consume the book.
+-- Applying is FREE (cost paid at the Enchanting Table).
 function PB_UTIL.apply_card_enchant(card, book)
     if not PB_UTIL.enchant_card_is_valid(card, book) then return false end
-    local cost = PB_UTIL.enchant_card_cost(book)
-    -- Lapis spent alongside levels; same check-before-spend ordering as apply_enchant.
-    local lcost = PB_UTIL.enchant_card_lapis_cost(book)
-    if PB_UTIL.get_resource_count and lcost > 0
-        and PB_UTIL.get_resource_count('lapis') < lcost then return false end
-    if not (PB_UTIL.spend_level and PB_UTIL.spend_level(cost)) then return false end
-    if PB_UTIL.add_resource and lcost > 0 then PB_UTIL.add_resource('lapis', -lcost) end
-
+    -- Applying is FREE (cost paid at the Enchanting Table).
     local key = PB_UTIL.book_card_edition_key(book)
     if not key then return false end
     card:set_edition(key, true)
     book:remove()
-
     if card.juice_up then card:juice_up(0.3, 0.5) end
     if G.hand and G.hand.unhighlight_all then G.hand:unhighlight_all() end
     if G.bc_mc_consumeables and G.bc_mc_consumeables.unhighlight_all then G.bc_mc_consumeables:unhighlight_all() end
@@ -336,10 +308,7 @@ end
 -- priority (a tool + book both in the consumable area); else a card-in-hand + any book.
 
 function PB_UTIL.get_enchant_target()
-    local tool, book = PB_UTIL.get_enchant_pair()
-    if tool and book and PB_UTIL.enchant_is_valid(tool, book) then
-        return { mode = 'tool', tool = tool, book = book }
-    end
+    -- Tools are enchanted at the Anvil now; the floating bar handles CARDS only.
     local card, cbook = PB_UTIL.get_enchant_card_pair()
     if card and cbook and PB_UTIL.enchant_card_is_valid(card, cbook) then
         return { mode = 'card', card = card, book = cbook }

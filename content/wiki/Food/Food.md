@@ -21,4 +21,4 @@ Hunger is measured in points where **2 points = 1 drumstick** on the bar (max 20
 
 See [[Hunger]] for how eating, well-fed regen and starvation work.
 
-> **Planned:** the [[Cooked Seal]] cooks a held card into a food at end of round, and the [[Hay Bale]] enhancement restores hunger when a card scores.
+> **Planned:** the [[Cooked Seal]] cooks a held card into a food at end of round.

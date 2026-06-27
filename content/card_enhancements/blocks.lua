@@ -1,36 +1,11 @@
 -- SMODS.Enhancement centers for BalaCraft "block-cards".
--- Tarot-applied: Hay Bale, Lapis. Ore Blocks: one per ore-block resource
--- (PB_UTIL.is_oreblock_resource), spawned naturally and pickaxe-mined (Phase B).
+-- Lapis (XP-per-play; applied via the Lapis Sheet, content/sheets). Ore Blocks: one per ore-block
+-- resource (PB_UTIL.is_oreblock_resource), spawned naturally and pickaxe-mined (Phase B).
 
 -- Atlas: bc_ore_blocks (71x95) -- each cell is the genuine MC block texture tiled to fill the card,
 -- clipped to the rounded card mask (built by assets/gen_ore_blocks.py). Drawn UNDER the card's
 -- rank/suit/pips. The ore blocks use their resource registry `pos`; the 2 tarot-applied block cards
 -- below use dedicated free cells (must match the CELLS table in gen_ore_blocks.py).
-
--- Hay Bale — restores 1 hunger pip when this card SCORES.
-SMODS.Enhancement {
-    key = 'hay_bale',
-    atlas = 'bc_ore_blocks',
-    pos = { x = 2, y = 7 },                 -- hay bale block cell
-    config = { extra = { hunger = 1 } },
-    loc_txt = {
-        name = 'Hay Bale Card',
-        text = {
-            'Restores {C:attention}#1#{} hunger',
-            'when this card scores.',
-        },
-    },
-    loc_vars = function(self, info_queue, card)
-        local h = (card and card.ability and card.ability.extra and card.ability.extra.hunger) or 1
-        return { vars = { h } }
-    end,
-    calculate = function(self, card, context)
-        if context.cardarea == G.play and context.main_scoring then
-            if PB_UTIL.add_hunger then PB_UTIL.add_hunger(card.ability.extra.hunger) end
-            return { message = '+' .. card.ability.extra.hunger .. ' Hunger', colour = G.C.GREEN, card = card }
-        end
-    end,
-}
 
 -- Lapis — grants XP every time this card is PLAYED. always_scores so it fires even when the
 -- card isn't part of the poker hand (the design is "each time played").

@@ -44,10 +44,13 @@ function PB_UTIL.inv_slots_used()
     return PB_UTIL.resource_slots_used() + PB_UTIL.consumable_slots_used()
 end
 
--- Total capacity = base + Chest bonus (the Chest station, once built this run).
+-- Total capacity = base + Chest bonus (the Chest station, once built this run) + any run-scoped
+-- bonus (G.GAME.balacraft.inv_bonus_slots; a plain int, so auto-saved/reset per run like the rest
+-- of the hybrid model -- used by the dev Test deck to make room for a stack of every resource).
 function PB_UTIL.inv_capacity()
     local cap = PB_UTIL.INV_BASE_SLOTS
     if bc() and bc().stations and bc().stations.chest then cap = cap + PB_UTIL.CHEST_SLOTS end
+    if bc() and bc().inv_bonus_slots then cap = cap + bc().inv_bonus_slots end
     return cap
 end
 

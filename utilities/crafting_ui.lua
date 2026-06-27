@@ -181,6 +181,7 @@ function PB_UTIL.update_crafting_modal()
     -- furnace.lua, so guard on existence).
     if PB_UTIL.update_furnace_modal then PB_UTIL.update_furnace_modal() end
     if PB_UTIL.update_anvil_forge then PB_UTIL.update_anvil_forge() end
+    if PB_UTIL.update_brew_modal then PB_UTIL.update_brew_modal() end
 end
 
 -- One state table living for the modal's lifetime. output_label is ALWAYS a string
@@ -388,7 +389,7 @@ local PICKER_STATIONS = {
     { id = 'furnace',        name = 'Furnace',  icon = 'furnace',          inframe = true, station = 'furnace' },
     { id = 'anvil',          name = 'Anvil',    icon = 'anvil',            external = 'bc_open_anvil',   station = 'anvil' },
     { id = 'brewing_stand',  name = 'Brewing',  icon = 'brewing_stand',    external = 'bc_open_brewing', station = 'brewing_stand' },
-    { id = 'enchant',        name = 'Enchant',  icon = 'enchanting_table', soon = true },
+    { id = 'enchant',        name = 'Enchant',  icon = 'enchanting_table', inframe = true, station = 'enchanting_table' },
 }
 
 -- Transfers (equip / un-equip) are only allowed OUTSIDE a blind (shop / blind-select). During play
@@ -479,6 +480,9 @@ local function station_content_node()
     if PB_UTIL.active_station == 'furnace' and PB_UTIL.furnace_station_content then
         return PB_UTIL.furnace_station_content()
     end
+    if PB_UTIL.active_station == 'enchant' and PB_UTIL.enchant_station_content then
+        return PB_UTIL.enchant_station_content()
+    end
     return PB_UTIL.crafting_station_content()
 end
 
@@ -517,6 +521,9 @@ function PB_UTIL.open_inventory(station, opts)
     if station == 'furnace' and not (PB_UTIL.station_built and PB_UTIL.station_built('furnace')) then
         station = 'crafting_table'
     end
+    if station == 'enchant' and not (PB_UTIL.station_built and PB_UTIL.station_built('enchanting_table')) then
+        station = 'crafting_table'
+    end
     PB_UTIL.active_station = station
 
     if PB_UTIL.destroy_craft_cells then PB_UTIL.destroy_craft_cells() end
@@ -532,6 +539,8 @@ function PB_UTIL.open_inventory(station, opts)
         PB_UTIL.furnace_last_out = nil
         PB_UTIL.build_furnace_cells()
         PB_UTIL.furnace_on_change = PB_UTIL.update_furnace_modal
+    elseif station == 'enchant' then
+        PB_UTIL.recipe_sprites = nil   -- the enchant station has no 3x3 grid / recipe squares
     else
         if not (opts and opts.keep_page) then PB_UTIL.recipe_page = 1 end
         PB_UTIL.crafting_selected = nil

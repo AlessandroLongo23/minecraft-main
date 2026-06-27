@@ -1,4 +1,4 @@
-Implemented: 0 / 4 — **all planned**
+Implemented: 0 / 3 — **all planned**
 
 ---
 
@@ -10,24 +10,22 @@ The base game's enhancements still work normally; these are **added** alongside 
 
 | Enhancement | MC block | Effect | How you get it |
 | --- | --- | --- | --- |
-| [[Hay Bale]] | hay block | restores [[Hunger\|hunger]] when scored | a Tarot |
-| [[Lapis]] | lapis block | +[[Experience\|XP]] each time it's played | a Tarot |
+| [[Lapis]] | lapis block | +[[Experience\|XP]] each time it's played | the [[Lapis Sheet]] |
 | [[Ore Blocks]] | ore blocks | **mine the ore with a [[Pickaxe]]** | **spawn in your deck** (not a Tarot) |
 | [[Obsidian]] | obsidian | an [[Ore Blocks\|Ore Block]] — mine for [[Nether]] fuel | spawns in your deck; **Diamond [[Pickaxe]] only** |
 
 ## Applying enhancements
-[[Hay Bale]] and [[Lapis]] are applied by **Tarot cards** — one new tarot each, exactly
-like vanilla enhancements (The Magician → Lucky, The Empress → Mult, etc.).
+[[Lapis]] is applied by a **[[Lapis Sheet]]** — a consumable you forge from ore at the Anvil and
+apply to a selected card (the same UX vanilla enhancement Tarots have).
 
-**[[Ore Blocks]] are different:** they are **not** applied by tarots. They **spawn naturally on cards
+**[[Ore Blocks]] are different:** they are **not** applied by sheets or tarots. They **spawn naturally on cards
 in your deck** when a blind is selected, scaling with your [[Biomes|biome]] and ante, and you "mine"
 them by **playing the card**. See [[Ore Blocks]] for the full mechanic.
 
 > A card can only hold **one** enhancement — Ore Blocks never spawn on a card that already has one.
 
 ## Status
-- [ ] **[[Hay Bale]]** — Hunger lane (Tarot)
-- [ ] **[[Lapis]]** — XP lane (Tarot)
+- [ ] **[[Lapis]]** — XP lane ([[Lapis Sheet]])
 - [ ] **[[Ore Blocks]]** — Resources lane (natural spawn, [[Pickaxe]]-mined)
 - [ ] **[[Obsidian]]** — an Ore Block, Diamond-[[Pickaxe]]-only ([[Nether]] fuel)
 

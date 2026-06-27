@@ -23,13 +23,14 @@ from utils import scale_image
 
 ICON = 34
 CARD_W, CARD_H = 71, 95
-COLS, ROWS = 3, 14      # 25 base + 16 brewing ingredients = 41 resources -> 14 rows (last cell free)
-ICON_ROWS = 14
+COLS, ROWS = 3, 15      # +leather/paper/book (44 resources -> 15 rows, last cell free)
+ICON_ROWS = 15
 
-# Wood + Cobblestone are BLOCKS, so (like Minecraft's inventory) they render as 2:1 dimetric
-# isometric cubes instead of a flat face -- top + two darker sides. Every other resource is a flat
-# item/mineral and stays a flat scaled texture. See iso_block() below.
-ISO_IDS = {"wood", "cobblestone"}
+# Wood, Cobblestone, Sand, Obsidian and Glass are BLOCKS, so (like Minecraft's inventory) they
+# render as 2:1 dimetric isometric cubes instead of a flat face -- top + two darker sides. Every
+# other resource is a flat item/mineral/ingot/gem and stays a flat scaled texture (per the mod's
+# refined-item art direction). See iso_block() below.
+ISO_IDS = {"wood", "cobblestone", "sand", "obsidian", "glass"}
 SHADE_TOP, SHADE_LEFT, SHADE_RIGHT = 1.0, 0.80, 0.62
 
 CARD_BG   = (40, 44, 52, 255)
@@ -55,7 +56,9 @@ ORDER = ["wood", "cobblestone", "coal", "iron", "gold", "diamond", "sticks", "em
          # Crafted intermediates (kind='crafted'): glass_bottle/water_bottle/sugar/glistering_melon/
          # golden_carrot/fermented_spider_eye/awkward_potion.
          "glass_bottle", "water_bottle", "sugar", "glistering_melon", "golden_carrot",
-         "fermented_spider_eye", "awkward_potion"]
+         "fermented_spider_eye", "awkward_potion",
+         # Enchanting book chain: leather (surface mob drop) + paper/book (craft intermediates).
+         "leather", "paper", "book"]
 # TIERS only drives the resource-CARD backdrop tint here; the Nether/End items are drop_class='special'
 # (no real tier), so these values are purely cosmetic: obsidian -> tier-4 face, pearl -> 3, powder -> 2.
 TIERS = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond": 3, "sticks": 1, "emerald": 2, "netherite": 4, "lapis": 3,
@@ -67,7 +70,8 @@ TIERS = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond"
          "nether_wart": 2, "sugar_cane": 1, "melon_slice": 1, "carrot": 1, "brown_mushroom": 1,
          "ghast_tear": 3, "blaze_rod": 3, "glowstone_dust": 2, "dragon_breath": 4,
          "glass_bottle": 1, "water_bottle": 1, "sugar": 1, "glistering_melon": 2, "golden_carrot": 2,
-         "fermented_spider_eye": 2, "awkward_potion": 2}
+         "fermented_spider_eye": 2, "awkward_potion": 2,
+         "leather": 1, "paper": 1, "book": 1}
 
 
 def load(rid):

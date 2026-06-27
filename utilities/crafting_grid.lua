@@ -13,6 +13,11 @@ PB_UTIL.inv_cells   = PB_UTIL.inv_cells   or nil   -- flat list of {area, rid, l
 -- (L_cursor_release / right-click) treats these as a second, mutually-exclusive set of drop targets
 -- (craft_cells is nil when the furnace is open and vice-versa). See utilities/furnace.lua.
 PB_UTIL.furnace_cells = PB_UTIL.furnace_cells or nil
+-- Brewing Stand drop slots (fuel + ingredient), live only while the Brewing Stand is open: a flat
+-- list of { area=CardArea, kind='fuel'|'ingredient', accepts=function(rid)->bool }. A third,
+-- mutually-exclusive set (like furnace_cells). The bottle slot is NOT here -- it holds no card; it is
+-- a display-only UI node (id 'bc_brew_bottle_slot') hit-tested in the drag router. See brewing_ui.lua.
+PB_UTIL.brew_cells = PB_UTIL.brew_cells or nil
 
 -- Tunable size constants (Minecraft-slot aesthetic, small squares).
 local CELL_W = 0.7   -- grid cell width  (world-units) -- tune in-game
@@ -372,6 +377,63 @@ if not PB_UTIL._craft_release_hooked then
                 return _orig_lrelease(self, x, y)
             end
         end
+        -- Brewing Stand drop slots (fuel + ingredient) + the display-only bottle slot. Mutually
+        -- exclusive with furnace_cells/craft_cells. A SOURCE dropped on the bottle slot MUTATES the
+        -- persistent bottle state (consumes 1 Water Bottle / Awkward Potion) instead of placing a
+        -- tile; the fuel/ingredient slots behave exactly like the Furnace's.
+        if PB_UTIL.brew_cells and dropped and dropped.is and dropped:is(Card)
+           and PB_UTIL.tile_resource(dropped) then
+            local rid = PB_UTIL.tile_resource(dropped)
+            local bn = G.OVERLAY_MENU and G.OVERLAY_MENU.get_UIE_by_ID
+                       and G.OVERLAY_MENU:get_UIE_by_ID('bc_brew_bottle_slot')
+            if dropped.bc_source and bn and bn:collides_with_point(G.CURSOR.T) then
+                local bottle = PB_UTIL.brew_bottle_state and PB_UTIL.brew_bottle_state()
+                if bottle and bottle.content == 'empty'
+                   and PB_UTIL.brew_bottle_accepts and PB_UTIL.brew_bottle_accepts(rid)
+                   and PB_UTIL.get_resource_count(rid) >= 1 then
+                    PB_UTIL.add_resource(rid, -1)
+                    bottle.content = (rid == 'awkward_potion') and 'awkward' or 'water'
+                    bottle.mods = {}
+                    play_sound('cardSlide1')
+                end
+                snap_source_home(dropped)
+                self.dragging.target = nil
+                self.dragging.prev_target = nil
+                if PB_UTIL.furnace_on_change then PB_UTIL.furnace_on_change() end
+                return _orig_lrelease(self, x, y)
+            end
+            local target
+            for _, slot in ipairs(PB_UTIL.brew_cells) do
+                if slot.area:collides_with_point(G.CURSOR.T) then target = slot; break end
+            end
+            if dropped.bc_source then
+                if target and (not target.accepts or target.accepts(rid)) and PB_UTIL.get_resource_count(rid) >= 1 then
+                    local tile = spawn_tile(rid)
+                    if tile then place_in_area(tile, target.area); play_sound('cardSlide1') end
+                end
+                snap_source_home(dropped)
+                self.dragging.target = nil
+                self.dragging.prev_target = nil
+                if PB_UTIL.furnace_on_change then PB_UTIL.furnace_on_change() end
+                return _orig_lrelease(self, x, y)
+            else
+                if target and target.area.cards[1] ~= dropped and (not target.accepts or target.accepts(rid)) then
+                    place_in_area(dropped, target.area)
+                    play_sound('cardSlide1')
+                else
+                    local a = dropped.area
+                    if a then
+                        dropped.states.drag.is = false
+                        dropped.T.x = a.T.x + (a.T.w - dropped.T.w) / 2
+                        dropped.T.y = a.T.y + (a.T.h - dropped.T.h) / 2
+                    end
+                end
+                self.dragging.target = nil
+                self.dragging.prev_target = nil
+                if PB_UTIL.furnace_on_change then PB_UTIL.furnace_on_change() end
+                return _orig_lrelease(self, x, y)
+            end
+        end
         if PB_UTIL.craft_cells and dropped and dropped.is and dropped:is(Card)
            and PB_UTIL.tile_resource(dropped) then
             if dropped.bc_source then
@@ -437,6 +499,33 @@ if not PB_UTIL._craft_rclick_hooked then
     PB_UTIL._craft_rclick_hooked = true
     local _orig_rpress = Controller.queue_R_cursor_press
     function Controller:queue_R_cursor_press(x, y)
+        -- Right-click a Brewing Stand slot: pull a reserved fuel/ingredient tile (credit), OR refund
+        -- a Water Bottle / Awkward Potion from the bottle slot (finished/intermediate bottles have no
+        -- resource to refund). The persistent bottle state is reset to empty on a bottle refund.
+        if PB_UTIL.brew_cells then
+            local bn = G.OVERLAY_MENU and G.OVERLAY_MENU.get_UIE_by_ID
+                       and G.OVERLAY_MENU:get_UIE_by_ID('bc_brew_bottle_slot')
+            if bn and bn:collides_with_point(G.CURSOR.T) then
+                local bottle = PB_UTIL.brew_bottle_state and PB_UTIL.brew_bottle_state()
+                if bottle and (bottle.content == 'water' or bottle.content == 'awkward') then
+                    PB_UTIL.add_resource(bottle.content == 'awkward' and 'awkward_potion' or 'water_bottle', 1)
+                    bottle.content = 'empty'
+                    bottle.mods = {}
+                    play_sound('cardSlide1')
+                    if PB_UTIL.furnace_on_change then PB_UTIL.furnace_on_change() end
+                end
+                return   -- over the bottle: consume the right-click either way
+            end
+            for _, slot in ipairs(PB_UTIL.brew_cells) do
+                local area = slot.area
+                if area.cards[1] and area:collides_with_point(G.CURSOR.T) then
+                    return_tile(area.cards[1])
+                    play_sound('cardSlide1')
+                    if PB_UTIL.furnace_on_change then PB_UTIL.furnace_on_change() end
+                    return
+                end
+            end
+        end
         -- Right-click a furnace slot to pull its reserved tile back to inventory (credit).
         if PB_UTIL.furnace_cells then
             for _, slot in ipairs(PB_UTIL.furnace_cells) do
@@ -580,6 +669,27 @@ function PB_UTIL.build_anvil_forge_cells()
     return PB_UTIL.furnace_cells
 end
 
+-- Build the two Brewing Stand drop slots: fuel (accepts Blaze Powder) + ingredient (accepts every
+-- brew ingredient + the 3 modifiers, from PB_UTIL.BREW_INGREDIENT_ACCEPTS). Same single-slot CardAreas
+-- + reserve accounting as the Furnace; the shared drag router + destroy_brew_cells drive them. The
+-- bottle is a display-only node, not a slot here. See utilities/brewing_ui.lua.
+function PB_UTIL.build_brew_cells()
+    PB_UTIL.destroy_brew_cells()
+    local function mk_area()
+        return CardArea(G.ROOM.T.x, G.ROOM.T.y, CELL_W, CELL_H,
+            { card_limit = 1, type = 'title_2', highlight_limit = 0, card_w = CELL_W, no_card_count = true })
+    end
+    PB_UTIL.brew_fuel_area       = mk_area()
+    PB_UTIL.brew_ingredient_area = mk_area()
+    PB_UTIL.brew_cells = {
+        { area = PB_UTIL.brew_fuel_area, kind = 'fuel',
+          accepts = function(rid) return rid == 'blaze_powder' end },
+        { area = PB_UTIL.brew_ingredient_area, kind = 'ingredient',
+          accepts = function(rid) return PB_UTIL.BREW_INGREDIENT_ACCEPTS and PB_UTIL.BREW_INGREDIENT_ACCEPTS[rid] == true end },
+    }
+    return PB_UTIL.brew_cells
+end
+
 -- An overlay node embedding one furnace slot CardArea (same dark inset square as a craft cell).
 function PB_UTIL.furnace_slot_node(area)
     return {
@@ -624,6 +734,45 @@ function PB_UTIL.destroy_furnace_cells()
         PB_UTIL.anvil_in_b = nil
     end
     -- Inventory sources are INERT (never reserved) -- NO credit.
+    if PB_UTIL.inv_cells then
+        for _, entry in ipairs(PB_UTIL.inv_cells) do
+            if entry.area then entry.area:remove() end
+        end
+        PB_UTIL.inv_cells = nil
+    end
+    PB_UTIL._inv_signature = nil
+end
+
+-- Tear down the Brewing Stand slots: CREDIT back the reserved fuel/ingredient tiles (incl. a mid-drag
+-- one) + the inventory sources, then drop the slot refs. The persistent G.GAME.balacraft.brew_bottle
+-- is DELIBERATELY untouched -- the bottle's progress survives closing the stand (MC-like). Idempotent.
+function PB_UTIL.destroy_brew_cells()
+    local C = G.CONTROLLER
+    local dragged = C and C.dragging and C.dragging.target
+    if PB_UTIL.brew_cells and dragged and dragged.is and dragged:is(Card)
+       and PB_UTIL.tile_resource(dragged) and not dragged.bc_source then
+        local rid = PB_UTIL.tile_resource(dragged)
+        if rid then PB_UTIL.add_resource(rid, 1) end
+        dragged:remove()
+        C.dragging.target = nil
+        C.dragging.prev_target = nil
+    end
+    if PB_UTIL.brew_cells then
+        for _, slot in ipairs(PB_UTIL.brew_cells) do
+            local area = slot.area
+            if area then
+                local occ = area.cards and area.cards[1]
+                if occ then
+                    local rid = PB_UTIL.tile_resource(occ)
+                    if rid then PB_UTIL.add_resource(rid, 1) end   -- return (credit)
+                end
+                area:remove()
+            end
+        end
+        PB_UTIL.brew_cells = nil
+        PB_UTIL.brew_fuel_area = nil
+        PB_UTIL.brew_ingredient_area = nil
+    end
     if PB_UTIL.inv_cells then
         for _, entry in ipairs(PB_UTIL.inv_cells) do
             if entry.area then entry.area:remove() end

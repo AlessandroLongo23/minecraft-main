@@ -66,12 +66,11 @@ PB_UTIL.ENABLED_EDITIONS = {
 }
 
 -- Balatro card enhancements ("block-cards") — DISTINCT from the Enchanting books above.
--- 'blocks' = the SMODS.Enhancement centers (Obsidian/Hay Bale/Lapis + 7 ore blocks);
--- 'tarots' = the Tarot consumables that apply the first three. Ore blocks spawn naturally
--- (utilities/card_enhancements.lua), so they have no applier.
+-- 'blocks' = the SMODS.Enhancement centers (the Lapis card + the ore blocks). Lapis is applied via
+-- the Lapis Sheet (content/sheets); the ore blocks spawn naturally (utilities/card_enhancements.lua),
+-- so none of them need a Tarot applier.
 PB_UTIL.ENABLED_CARD_ENHANCEMENTS = {
     'blocks',
-    'tarots',
 }
 
 -- BalaCraft seals (Ore / Soul / Cooked) + the Spectral cards that apply them.

@@ -42,7 +42,7 @@ end
 
 PB_UTIL.EFFECT_HUD = {
     { id = 'strength', title = 'Strength', icon_pos = { x = 0, y = 0 },
-      desc = "{C:blue}Chips{} & {C:red}Mult{} pulled toward their average",
+      desc = "Balance {C:attention}10%{} of {C:blue}Chips{} and {C:red}Mult{}",
       remaining = function() local s = pst(); return s and s.strength_blinds or 0 end,
       dur_text = blinds_left },
     { id = 'regeneration', title = 'Regeneration', icon_pos = { x = 1, y = 0 },

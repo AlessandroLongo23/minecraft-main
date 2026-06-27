@@ -85,6 +85,14 @@ PB_UTIL.RESOURCES = {
     { id = 'golden_carrot',        name = 'Golden Carrot',        kind = 'crafted', pos = { x = 2, y = 12 } },
     { id = 'fermented_spider_eye', name = 'Fermented Spider Eye', kind = 'crafted', pos = { x = 0, y = 13 } },
     { id = 'awkward_potion',       name = 'Awkward Potion',       kind = 'crafted', pos = { x = 1, y = 13 } },
+    -- ── Enchanting book chain (enchanting-table feature) ────────────────────────
+    -- Leather: a surface (Night) mob drop -- drop_class='mob'+location='surface' auto-pools it via
+    -- PB_UTIL.random_mob_drop (no extra wiring). Paper + Book are craft-only intermediates: Book is
+    -- consumed at the Enchanting Table to generate enchant books. MC chain: Sugar Cane -> Paper;
+    -- 3 Paper + Leather -> Book.
+    { id = 'leather', name = 'Leather', kind = 'gathered', tier = 1, drop_class = 'mob', location = 'surface', pos = { x = 2, y = 13 } },
+    { id = 'paper',   name = 'Paper',   kind = 'crafted', pos = { x = 0, y = 14 } },
+    { id = 'book',    name = 'Book',    kind = 'crafted', pos = { x = 1, y = 14 } },
 }
 
 -- Lookup by id (used by drops/UI).

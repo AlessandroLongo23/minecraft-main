@@ -614,6 +614,89 @@ local function anvil_tool_row(card)
     }
 end
 
+-- ── Anvil "Enchant" tab helpers (apply a book to a tool; free) ─────────────────
+-- Enchant books currently in the MC consumable area.
+local function anvil_books()
+    local out = {}
+    local area = G.bc_mc_consumeables
+    if area and area.cards then
+        for _, c in ipairs(area.cards) do
+            if PB_UTIL.is_enchant_book and PB_UTIL.is_enchant_book(c) then out[#out + 1] = c end
+        end
+    end
+    return out
+end
+
+-- Resolve a sort_id back to a live card in the MC area (tool OR book).
+local function anvil_card_by_sid(sid)
+    if sid == nil then return nil end
+    local area = G.bc_mc_consumeables
+    if area and area.cards then
+        for _, c in ipairs(area.cards) do if c.sort_id == sid then return c end end
+    end
+    return nil
+end
+
+-- The book def (name + atlas pos) behind a book card.
+local function anvil_book_def(card)
+    local e = card and card.ability and card.ability.extra
+    if not (e and e.etype) then return nil end
+    return PB_UTIL.ENCHANT_BOOK_BY_ID and PB_UTIL.ENCHANT_BOOK_BY_ID[(e.etype) .. '_' .. (e.tier or 1)]
+end
+
+local function anvil_book_icon(card)
+    local b = anvil_book_def(card)
+    local atlas = PB_UTIL.enchant_icon_atlas and G.ASSET_ATLAS[PB_UTIL.enchant_icon_atlas.key]
+    if b and b.pos and atlas then
+        return { n = G.UIT.O, config = { object = Sprite(0, 0, 0.6, 0.6, atlas, b.pos) } }
+    end
+    return { n = G.UIT.C, config = { align = 'cm', minw = 0.6, minh = 0.6 }, nodes = {} }
+end
+
+-- A clickable tool row for the Enchant tab (selects PB_UTIL.anvil_state.ench_tool).
+local function anvil_ench_tool_row(card)
+    local tdef = anvil_tool_def(card)
+    local name = (tdef and tdef.name) or 'Tool'
+    local ench, uses = anvil_row_text(card)
+    local sel = (PB_UTIL.anvil_state.ench_tool == card.sort_id)
+    return {
+        n = G.UIT.R, config = {
+            align = 'cm', padding = 0.06, r = 0.08, minw = 5.6, minh = 0.66,
+            colour = sel and G.C.ORANGE or G.C.UI.TRANSPARENT_DARK,
+            button = 'bc_anvil_ench_pick_tool', bc_sid = card.sort_id, hover = true, shadow = true,
+        },
+        nodes = {
+            { n = G.UIT.C, config = { align = 'cm', padding = 0.05 }, nodes = { anvil_tool_icon(card) } },
+            { n = G.UIT.C, config = { align = 'cl', padding = 0.05, minw = 4.6 }, nodes = {
+                { n = G.UIT.R, config = { align = 'cl' }, nodes = {
+                    { n = G.UIT.T, config = { text = name, scale = 0.34, colour = G.C.UI.TEXT_LIGHT } } } },
+                { n = G.UIT.R, config = { align = 'cl' }, nodes = {
+                    { n = G.UIT.T, config = { text = ench .. '  ·  ' .. uses, scale = 0.26,
+                        colour = sel and G.C.UI.TEXT_LIGHT or G.C.UI.TEXT_INACTIVE } } } },
+            } },
+        },
+    }
+end
+
+-- A clickable book row for the Enchant tab (selects PB_UTIL.anvil_state.ench_book).
+local function anvil_ench_book_row(card)
+    local b = anvil_book_def(card)
+    local name = (b and b.name) or 'Enchant Book'
+    local sel = (PB_UTIL.anvil_state.ench_book == card.sort_id)
+    return {
+        n = G.UIT.R, config = {
+            align = 'cm', padding = 0.06, r = 0.08, minw = 5.6, minh = 0.6,
+            colour = sel and G.C.ORANGE or G.C.UI.TRANSPARENT_DARK,
+            button = 'bc_anvil_ench_pick_book', bc_sid = card.sort_id, hover = true, shadow = true,
+        },
+        nodes = {
+            { n = G.UIT.C, config = { align = 'cm', padding = 0.05 }, nodes = { anvil_book_icon(card) } },
+            { n = G.UIT.C, config = { align = 'cl', padding = 0.05, minw = 4.6 }, nodes = {
+                { n = G.UIT.T, config = { text = name, scale = 0.34, colour = G.C.UI.TEXT_LIGHT } } } },
+        },
+    }
+end
+
 -- ── Anvil "Forge Sheets" mode ─────────────────────────────────────────────────
 -- The Anvil's second tab: press 2 of one ORE into the matching Sheet consumable. A 2-input drag
 -- overlay modelled on the Furnace -- drag an ore into each of the two slots (both must be the SAME
@@ -736,10 +819,14 @@ local function anvil_tab_row(active)
             button = (not on) and fn or nil, hover = not on, shadow = true },
             nodes = { { n = G.UIT.T, config = { text = label, scale = 0.32, colour = G.C.UI.TEXT_LIGHT } } } }
     end
-    return { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = {
+    local tabs = {
         tab('Forge Sheets', 'forge', 'bc_anvil_tab_forge'),
         tab('Combine Tools', 'combine', 'bc_anvil_tab_combine'),
-    } }
+    }
+    if PB_UTIL.ENCHANT_BOOKS then
+        tabs[#tabs + 1] = tab('Enchant', 'enchant', 'bc_anvil_tab_enchant')
+    end
+    return { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = tabs }
 end
 
 function PB_UTIL.build_anvil_forge_modal()
@@ -823,11 +910,55 @@ function PB_UTIL.build_anvil_modal()
         nodes = nodes }
 end
 
+function PB_UTIL.build_anvil_enchant_modal()
+    local tools = anvil_tools()
+    local books = anvil_books()
+    local nodes = {
+        text_row('Anvil', 0.6, G.C.ORANGE),
+        anvil_tab_row('enchant'),
+        text_row('Pick a tool and an enchant book to apply it. Applying is free.', 0.26, G.C.UI.TEXT_INACTIVE),
+        { n = G.UIT.R, config = { align = 'cm', minh = 0.12 }, nodes = {} },
+    }
+    if #tools < 1 or #books < 1 then
+        nodes[#nodes + 1] = text_row('You need a tool and an enchant book in your consumable slots.',
+            0.32, G.C.UI.TEXT_INACTIVE)
+    else
+        local tlist = { n = G.UIT.C, config = { align = 'tm', padding = 0.04 }, nodes = {} }
+        for _, c in ipairs(tools) do tlist.nodes[#tlist.nodes + 1] = anvil_ench_tool_row(c) end
+        local blist = { n = G.UIT.C, config = { align = 'tm', padding = 0.04 }, nodes = {} }
+        for _, c in ipairs(books) do blist.nodes[#blist.nodes + 1] = anvil_ench_book_row(c) end
+        nodes[#nodes + 1] = { n = G.UIT.R, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK }, nodes = {
+            { n = G.UIT.C, config = { align = 'tm', padding = 0.06 }, nodes = { text_row('Tools', 0.3), tlist } },
+            { n = G.UIT.C, config = { align = 'tm', padding = 0.06 }, nodes = { text_row('Books', 0.3), blist } },
+        } }
+    end
+
+    local tool = anvil_card_by_sid(PB_UTIL.anvil_state.ench_tool)
+    local book = anvil_card_by_sid(PB_UTIL.anvil_state.ench_book)
+    nodes[#nodes + 1] = { n = G.UIT.R, config = { align = 'cm', minh = 0.12 }, nodes = {} }
+    if tool and book and PB_UTIL.is_enchant_book(book) and PB_UTIL.enchant_is_valid(tool, book) then
+        nodes[#nodes + 1] = full_btn('Apply', 'bc_anvil_ench_apply', G.C.GREEN)
+    elseif tool and book then
+        nodes[#nodes + 1] = text_row("That book can't enchant that tool (wrong type, or not an upgrade).",
+            0.3, G.C.RED)
+    else
+        nodes[#nodes + 1] = text_row('Select one tool and one book.', 0.3, G.C.UI.TEXT_INACTIVE)
+    end
+    nodes[#nodes + 1] = { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }, nodes = {} }
+    nodes[#nodes + 1] = full_btn('Back', 'bc_anvil_back')
+
+    return { n = G.UIT.ROOT,
+        config = { align = 'cm', padding = 0.12, r = 0.1, colour = G.C.GREY, minw = 8, minh = 4 },
+        nodes = nodes }
+end
+
 function PB_UTIL.open_anvil()
     PB_UTIL.anvil_state.selected = {}
     PB_UTIL.anvil_state.tab = PB_UTIL.anvil_state.tab or 'forge'
     if PB_UTIL.anvil_state.tab == 'forge' and PB_UTIL.SHEETS then
         PB_UTIL.open_anvil_forge()
+    elseif PB_UTIL.anvil_state.tab == 'enchant' and PB_UTIL.ENCHANT_BOOKS then
+        PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_enchant_modal())
     else
         PB_UTIL.anvil_state.tab = 'combine'
         PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_modal())
@@ -868,6 +999,8 @@ G.FUNCS.bc_anvil_back = function(e)
         PB_UTIL.furnace_on_change = nil
     end
     PB_UTIL.anvil_state.selected = {}
+    PB_UTIL.anvil_state.ench_tool = nil
+    PB_UTIL.anvil_state.ench_book = nil
     PB_UTIL.open_base()
 end
 
@@ -876,6 +1009,8 @@ G.FUNCS.bc_open_anvil = function(e) PB_UTIL.open_anvil() end
 -- ── Anvil tab switching ───────────────────────────────────────────────────────
 G.FUNCS.bc_anvil_tab_forge = function(e)
     PB_UTIL.anvil_state.selected = {}
+    PB_UTIL.anvil_state.ench_tool = nil
+    PB_UTIL.anvil_state.ench_book = nil
     PB_UTIL.open_anvil_forge()
 end
 
@@ -886,7 +1021,46 @@ G.FUNCS.bc_anvil_tab_combine = function(e)
     end
     PB_UTIL.anvil_state.tab = 'combine'
     PB_UTIL.anvil_state.selected = {}
+    PB_UTIL.anvil_state.ench_tool = nil
+    PB_UTIL.anvil_state.ench_book = nil
     PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_modal())
+end
+
+G.FUNCS.bc_anvil_tab_enchant = function(e)
+    if PB_UTIL.furnace_cells then              -- leaving the Forge tab: tear down its slots
+        PB_UTIL.destroy_furnace_cells()
+        PB_UTIL.furnace_on_change = nil
+    end
+    PB_UTIL.anvil_state.tab = 'enchant'
+    PB_UTIL.anvil_state.selected = {}
+    PB_UTIL.anvil_state.ench_tool = nil
+    PB_UTIL.anvil_state.ench_book = nil
+    PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_enchant_modal())
+end
+
+G.FUNCS.bc_anvil_ench_pick_tool = function(e)
+    local sid = e.config and e.config.bc_sid
+    PB_UTIL.anvil_state.ench_tool = (PB_UTIL.anvil_state.ench_tool == sid) and nil or sid
+    PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_enchant_modal())
+end
+
+G.FUNCS.bc_anvil_ench_pick_book = function(e)
+    local sid = e.config and e.config.bc_sid
+    PB_UTIL.anvil_state.ench_book = (PB_UTIL.anvil_state.ench_book == sid) and nil or sid
+    PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_enchant_modal())
+end
+
+G.FUNCS.bc_anvil_ench_apply = function(e)
+    local tool = anvil_card_by_sid(PB_UTIL.anvil_state.ench_tool)
+    local book = anvil_card_by_sid(PB_UTIL.anvil_state.ench_book)
+    if tool and book and PB_UTIL.apply_enchant(tool, book) then
+        play_sound('timpani', 0.8)
+    else
+        play_sound('cancel')
+    end
+    PB_UTIL.anvil_state.ench_tool = nil
+    PB_UTIL.anvil_state.ench_book = nil
+    PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_enchant_modal())
 end
 
 -- ── Forge button (mirror the Furnace's smelt button) ──────────────────────────

@@ -4,7 +4,7 @@
 -- sheet reuses the existing m_balacraft_lapis (XP per play, content/card_enhancements/blocks.lua) --
 -- so only these four need new centers. Keyed m_balacraft_<id>.
 --
--- Shape copied from blocks.lua (Obsidian/Hay Bale): key/atlas/pos/config.extra/loc_txt/loc_vars/
+-- Shape copied from blocks.lua (the Lapis card): key/atlas/pos/config.extra/loc_txt/loc_vars/
 -- calculate. Art: bc_sheet_enh_blocks (71x95), built by assets/gen_sheet_enh_blocks.py (tile the MC
 -- block face, clip to the rounded card mask -- same style as bc_ore_blocks). A dedicated atlas keeps
 -- the near-full bc_ore_blocks sheet untouched. Loaded in main.lua's sheets block (after resources/xp,
@@ -39,8 +39,8 @@ SMODS.Enhancement {
     end,
 }
 
--- Emerald — earn money when it SCORES (emerald = the trade currency). Mirrors Hay Bale's on-score
--- hook but pays dollars.
+-- Emerald — earn money when it SCORES (emerald = the trade currency). Uses the standard on-score
+-- hook (context.cardarea == G.play and context.main_scoring) but pays dollars.
 SMODS.Enhancement {
     key = 'emerald',
     atlas = 'bc_sheet_enh_blocks',

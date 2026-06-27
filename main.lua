@@ -134,6 +134,7 @@ if PB_UTIL.config.enhancements_enabled then
     PB_UTIL.register_items(PB_UTIL.ENABLED_EDITIONS, "editions")
     SMODS.load_file("utilities/enchanting.lua")()
     SMODS.load_file("utilities/enchanting_ui.lua")()
+    SMODS.load_file("utilities/enchanting_table_ui.lua")()
     -- Enchanting booster pack (gated with enchanting, like the food packs are with food).
     -- Sampler lives in utilities/functions.lua (loaded first); the books were registered above.
     PB_UTIL.register_items({ 'enchant_pack' }, "boosters")
@@ -143,7 +144,7 @@ if PB_UTIL.config.jokers_enabled then
     PB_UTIL.register_items(PB_UTIL.ENABLED_JOKERS, "jokers")
 end
 
--- Card enhancements ("block-cards"): Obsidian/Hay Bale/Lapis (tarot-applied) + Ore Blocks
+-- Card enhancements ("block-cards"): the Lapis card (Sheet-applied) + Ore Blocks
 -- (spawn naturally). Loads AFTER resources (needs PB_UTIL.random_ore_of_tier + the
 -- bc_resource_cards atlas), xp, and food so the per-block effects can grant XP / hunger / ore.
 if PB_UTIL.config.card_enhancements_enabled then
