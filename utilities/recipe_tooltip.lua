@@ -23,6 +23,12 @@
 local ICON = 0.46   -- ingredient icon size (the 34x34 bc_resource_icons cell), world-units
 local SLOT = ICON + 0.1
 
+-- Authentic Minecraft crafting-GUI greys (panel #c6c6c6, slot #8b8b8b). Medium-grey slots give
+-- both dark icons (coal, netherite, flint) and light ones (bone, diamond) readable contrast --
+-- the old near-black backing washed the dark ones out. Built once (HEX is global by load time).
+local GRID_BG = HEX('c6c6c6')
+local SLOT_BG = HEX('8b8b8b')
+
 -- center key -> the recipe that outputs it (first registered wins, so Torch shows its coal recipe
 -- rather than the alt Glow Ink one). Built once, lazily, after every recipe is registered.
 local _by_output = nil
@@ -51,7 +57,7 @@ local function cell_node(rid)
     return {
         n = G.UIT.C,
         config = { align = 'cm', padding = 0.02, minw = SLOT, minh = SLOT,
-                   r = 0.04, colour = G.C.UI.TRANSPARENT_DARK },
+                   r = 0.04, colour = SLOT_BG },
         nodes = spr and { { n = G.UIT.O, config = { object = spr } } } or {},
     }
 end
@@ -67,7 +73,7 @@ function PB_UTIL.build_recipe_grid_node(recipe)
         end
         rows[#rows + 1] = row
     end
-    return { n = G.UIT.C, config = { align = 'cm', padding = 0.04, r = 0.06, colour = G.C.BLACK }, nodes = rows }
+    return { n = G.UIT.C, config = { align = 'cm', padding = 0.04, r = 0.06, colour = GRID_BG }, nodes = rows }
 end
 
 -- Wrap the AUT builder once: append the "Recipe" side panel for craftable cards. vars_only is a

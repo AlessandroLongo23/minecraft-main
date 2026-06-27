@@ -6,7 +6,7 @@
 -- ---- Spawn budget ----
 
 -- Expected ore-block cards per tier this blind, by ante band (spec section 3b). `ante` sets
--- the total + tier depth; the biome sets WHICH ore (via PB_UTIL.random_ore_of_tier). Honors
+-- the total + tier depth; the biome sets WHICH ore (via PB_UTIL.random_oreblock_of_tier). Honors
 -- the tier gate (T2 from ante 3, T3 from ante 6, T4 Netherite from ante 8) by leaving locked
 -- tiers at 0.
 function PB_UTIL.oreblock_budget(ante)
@@ -34,13 +34,28 @@ end
 
 -- The ore id of an Ore-Block card, or nil if it isn't one. The id lives on the enhancement
 -- center's config.extra.ore (and is copied onto card.ability.extra.ore when applied) -- read
--- both so detection is robust regardless of how SMODS surfaces the config.
-local function oreblock_ore(c)
+-- both so detection is robust regardless of how SMODS surfaces the config. Exposed on PB_UTIL so
+-- the Pickaxe/Axe mining in content/tools/tool_consumabletype.lua can detect ore-block cards too.
+function PB_UTIL.oreblock_ore(c)
     if not c then return nil end
     local ctr = c.config and c.config.center
     local ore = ctr and ctr.config and ctr.config.extra and ctr.config.extra.ore
     if not ore and c.ability and c.ability.extra then ore = c.ability.extra.ore end
     return ore
+end
+local oreblock_ore = PB_UTIL.oreblock_ore
+
+-- Revert an ore-block card back to a plain base card once mined (deferred a tick so it doesn't
+-- fight the play/use animation). Clears the per-card `_mined` guard. Shared by the bare-hand wood
+-- chop below and the tool-driven mining (tool_consumabletype.lua).
+function PB_UTIL.revert_oreblock_card(card, delay)
+    G.E_MANAGER:add_event(Event({ trigger = 'after', delay = delay or 0.5, func = function()
+        if card and not card.REMOVED and card.set_ability then
+            card:set_ability(G.P_CENTERS.c_base)
+            if card.ability and card.ability.extra then card.ability.extra._mined = nil end
+        end
+        return true
+    end }))
 end
 
 -- Count ore blocks of a given tier currently on cards anywhere in the deck (draw pile + hand),
@@ -62,7 +77,7 @@ end
 -- Place ore blocks onto random eligible draw-pile cards, topping up toward the ante target.
 function PB_UTIL.spawn_ore_blocks()
     if not (G.GAME and G.deck and G.deck.cards) then return end
-    if not PB_UTIL.random_ore_of_tier then return end
+    if not PB_UTIL.random_oreblock_of_tier then return end
     local ante = (G.GAME.round_resets and G.GAME.round_resets.ante) or 1
     local budget = PB_UTIL.oreblock_budget(ante)
 
@@ -77,7 +92,7 @@ function PB_UTIL.spawn_ore_blocks()
                 if #pool == 0 then break end
                 local seed = 'bc_oreplace_' .. ante .. '_t' .. tier .. '_' .. #pool
                 local target_card = pseudorandom_element(pool, pseudoseed(seed))
-                local ore = PB_UTIL.random_ore_of_tier(tier, 'bc_orepick_' .. ante .. '_t' .. tier .. '_' .. #pool)
+                local ore = PB_UTIL.random_oreblock_of_tier(tier, 'bc_orepick_' .. ante .. '_t' .. tier .. '_' .. #pool)
                 if target_card and ore then
                     target_card:set_ability(G.P_CENTERS['m_balacraft_block_' .. ore])
                 end
@@ -99,43 +114,32 @@ end
 
 -- ---- Mining ----
 
--- When cards are played, any ore-block card grants its ore (x the per-blind Pickaxe bonus)
--- and reverts to a base card. Wrap G.FUNCS.play_cards_from_highlighted and snapshot the
--- highlighted cards BEFORE the base call moves them to G.play. Removal is deferred a tick so
--- it doesn't fight the play animation. Guard with a flag so a card mines at most once.
+-- Bare-hand wood chop. Ore blocks NO LONGER auto-mine when played (the old behavior) -- the only
+-- way to mine an ore is to USE a Pickaxe (or, for wood, an Axe) on selected ore-block cards (see
+-- content/tools/tool_consumabletype.lua). The ONE exception is wood: you may chop it by hand by
+-- playing a SINGLE wood ore-block (a one-card High Card) for +1 wood. (An Axe yields more, and can
+-- take several wood cards at once.) Every other ore block just scores as its base rank and persists
+-- on the card until pickaxe-mined. Wrap play_cards_from_highlighted, snapshot the lone wood card
+-- BEFORE the base call moves it to G.play, then grant + revert.
 if G.FUNCS and G.FUNCS.play_cards_from_highlighted then
     local _play = G.FUNCS.play_cards_from_highlighted
     G.FUNCS.play_cards_from_highlighted = function(e)
-        local mined = {}
-        if G.hand and G.hand.highlighted then
-            for _, c in ipairs(G.hand.highlighted) do
-                local ore = oreblock_ore(c)
-                if ore and not (c.ability and c.ability.extra and c.ability.extra._mined) then
-                    mined[#mined + 1] = { card = c, ore = ore }
-                end
+        local wood_card
+        if G.hand and G.hand.highlighted and #G.hand.highlighted == 1 then
+            local c = G.hand.highlighted[1]
+            if oreblock_ore(c) == 'wood'
+                and not (c.ability and c.ability.extra and c.ability.extra._mined) then
+                wood_card = c
             end
         end
         _play(e)
-        if #mined == 0 then return end
-        local bonus = (G.GAME and G.GAME.balacraft and G.GAME.balacraft.mine_bonus) or 0
-        for _, m in ipairs(mined) do
-            local amount = 1 + bonus
-            if PB_UTIL.add_resource then PB_UTIL.add_resource(m.ore, amount) end
-            if m.card.ability then
-                m.card.ability.extra = m.card.ability.extra or {}
-                m.card.ability.extra._mined = true
-            end
-            local res = PB_UTIL.RESOURCE_BY_ID[m.ore]
-            card_eval_status_text(m.card, 'extra', nil, nil, nil,
-                { message = '+' .. amount .. ' ' .. ((res and res.name) or m.ore), colour = G.C.GOLD })
-            local card = m.card
-            G.E_MANAGER:add_event(Event({ trigger = 'after', delay = 0.5, func = function()
-                if card and not card.REMOVED and card.set_ability then
-                    card:set_ability(G.P_CENTERS.c_base)
-                    if card.ability and card.ability.extra then card.ability.extra._mined = nil end
-                end
-                return true
-            end }))
-        end
+        if not wood_card then return end
+        if PB_UTIL.add_resource then PB_UTIL.add_resource('wood', 1) end
+        wood_card.ability.extra = wood_card.ability.extra or {}
+        wood_card.ability.extra._mined = true
+        local res = PB_UTIL.RESOURCE_BY_ID['wood']
+        card_eval_status_text(wood_card, 'extra', nil, nil, nil,
+            { message = '+1 ' .. ((res and res.name) or 'Wood'), colour = G.C.GOLD })
+        PB_UTIL.revert_oreblock_card(wood_card, 0.5)
     end
 end

@@ -13,6 +13,9 @@
 PB_UTIL.SMELTS = {
     { raw = 'raw_iron', out = 'iron' },
     { raw = 'raw_gold', out = 'gold' },
+    -- Glass chain: Sand smelts into Glass (MC-faithful), which crafts the Glass Sheet at the
+    -- Crafting Table (content/resources/recipes.lua). Picked up automatically by SMELT_BY_RAW below.
+    { raw = 'sand',     out = 'glass' },
 }
 PB_UTIL.SMELT_BY_RAW = {}
 for _, s in ipairs(PB_UTIL.SMELTS) do PB_UTIL.SMELT_BY_RAW[s.raw] = s.out end
@@ -42,6 +45,7 @@ function PB_UTIL.can_smelt(raw_id)
     if not out then return false end
     if PB_UTIL.get_resource_count(raw_id) < 1 then return false end
     if PB_UTIL.get_furnace_fuel() < 1 then return false end
+    if PB_UTIL.inv_can_fit_resource and not PB_UTIL.inv_can_fit_resource(out, 1) then return false end
     return true
 end
 
@@ -122,6 +126,8 @@ function PB_UTIL.furnace_can_smelt()
     local in_card = input and input.cards and input.cards[1]
     local raw = in_card and PB_UTIL.tile_resource(in_card)
     if not (raw and PB_UTIL.SMELT_BY_RAW[raw]) then return false end
+    -- The refined ingot must fit the inventory's real capacity (else the raw + fuel would be wasted).
+    if PB_UTIL.inv_can_fit_resource and not PB_UTIL.inv_can_fit_resource(PB_UTIL.SMELT_BY_RAW[raw], 1) then return false end
     if PB_UTIL.get_furnace_fuel() >= 1 then return true end
     local fuelslot = PB_UTIL.furnace_fuel_area
     local f_card = fuelslot and fuelslot.cards and fuelslot.cards[1]
@@ -225,6 +231,36 @@ local function furnace_output_node()
     return { n = G.UIT.C, config = { align = 'cm' }, nodes = { square } }
 end
 
+-- The Furnace's interactive content (smelt slots + gauge + Smelt button + hint), as an embeddable
+-- node for the unified Inventory modal's station area. The shared inventory + Back live in the shell.
+function PB_UTIL.furnace_station_content()
+    local slots_col = { n = G.UIT.C, config = { align = 'cm', padding = 0.04 }, nodes = {
+        { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.furnace_slot_node(PB_UTIL.furnace_input_area) } },
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.03 }, nodes = {
+            res_icon('coal', 0.4),
+            { n = G.UIT.T, config = { id = 'bc_furnace_fuel_label', ref_table = PB_UTIL.furnace_state,
+                ref_value = 'fuel_label', scale = 0.34, colour = G.C.ORANGE } },
+        } },
+        { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.furnace_slot_node(PB_UTIL.furnace_fuel_area) } },
+    } }
+    local arrow_node = { n = G.UIT.C, config = { align = 'cm', padding = 0.1 },
+        nodes = { { n = G.UIT.T, config = { text = '>', scale = 0.6, colour = G.C.WHITE } } } }
+    local smelt_btn = {
+        n = G.UIT.C, config = { align = 'cm' }, nodes = { {
+            n = G.UIT.R, config = { id = 'bc_furnace_smelt_btn', align = 'cm', padding = 0.1, r = 0.1,
+                minw = 1.6, minh = FURNACE_CELL, colour = G.C.UI.TRANSPARENT_LIGHT,
+                button = 'bc_furnace_smelt', func = 'bc_furnace_can_smelt_btn', hover = true, shadow = true },
+            nodes = { { n = G.UIT.T, config = { text = 'Smelt', scale = 0.45, colour = G.C.UI.TEXT_LIGHT } } },
+        } } }
+    local smelt_row = { n = G.UIT.R, config = { align = 'cm', padding = 0.06 },
+        nodes = { slots_col, arrow_node, furnace_output_node(), smelt_btn } }
+    return { n = G.UIT.C, config = { align = 'cm', padding = 0.06 }, nodes = {
+        text_row('Furnace', 0.5, G.C.ORANGE),
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK }, nodes = { smelt_row } },
+        text_row('Drag a raw ore into the top slot and fuel (coal/wood) into the bottom.', 0.24, G.C.UI.TEXT_INACTIVE),
+    } }
+end
+
 function PB_UTIL.build_furnace_modal()
     -- Slots column: input (top), the flame/fuel gauge (middle), fuel (bottom) -- the Minecraft stack.
     local slots_col = { n = G.UIT.C, config = { align = 'cm', padding = 0.04 }, nodes = {
@@ -292,11 +328,12 @@ G.FUNCS.bc_furnace_smelt = function(e)
     PB_UTIL.update_inventory()       -- a raw/fuel may have hit 0 -> reflow the source grid
 end
 
--- Back to the Base: credit any reserved tiles still in the slots, then return (in place).
+-- Back to the unified Inventory modal: credit any reserved tiles still in the slots, then return.
+-- (Legacy: the standalone furnace overlay is unused now -- the Furnace is a station in the modal.)
 G.FUNCS.bc_furnace_back = function(e)
     PB_UTIL.destroy_furnace_cells()
     PB_UTIL.furnace_on_change = nil
-    PB_UTIL.open_base()
+    PB_UTIL.open_inventory('crafting_table')
 end
 
 -- Tear down the furnace slots on ANY overlay close path (Close/ESC). Stacks above the crafting +
@@ -327,6 +364,7 @@ PB_UTIL.station_icon_atlas = SMODS.Atlas { key = 'bc_station_icons', path = 'sta
 PB_UTIL.STATION_ICONS = {
     crafting_table = { x = 0, y = 0 }, furnace = { x = 1, y = 0 }, composter = { x = 2, y = 0 },
     anvil = { x = 3, y = 0 }, brewing_stand = { x = 0, y = 1 }, chest = { x = 1, y = 1 },
+    enchanting_table = { x = 2, y = 1 },
 }
 
 -- Each station is one of: `always` (always-open, e.g. Crafting Table), `station` + `fn` (crafted ->
@@ -412,8 +450,11 @@ function PB_UTIL.build_base_modal()
         nodes = nodes }
 end
 
+-- The standalone "Your Base" launcher is superseded by the unified Inventory modal (its workbench
+-- picker). open_base now just opens that modal, so every legacy caller (station Backs, the old
+-- hotbar button) lands in the right place. build_base_modal below is dead but kept inert.
 function PB_UTIL.open_base()
-    PB_UTIL.refresh_overlay(PB_UTIL.build_base_modal())   -- swap in place (no fly-in) when transitioning
+    PB_UTIL.open_inventory('crafting_table')
 end
 
 G.FUNCS.bc_open_base = function(e) PB_UTIL.open_base() end
@@ -493,14 +534,15 @@ function PB_UTIL.anvil_combine(keep, consumed)
 end
 
 -- ── Anvil overlay ────────────────────────────────────────────────────────────
--- Selection: up to 2 selected tool sort_ids (reset fresh each open). The overlay sees only ACTIVE
--- tools in G.consumeables (benched/loadout tools aren't combinable in v1 -- swap one in first).
+-- Selection: up to 2 selected tool sort_ids (reset fresh each open). The overlay sees the EQUIPPED
+-- tools in the Minecraft consumable area (store-and-equip from the inventory to swap a tool in).
 PB_UTIL.anvil_state = PB_UTIL.anvil_state or { selected = {} }
 
 local function anvil_tools()
     local out = {}
-    if G.consumeables and G.consumeables.cards then
-        for _, c in ipairs(G.consumeables.cards) do
+    local area = G.bc_mc_consumeables
+    if area and area.cards then
+        for _, c in ipairs(area.cards) do
             if anvil_is_tool(c) then out[#out + 1] = c end
         end
     end
@@ -572,10 +614,182 @@ local function anvil_tool_row(card)
     }
 end
 
+-- ── Anvil "Forge Sheets" mode ─────────────────────────────────────────────────
+-- The Anvil's second tab: press 2 of one ORE into the matching Sheet consumable. A 2-input drag
+-- overlay modelled on the Furnace -- drag an ore into each of the two slots (both must be the SAME
+-- ore), then Forge. Reuses the Furnace slot/reserve plumbing wholesale: build_anvil_forge_cells
+-- builds into PB_UTIL.furnace_cells, so the shared drag router + the _furnace_exit_hooked teardown
+-- drive it with no extra code. Inert / guarded when sheets are off (PB_UTIL.SHEETS absent).
+PB_UTIL.ANVIL_COST = 2   -- ores consumed per sheet (one reserved tile in each of the two slots)
+
+-- The 'anvil'-station Sheet whose ore == rid, or nil. Derived from PB_UTIL.SHEETS (content/sheets/).
+function PB_UTIL.anvil_recipe_for_ore(rid)
+    if not rid then return nil end
+    for _, s in ipairs(PB_UTIL.SHEETS or {}) do
+        if s.station == 'anvil' and s.ore == rid then return s end
+    end
+    return nil
+end
+function PB_UTIL.anvil_ore_accepts(rid) return PB_UTIL.anvil_recipe_for_ore(rid) ~= nil end
+
+PB_UTIL.anvil_forge_state = PB_UTIL.anvil_forge_state or { can_forge = false }
+
+-- True iff both slots hold the SAME forgeable ore and there is consumable room for the sheet.
+function PB_UTIL.anvil_can_forge()
+    if not PB_UTIL.furnace_cells then return false end
+    local a = PB_UTIL.anvil_in_a and PB_UTIL.anvil_in_a.cards and PB_UTIL.anvil_in_a.cards[1]
+    local b = PB_UTIL.anvil_in_b and PB_UTIL.anvil_in_b.cards and PB_UTIL.anvil_in_b.cards[1]
+    if not (a and b) then return false end
+    local ra, rb = PB_UTIL.tile_resource(a), PB_UTIL.tile_resource(b)
+    if not (ra and rb and ra == rb and PB_UTIL.anvil_recipe_for_ore(ra)) then return false end
+    if PB_UTIL.has_consumable_room and not PB_UTIL.has_consumable_room() then return false end
+    return true
+end
+
+-- Forge one sheet: consume both reserved input tiles (no credit), spawn the sheet consumable, then
+-- auto-refill both slots if 2 more of that ore remain (so Forge can be clicked repeatedly).
+function PB_UTIL.anvil_do_forge()
+    if not PB_UTIL.anvil_can_forge() then return false end
+    local ra    = PB_UTIL.tile_resource(PB_UTIL.anvil_in_a.cards[1])
+    local sheet = PB_UTIL.anvil_recipe_for_ore(ra)
+    PB_UTIL.anvil_in_a.cards[1]:remove()   -- consume reserved tile (NO credit)
+    PB_UTIL.anvil_in_b.cards[1]:remove()
+    consumable_add('c_balacraft_sheet_' .. sheet.id)
+    PB_UTIL.anvil_last_out = sheet.id
+    if PB_UTIL.get_resource_count(ra) >= 2 then
+        local t1 = PB_UTIL.spawn_reserved_tile(ra); if t1 then PB_UTIL.place_in_area(t1, PB_UTIL.anvil_in_a) end
+        local t2 = PB_UTIL.spawn_reserved_tile(ra); if t2 then PB_UTIL.place_in_area(t2, PB_UTIL.anvil_in_b) end
+    end
+    return true
+end
+
+-- Output-preview icon: the sheet for whatever ore fills BOTH matched slots, else the last forged,
+-- else hidden. (Mirrors refresh_furnace_output, but on bc_sheet_icons.)
+function PB_UTIL.refresh_anvil_output()
+    if not G.OVERLAY_MENU then return end
+    local icon = G.OVERLAY_MENU:get_UIE_by_ID('bc_anvil_output_icon')
+    if not (icon and icon.config and icon.config.object) then return end
+    local obj = icon.config.object
+    local a = PB_UTIL.anvil_in_a and PB_UTIL.anvil_in_a.cards and PB_UTIL.anvil_in_a.cards[1]
+    local b = PB_UTIL.anvil_in_b and PB_UTIL.anvil_in_b.cards and PB_UTIL.anvil_in_b.cards[1]
+    local ra = a and PB_UTIL.tile_resource(a)
+    local rb = b and PB_UTIL.tile_resource(b)
+    local sheet = (ra and rb and ra == rb and PB_UTIL.anvil_recipe_for_ore(ra))
+        or (PB_UTIL.anvil_last_out and PB_UTIL.SHEET_BY_ID and PB_UTIL.SHEET_BY_ID[PB_UTIL.anvil_last_out])
+    local atlas = PB_UTIL.sheet_icon_atlas and G.ASSET_ATLAS[PB_UTIL.sheet_icon_atlas.key]
+    if sheet and atlas then
+        obj.atlas = atlas
+        obj:set_sprite_pos(sheet.icon)
+        if obj.bc_overlay then obj.bc_overlay[4] = 1 end
+    elseif obj.bc_overlay then
+        obj.bc_overlay[4] = 0
+    end
+end
+
+-- Per-frame: snap settled slot tiles + refresh can_forge + preview. Inert unless the forge tab is
+-- open (furnace_cells + the anvil slots present). Wired into update_crafting_modal (crafting_ui.lua).
+function PB_UTIL.update_anvil_forge()
+    if not (PB_UTIL.furnace_cells and PB_UTIL.anvil_in_a) then return end
+    PB_UTIL.anvil_forge_state.can_forge = PB_UTIL.anvil_can_forge()
+    local C = G.CONTROLLER
+    local dragged = C and C.dragging and C.dragging.target
+    for _, slot in ipairs(PB_UTIL.furnace_cells) do
+        local area = slot.area
+        local card = area and area.cards and area.cards[1]
+        if card and card ~= dragged and not (card.states and card.states.drag.is) then
+            local tx = area.T.x + (area.T.w - card.T.w) / 2
+            local ty = area.T.y + (area.T.h - card.T.h) / 2
+            card.T.x, card.T.y = tx, ty
+            card.VT.x, card.VT.y = tx, ty
+        end
+    end
+    PB_UTIL.refresh_anvil_output()
+end
+
+local FORGE_CELL = 0.76
+-- A single grid-cell-sized output square holding the sheet preview icon (or blank if art isn't ready).
+local function anvil_forge_output_node()
+    local atlas = PB_UTIL.sheet_icon_atlas and G.ASSET_ATLAS[PB_UTIL.sheet_icon_atlas.key]
+    local inner
+    if atlas then
+        local first = (PB_UTIL.SHEETS and PB_UTIL.SHEETS[1] and PB_UTIL.SHEETS[1].icon) or { x = 0, y = 0 }
+        local out_icon = PB_UTIL.make_dimmable(Sprite(0, 0, 0.5, 0.5, atlas, first))
+        out_icon.bc_overlay[4] = 0   -- hidden until both slots hold a matching ore
+        inner = { n = G.UIT.O, config = { id = 'bc_anvil_output_icon', object = out_icon } }
+    else
+        inner = { n = G.UIT.T, config = { text = ' ', scale = 0.3 } }
+    end
+    local square = {
+        n = G.UIT.C, config = { align = 'cm', padding = 0.03, r = 0.05, colour = G.C.UI.TRANSPARENT_DARK,
+                                minw = FORGE_CELL, minh = FORGE_CELL },
+        nodes = { inner },
+    }
+    return { n = G.UIT.C, config = { align = 'cm' }, nodes = { square } }
+end
+
+-- Tab switcher shared by both Anvil modes (active tab is highlighted + non-clickable).
+local function anvil_tab_row(active)
+    local function tab(label, key, fn)
+        local on = (active == key)
+        return { n = G.UIT.C, config = { align = 'cm', padding = 0.08, r = 0.08, minw = 2.4, minh = 0.5,
+            colour = on and G.C.ORANGE or G.C.UI.TRANSPARENT_DARK,
+            button = (not on) and fn or nil, hover = not on, shadow = true },
+            nodes = { { n = G.UIT.T, config = { text = label, scale = 0.32, colour = G.C.UI.TEXT_LIGHT } } } }
+    end
+    return { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = {
+        tab('Forge Sheets', 'forge', 'bc_anvil_tab_forge'),
+        tab('Combine Tools', 'combine', 'bc_anvil_tab_combine'),
+    } }
+end
+
+function PB_UTIL.build_anvil_forge_modal()
+    local forge_btn = {
+        n = G.UIT.C, config = { align = 'cm' }, nodes = { {
+            n = G.UIT.R, config = { id = 'bc_anvil_forge_btn', align = 'cm', padding = 0.1, r = 0.1,
+                minw = 1.6, minh = FORGE_CELL, colour = G.C.UI.TRANSPARENT_LIGHT,
+                button = 'bc_anvil_forge', func = 'bc_anvil_can_forge_btn', hover = true, shadow = true },
+            nodes = { { n = G.UIT.T, config = { text = 'Forge', scale = 0.45, colour = G.C.UI.TEXT_LIGHT } } },
+        } } }
+    local plus  = { n = G.UIT.C, config = { align = 'cm', padding = 0.06 },
+        nodes = { { n = G.UIT.T, config = { text = '+', scale = 0.6, colour = G.C.WHITE } } } }
+    local arrow = { n = G.UIT.C, config = { align = 'cm', padding = 0.1 },
+        nodes = { { n = G.UIT.T, config = { text = '=', scale = 0.6, colour = G.C.WHITE } } } }
+    local forge_row = { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = {
+        PB_UTIL.furnace_slot_node(PB_UTIL.anvil_in_a), plus,
+        PB_UTIL.furnace_slot_node(PB_UTIL.anvil_in_b), arrow,
+        anvil_forge_output_node(), forge_btn,
+    } }
+    return { n = G.UIT.ROOT,
+        config = { align = 'cm', padding = 0.12, r = 0.1, colour = G.C.GREY, minw = 9, minh = 5 },
+        nodes = {
+            text_row('Anvil', 0.6, G.C.ORANGE),
+            anvil_tab_row('forge'),
+            { n = G.UIT.R, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK }, nodes = { forge_row } },
+            text_row('Drag 2 of the SAME ore into the slots, then Forge a Sheet.', 0.26, G.C.UI.TEXT_INACTIVE),
+            { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }, nodes = {} },
+            { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+                { n = G.UIT.T, config = { text = 'Inventory', scale = 0.38, colour = G.C.UI.TEXT_LIGHT } } } },
+            { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.build_inventory_node() } },
+            { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }, nodes = {} },
+            full_btn('Back', 'bc_anvil_back'),
+        } }
+end
+
+function PB_UTIL.open_anvil_forge()
+    PB_UTIL.anvil_state.tab = 'forge'
+    PB_UTIL.anvil_forge_state.can_forge = false
+    PB_UTIL.anvil_last_out = nil
+    PB_UTIL.build_anvil_forge_cells()                          -- the two ore input slots
+    PB_UTIL.build_inventory()                                  -- shared draggable source grid
+    PB_UTIL.furnace_on_change = PB_UTIL.update_anvil_forge     -- drag/right-click -> immediate refresh
+    PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_forge_modal())
+end
+
 function PB_UTIL.build_anvil_modal()
     local tools = anvil_tools()
     local nodes = {
         text_row('Anvil', 0.6, G.C.ORANGE),
+        anvil_tab_row('combine'),
         text_row('Combine two tools of the same type & material: keep the best enchants and pool their remaining uses.',
             0.26, G.C.UI.TEXT_INACTIVE),
         { n = G.UIT.R, config = { align = 'cm', minh = 0.12 }, nodes = {} },
@@ -611,7 +825,13 @@ end
 
 function PB_UTIL.open_anvil()
     PB_UTIL.anvil_state.selected = {}
-    PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_modal())
+    PB_UTIL.anvil_state.tab = PB_UTIL.anvil_state.tab or 'forge'
+    if PB_UTIL.anvil_state.tab == 'forge' and PB_UTIL.SHEETS then
+        PB_UTIL.open_anvil_forge()
+    else
+        PB_UTIL.anvil_state.tab = 'combine'
+        PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_modal())
+    end
 end
 
 -- Toggle a tool's selection (cap 2; a 3rd pick slides the oldest out), then rebuild in place.
@@ -642,8 +862,40 @@ G.FUNCS.bc_anvil_combine = function(e)
 end
 
 G.FUNCS.bc_anvil_back = function(e)
+    -- The Forge tab holds drag slots in furnace_cells; credit any reserved tiles before leaving.
+    if PB_UTIL.furnace_cells then
+        PB_UTIL.destroy_furnace_cells()
+        PB_UTIL.furnace_on_change = nil
+    end
     PB_UTIL.anvil_state.selected = {}
     PB_UTIL.open_base()
 end
 
 G.FUNCS.bc_open_anvil = function(e) PB_UTIL.open_anvil() end
+
+-- ── Anvil tab switching ───────────────────────────────────────────────────────
+G.FUNCS.bc_anvil_tab_forge = function(e)
+    PB_UTIL.anvil_state.selected = {}
+    PB_UTIL.open_anvil_forge()
+end
+
+G.FUNCS.bc_anvil_tab_combine = function(e)
+    if PB_UTIL.furnace_cells then              -- leaving the Forge tab: tear down its slots (credits tiles)
+        PB_UTIL.destroy_furnace_cells()
+        PB_UTIL.furnace_on_change = nil
+    end
+    PB_UTIL.anvil_state.tab = 'combine'
+    PB_UTIL.anvil_state.selected = {}
+    PB_UTIL.refresh_overlay(PB_UTIL.build_anvil_modal())
+end
+
+-- ── Forge button (mirror the Furnace's smelt button) ──────────────────────────
+G.FUNCS.bc_anvil_can_forge_btn = function(e)
+    e.config.colour = PB_UTIL.anvil_forge_state.can_forge and G.C.GREEN or G.C.UI.TRANSPARENT_LIGHT
+end
+
+G.FUNCS.bc_anvil_forge = function(e)
+    if PB_UTIL.anvil_do_forge() then play_sound('timpani', 0.8) else play_sound('cancel') end
+    PB_UTIL.update_anvil_forge()   -- in-place refresh (button + preview)
+    PB_UTIL.update_inventory()     -- an ore may have hit 0 -> reflow the source grid
+end

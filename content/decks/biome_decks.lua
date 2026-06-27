@@ -8,7 +8,9 @@
 -- Nether/End biomes are reached via their dimension decks instead (no per-biome decks there).
 
 for _, b in ipairs(PB_UTIL.BIOMES or {}) do
-    if b.dimension == 'overworld' then
+    -- ritual_only biomes (Stronghold) are never a normal start-deck: they're only reached via the
+    -- Eye-of-Ender trail, so skip them here (they also have no deck-splash cell).
+    if b.dimension == 'overworld' and not b.ritual_only then
         local bid, bname, bx = b.id, b.name, b.pos.x
         SMODS.Back {
             name = bname,

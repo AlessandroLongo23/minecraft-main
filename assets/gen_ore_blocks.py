@@ -22,7 +22,7 @@ from PIL import Image
 from utils import scale_image
 
 CARD_W, CARD_H = 71, 95
-COLS, ROWS = 3, 7
+COLS, ROWS = 3, 8   # row 6 gained Redstone/Sand ore-blocks; the obsidian/hay_bale specials moved to row 7
 
 TILE_SCALE   = 3            # 16 -> 48px tiles; repeat is visible across the 71x95 card. Tunable.
 DARKEN       = 0.90         # mild overall darken so the coloured pips pop over busy stone textures
@@ -44,9 +44,10 @@ CELLS = {
     "wood":        (0, 0), "cobblestone": (1, 0), "coal":     (2, 0),
     "diamond":     (2, 1), "emerald":     (1, 2), "netherite": (2, 2),
     "lapis":       (0, 3), "raw_iron":    (2, 5), "raw_gold": (0, 6),
-    # tarot-applied block cards (dedicated free cells)
+    "redstone":    (1, 6), "sand":        (2, 6),   # new ore-blocks (registry pos)
+    # tarot-applied block cards (dedicated free cells; moved to row 7 to free (1,6)/(2,6))
     "lapis_block": (1, 1),                 # the "Lapis Card" XP enhancement (key 'lapis')
-    "obsidian":    (1, 6), "hay_bale":     (2, 6),
+    "obsidian":    (1, 7), "hay_bale":     (2, 7),
 }
 
 

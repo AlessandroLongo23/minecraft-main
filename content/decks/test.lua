@@ -20,8 +20,11 @@ local CONSUMABLES = {
 local VOUCHERS    = {                                      -- vouchers to force-redeem
     'v_balacraft_enchanting_table',
     'v_balacraft_sorcerers_tome',
-    -- 'v_balacraft_nether_portal',  -- dimension portals: uncomment to test dimensions
-    -- 'v_balacraft_end_portal',
+    -- Dimensions are no longer voucher-warped: reach the Nether by lighting a Ruined Portal blind
+    -- with Flint & Steel + Obsidian, and the End via the Eye-of-Ender trail. RESOURCES=99 (below)
+    -- already stocks Obsidian / Ender Pearl / Blaze Powder; craft Flint & Steel and Eyes of Ender
+    -- in the Crafting Table to test, or add 'c_balacraft_flint_and_steel'/'c_balacraft_ender_eye'
+    -- to CONSUMABLES above.
 }
 local CARD_MOD    = { seal = nil, enhancement = nil, edition = nil, count = 0 } -- stamp N starting cards
 -- ──────────────────────────────────────────────────────────────────────────────

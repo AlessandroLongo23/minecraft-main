@@ -10,13 +10,13 @@ The base game's enhancements still work normally; these are **added** alongside 
 
 | Enhancement | MC block | Effect | How you get it |
 | --- | --- | --- | --- |
-| [[Obsidian]] | obsidian | indestructible + ×1.5 Mult while held | a Tarot (planned) |
-| [[Hay Bale]] | hay block | restores [[Hunger\|hunger]] when scored | a Tarot (planned) |
-| [[Lapis]] | lapis block | +[[Experience\|XP]] each time it's played | a Tarot (planned) |
-| [[Ore Blocks]] | ore blocks (7) | **mine ore by playing the card** | **spawn in your deck** (not a Tarot) |
+| [[Hay Bale]] | hay block | restores [[Hunger\|hunger]] when scored | a Tarot |
+| [[Lapis]] | lapis block | +[[Experience\|XP]] each time it's played | a Tarot |
+| [[Ore Blocks]] | ore blocks | **mine the ore with a [[Pickaxe]]** | **spawn in your deck** (not a Tarot) |
+| [[Obsidian]] | obsidian | an [[Ore Blocks\|Ore Block]] — mine for [[Nether]] fuel | spawns in your deck; **Diamond [[Pickaxe]] only** |
 
 ## Applying enhancements
-[[Obsidian]], [[Hay Bale]] and [[Lapis]] are applied by **Tarot cards** — one new tarot each, exactly
+[[Hay Bale]] and [[Lapis]] are applied by **Tarot cards** — one new tarot each, exactly
 like vanilla enhancements (The Magician → Lucky, The Empress → Mult, etc.).
 
 **[[Ore Blocks]] are different:** they are **not** applied by tarots. They **spawn naturally on cards
@@ -26,9 +26,9 @@ them by **playing the card**. See [[Ore Blocks]] for the full mechanic.
 > A card can only hold **one** enhancement — Ore Blocks never spawn on a card that already has one.
 
 ## Status
-- [ ] **[[Obsidian]]** (planned) — Defense lane
-- [ ] **[[Hay Bale]]** (planned) — Hunger lane
-- [ ] **[[Lapis]]** (planned) — XP lane
-- [ ] **[[Ore Blocks]]** (planned) — Resources lane (7 ores, natural spawn)
+- [ ] **[[Hay Bale]]** — Hunger lane (Tarot)
+- [ ] **[[Lapis]]** — XP lane (Tarot)
+- [ ] **[[Ore Blocks]]** — Resources lane (natural spawn, [[Pickaxe]]-mined)
+- [ ] **[[Obsidian]]** — an Ore Block, Diamond-[[Pickaxe]]-only ([[Nether]] fuel)
 
 [[Overview|← Back to Overview]]

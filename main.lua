@@ -11,6 +11,12 @@ end
 
 if PB_UTIL.config.resources_enabled then
     SMODS.load_file("utilities/resources.lua")()
+    -- Unified inventory capacity model (slot math); load right after resources so add_resource's
+    -- capacity-aware path and the crafting gates can reach it.
+    SMODS.load_file("utilities/inventory_model.lua")()
+    -- Minecraft consumable area (G.bc_mc_consumeables) + classification + acquire routing. Loads
+    -- before resource_ui so the toggle/driver can flip between the vanilla and MC areas.
+    SMODS.load_file("utilities/mc_consumables.lua")()
     SMODS.load_file("utilities/resource_ui.lua")()
     SMODS.load_file("utilities/cashout_ui.lua")()
     SMODS.load_file("utilities/crafting.lua")()
@@ -31,7 +37,8 @@ if PB_UTIL.config.resources_enabled then
     PB_UTIL.register_items(PB_UTIL.ENABLED_RESOURCES, "resources")
     -- Tool consumable cards + the Torch AFTER resources: they use the bc_resource_cards atlas
     -- registered in content/resources/registry.lua.
-    PB_UTIL.register_items({ 'tool_consumabletype', 'torch', 'arrow', 'bone_meal', 'tnt', 'firework' }, "tools")
+    PB_UTIL.register_items({ 'tool_consumabletype', 'torch', 'arrow', 'bone_meal', 'tnt', 'firework',
+        'flint_and_steel', 'ender_eye' }, "tools")
     -- Tool booster packs (Toolbox trio). Logic helpers + the three boosters. sample_pack_tools
     -- reads PB_UTIL.TOOLS (registered just above) at pack-open time; the enchant roll is runtime-
     -- guarded on PB_UTIL.ENCHANTS, so it composes regardless of the enhancements load order below.
@@ -46,15 +53,6 @@ if PB_UTIL.config.resources_enabled then
         SMODS.load_file("utilities/villager.lua")()
         SMODS.load_file("utilities/villager_ui.lua")()
     end
-end
-
--- Minecraft Inventory & Loadout. Loads AFTER the resources block so its bench-aware
--- has_joker_room / has_consumable_room overrides land on top of crafting.lua's, and so the
--- "Open Crafting" button + resource row can reach open_crafting_table / the resource atlas
--- (both guarded, so this still works when resources are off).
-if PB_UTIL.config.inventory_enabled then
-    SMODS.load_file("utilities/inventory.lua")()
-    SMODS.load_file("utilities/inventory_ui.lua")()
 end
 
 if PB_UTIL.config.health_enabled then
@@ -72,6 +70,9 @@ if PB_UTIL.config.biomes_enabled then
     PB_UTIL.register_items(PB_UTIL.ENABLED_BIOMES, "biomes")
     SMODS.load_file("utilities/biomes.lua")()
     SMODS.load_file("utilities/biomes_ui.lua")()
+    -- Structure blinds (re-theme Night/Cave per ante) + the Ruined Portal -> Nether entry. Loads
+    -- after biomes (reads current_dimension/biome) and is self-guarded on blinds_enabled.
+    SMODS.load_file("utilities/structures.lua")()
 end
 
 -- XP loads after the resources block so xp.lua's PB_UTIL.craft wrap sees the real
@@ -88,6 +89,31 @@ if PB_UTIL.config.food_enabled then
     SMODS.load_file("utilities/hunger_ui.lua")()
     PB_UTIL.register_items(PB_UTIL.ENABLED_FOODS, "foods")
     PB_UTIL.register_items(PB_UTIL.ENABLED_FOOD_PACKS, "boosters")
+end
+
+-- Potions: a Minecraft brewing consumable category (drink / throw). Loads after health
+-- (Healing/Instant Health call PB_UTIL.heal/damage), biomes (Swiftness opens the biome select),
+-- xp, and the resources block (potions route through the MC consumable area, and the Brewing
+-- Stand is a crafting station). potions.lua holds the effect helpers; the registry registers the
+-- ConsumableType + the 8 centers. The Brewing Stand station + booster pack are loaded here as
+-- their files are added (Waves 2 & 4).
+if PB_UTIL.config.potions_enabled then
+    SMODS.load_file("utilities/potions.lua")()
+    PB_UTIL.register_items(PB_UTIL.ENABLED_POTIONS, "potions")
+    -- Active-effects HUD row below the consumable area (reads the potion effect state seeded in
+    -- potions.lua; uses the bc_effect_icons atlas registered by the registry above).
+    SMODS.load_file("utilities/effects_ui.lua")()
+    -- The Brewing Stand: fuel + brew recipes + dimension drops (brewing.lua), then its Base-station
+    -- overlay (brewing_ui.lua), which also flips the Brewing Stand entry in PB_UTIL.BASE_STATIONS
+    -- (defined in furnace.lua, loaded in the resources block above) from a `soon` stub to active.
+    -- Guarded so potions still load if the resources block (and thus the Base) is disabled.
+    if PB_UTIL.config.resources_enabled then
+        SMODS.load_file("utilities/brewing.lua")()
+        SMODS.load_file("utilities/brewing_ui.lua")()
+    end
+    -- Potion booster pack (secondary source; brewing is primary). Registered after the centers
+    -- above so its create_card can spawn them.
+    PB_UTIL.register_items(PB_UTIL.ENABLED_POTION_PACKS, "boosters")
 end
 
 if PB_UTIL.config.boosters_enabled then
@@ -123,6 +149,18 @@ end
 if PB_UTIL.config.card_enhancements_enabled then
     PB_UTIL.register_items(PB_UTIL.ENABLED_CARD_ENHANCEMENTS, "card_enhancements")
     SMODS.load_file("utilities/card_enhancements.lua")()
+end
+
+-- Sheets: a craftable consumable (Anvil "Forge Sheets" tab: 2 ore -> 1 sheet; the Glass sheet is the
+-- Crafting Table exception) APPLIED to a playing card as an enhancement (the same UX as a Tarot).
+-- Loads after card_enhancements (the Lapis sheet reuses m_balacraft_lapis) and after resources/xp
+-- (the Emerald sheet pays $). The Steel->Iron display rename lives in the sheets registry; the Anvil
+-- "Forge Sheets" tab + sand->glass smelt + the glass-sheet recipe are wired in the resources block
+-- above (utilities/furnace.lua + content/resources/recipes.lua), all runtime-guarded on PB_UTIL.SHEETS.
+if PB_UTIL.config.sheets_enabled then
+    -- the four new enhancement centers (Diamond/Emerald/Redstone/Coal) the metal sheets apply.
+    PB_UTIL.register_items({ 'sheet_enhancements' }, "card_enhancements")
+    PB_UTIL.register_items(PB_UTIL.ENABLED_SHEETS, "sheets")
 end
 
 -- Seals: Ore (discard->resource), Soul (play->XP), Cooked (held->Food, seal stays on the card).

@@ -82,10 +82,10 @@ function PB_UTIL.attach_enchant_bar(target)
     if G.bc_enchant_bar and not G.bc_enchant_bar.REMOVED then G.bc_enchant_bar:remove() end
     G.bc_enchant_bar = UIBox {
         definition = build_enchant_bar(target),
-        config = { align = 'bm', offset = { x = 0, y = ENCHANT_BAR_GAP }, major = G.consumeables, bond = 'Weak' },
+        config = { align = 'bm', offset = { x = 0, y = ENCHANT_BAR_GAP }, major = G.bc_mc_consumeables, bond = 'Weak' },
     }
     -- Remember the target + area so the driver rebuilds on any change (target/area swapped).
-    G.bc_enchant_bar.bc_major = G.consumeables
+    G.bc_enchant_bar.bc_major = G.bc_mc_consumeables
     G.bc_enchant_bar.bc_target_key = PB_UTIL.enchant_target_key(target)
 end
 
@@ -113,14 +113,16 @@ local function heal_tool_sprites(area)
 end
 
 function PB_UTIL.update_enchant_ui()
-    -- Self-heal enchanted tool sprites every frame, in the consumable area AND any open booster
-    -- pack (so a pre-enchanted pack tool shows its enchanted art on the selection screen, not only
-    -- after it's picked). Runs regardless of the Enchant-bar states handled below.
-    heal_tool_sprites(G.consumeables)
+    -- Self-heal enchanted tool sprites every frame, in the Minecraft consumable area AND any open
+    -- booster pack (so a pre-enchanted pack tool shows its enchanted art on the selection screen, not
+    -- only after it's picked). Runs regardless of the Enchant-bar states handled below.
+    heal_tool_sprites(G.bc_mc_consumeables)
     heal_tool_sprites(G.pack_cards)
 
-    local active = G.consumeables and G.GAME and G.GAME.balacraft and enchant_state_ok()
-        and (not PB_UTIL.get_view_mode or PB_UTIL.get_view_mode() ~= 'resources')
+    -- Tools + books live on the Minecraft side now, so the Enchant bar is only relevant when that
+    -- side of the consumable area is showing.
+    local active = G.bc_mc_consumeables and G.GAME and G.GAME.balacraft and enchant_state_ok()
+        and (not PB_UTIL.get_view_mode or PB_UTIL.get_view_mode() == 'minecraft')
     if not active then return remove_enchant_bar() end
 
     -- Keep two-card highlighting available even if the area was rebuilt this run.
@@ -131,7 +133,7 @@ function PB_UTIL.update_enchant_ui()
     if not target then return remove_enchant_bar() end
 
     if not G.bc_enchant_bar or G.bc_enchant_bar.REMOVED
-        or G.bc_enchant_bar.bc_major ~= G.consumeables
+        or G.bc_enchant_bar.bc_major ~= G.bc_mc_consumeables
         or G.bc_enchant_bar.bc_target_key ~= PB_UTIL.enchant_target_key(target) then
         PB_UTIL.attach_enchant_bar(target)
     end

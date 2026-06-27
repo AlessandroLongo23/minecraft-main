@@ -169,8 +169,12 @@ function PB_UTIL.can_buy_villager_offer(offer)
     if not offer or offer.sold then return false end
     if PB_UTIL.get_resource_count('emerald') < (offer.cost or 0) then return false end
     if offer.kind == 'consumable' then
-        -- Card outputs (tools / books / torch / food) need a free consumable slot.
-        if not (G.consumeables and #G.consumeables.cards < G.consumeables.config.card_limit) then
+        -- Card outputs (tools / books / torch / food) need a free Minecraft consumable slot OR
+        -- inventory room (they auto-equip, else store).
+        if not (PB_UTIL.has_consumable_room and PB_UTIL.has_consumable_room()) then return false end
+    elseif offer.kind == 'resource' then
+        -- Resource bundles must fit the inventory's real capacity (else Emeralds buy nothing).
+        if PB_UTIL.inv_can_fit_resource and not PB_UTIL.inv_can_fit_resource(offer.id, offer.amount or 1) then
             return false
         end
     end

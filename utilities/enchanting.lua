@@ -114,9 +114,9 @@ function PB_UTIL.enchant_material_cost(book)
     return { id = id, amount = 1 }
 end
 
--- Returns tool_card, book_card if exactly one of each is highlighted in G.consumeables.
+-- Returns tool_card, book_card if exactly one of each is highlighted in G.bc_mc_consumeables.
 function PB_UTIL.get_enchant_pair()
-    local hl = G.consumeables and G.consumeables.highlighted
+    local hl = G.bc_mc_consumeables and G.bc_mc_consumeables.highlighted
     if not hl or #hl ~= 2 then return nil end
     local tool, book
     for _, c in ipairs(hl) do
@@ -128,11 +128,11 @@ function PB_UTIL.get_enchant_pair()
 end
 
 -- Allow co-highlighting a tool + a book (vanilla consumable limit is 1). Cheap; called
--- each frame from the UI driver and re-asserted because G.consumeables is rebuilt per run.
+-- each frame from the UI driver and re-asserted because G.bc_mc_consumeables is rebuilt per run.
 function PB_UTIL.ensure_enchant_highlight_limit()
-    if G.consumeables and G.consumeables.config then
-        local cur = G.consumeables.config.highlighted_limit or 1
-        if cur < 2 then G.consumeables.config.highlighted_limit = 2 end
+    if G.bc_mc_consumeables and G.bc_mc_consumeables.config then
+        local cur = G.bc_mc_consumeables.config.highlighted_limit or 1
+        if cur < 2 then G.bc_mc_consumeables.config.highlighted_limit = 2 end
     end
 end
 
@@ -144,7 +144,7 @@ if not PB_UTIL._consumable_highlight_wrapped then
     PB_UTIL._consumable_highlight_wrapped = true
     local _add_to_highlighted = CardArea.add_to_highlighted
     function CardArea:add_to_highlighted(card, silent)
-        if self == G.consumeables then
+        if self == G.bc_mc_consumeables then
             local hl = self.highlighted or {}
             local pair = false
             if #hl == 1 and hl[1] ~= card then
@@ -222,7 +222,7 @@ function PB_UTIL.apply_enchant(tool, book)
 
     -- Visual feedback.
     if tool.juice_up then tool:juice_up(0.3, 0.5) end
-    if G.consumeables and G.consumeables.unhighlight_all then G.consumeables:unhighlight_all() end
+    if G.bc_mc_consumeables and G.bc_mc_consumeables.unhighlight_all then G.bc_mc_consumeables:unhighlight_all() end
     pcall(play_sound, 'tarot1', 1.0, 0.6)
     return true
 end
@@ -266,9 +266,9 @@ local function card_edition_info(card)
 end
 
 -- Returns card, book if exactly one playing card is highlighted in G.hand AND exactly one enchant
--- book is highlighted in G.consumeables.
+-- book is highlighted in G.bc_mc_consumeables.
 function PB_UTIL.get_enchant_card_pair()
-    local chl = G.consumeables and G.consumeables.highlighted
+    local chl = G.bc_mc_consumeables and G.bc_mc_consumeables.highlighted
     if not chl or #chl ~= 1 or not PB_UTIL.is_enchant_book(chl[1]) then return nil end
     local hhl = G.hand and G.hand.highlighted
     if not hhl or #hhl ~= 1 or not is_playing_card(hhl[1]) then return nil end
@@ -326,7 +326,7 @@ function PB_UTIL.apply_card_enchant(card, book)
 
     if card.juice_up then card:juice_up(0.3, 0.5) end
     if G.hand and G.hand.unhighlight_all then G.hand:unhighlight_all() end
-    if G.consumeables and G.consumeables.unhighlight_all then G.consumeables:unhighlight_all() end
+    if G.bc_mc_consumeables and G.bc_mc_consumeables.unhighlight_all then G.bc_mc_consumeables:unhighlight_all() end
     pcall(play_sound, 'foil1', 1.0, 0.6)
     return true
 end

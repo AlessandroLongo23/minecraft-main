@@ -55,7 +55,9 @@ end
 function PB_UTIL.roll_biome_choices(dim, n, exclude)
     local pool = {}
     for _, b in ipairs(PB_UTIL.BIOMES or {}) do
-        if b.dimension == dim and b.id ~= exclude then pool[#pool + 1] = b.id end
+        -- ritual_only biomes (Stronghold, and any future ones) never roll normally -- they're only
+        -- injected by the Eye-of-Ender trail (PB_UTIL.roll_end_trail_choices).
+        if b.dimension == dim and b.id ~= exclude and not b.ritual_only then pool[#pool + 1] = b.id end
     end
     local picked = {}
     n = math.min(n or 3, #pool)
@@ -120,6 +122,53 @@ end
 -- The shared base blinds declare no in_pool, so they stay always-eligible -> ADDITIVE pools.
 function PB_UTIL.biome_blind_in_pool(biome_id)
     return PB_UTIL.current_biome() == biome_id
+end
+
+-- ---- Eye-of-Ender trail (the End-access ritual) ----
+-- Using an Eye of Ender (content/tools/ender_eye.lua) ARMS the next biome selection to show a
+-- directional marker. Follow the marked option for three CONSECUTIVE antes -- (1) a random biome,
+-- (2) the Stronghold, (3) The End -- to reach the End. Per-run state on G.GAME.balacraft:
+--   end_ritual_step       marked picks completed so far (0..3)
+--   end_ritual_last_ante  ante of the last correct pick (enforces the "consecutive" rule)
+--   end_eye_armed         an Eye was used this ante -> the next selection shows the marker
+--   end_eye_ante          the ante the Eye was used in
+--   end_ritual_marked_id  id of the marked option at the pending selection (read by the UI + handler)
+function PB_UTIL.use_ender_eye()
+    if not G.GAME then return end
+    G.GAME.balacraft = G.GAME.balacraft or {}
+    local bc = G.GAME.balacraft
+    bc.end_eye_armed = true
+    bc.end_eye_ante  = (G.GAME.round_resets and G.GAME.round_resets.ante) or 1
+    pcall(play_sound, 'tarot1', 1, 0.6)
+end
+
+-- Build the biome options for an armed selection, marking exactly one as the trail direction.
+-- Returns (choices_list, marked_id). Enforces the consecutive-ante chain: a skipped ante resets to
+-- step 1. Called from PB_UTIL.open_biome_select when end_eye_armed.
+function PB_UTIL.roll_end_trail_choices()
+    local bc = G.GAME.balacraft
+    -- Broken chain (the Eye wasn't used in the very next ante) -> restart the trail at step 1.
+    if (bc.end_ritual_step or 0) > 0 and bc.end_eye_ante ~= (bc.end_ritual_last_ante or -99) + 1 then
+        bc.end_ritual_step = 0
+    end
+    local attempting = (bc.end_ritual_step or 0) + 1
+    local dim    = PB_UTIL.current_dimension()
+    local forced = (attempting >= 3 and 'central_end') or (attempting == 2 and 'stronghold') or nil
+
+    if forced then
+        -- Two random biomes + the forced marked waypoint, inserted at a seeded slot.
+        local choices = PB_UTIL.roll_biome_choices(dim, 2, PB_UTIL.current_biome())
+        local slot = 1 + math.floor(pseudorandom(pseudoseed('bc_endtrail_slot_' .. tostring(bc.end_eye_ante))) * (#choices + 1))
+        slot = math.max(1, math.min(slot, #choices + 1))
+        table.insert(choices, slot, forced)
+        return choices, forced
+    end
+    -- Step 1: three random biomes; the Eye "points" to one of them (marked at random).
+    local choices = PB_UTIL.roll_biome_choices(dim, 3, PB_UTIL.current_biome())
+    if #choices == 0 then return choices, nil end
+    local mi = 1 + math.floor(pseudorandom(pseudoseed('bc_endtrail_mark_' .. tostring(bc.end_eye_ante))) * #choices)
+    mi = math.max(1, math.min(mi, #choices))
+    return choices, choices[mi]
 end
 
 -- ---- Background tint wrap ----

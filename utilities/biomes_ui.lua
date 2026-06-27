@@ -19,7 +19,9 @@ local function biome_art_sprite(b)
     return SMODS.create_sprite(0, 0, CARD_W, CARD_H, atlas, b.pos)
 end
 
-local function biome_card_node(id)
+-- `marked` (Eye-of-Ender trail): when true, the card wears a purple "Eye of Ender" plate + a purple
+-- frame outline, signalling it's the direction to pick. Set by PB_UTIL.roll_end_trail_choices.
+local function biome_card_node(id, marked)
     local b = PB_UTIL.get_biome(id)
     if not b then return nil end
 
@@ -37,46 +39,55 @@ local function biome_card_node(id)
         } }
     end
 
-    -- Each option is a framed card: a dark rounded panel with a biome-coloured outline,
-    -- mirroring the base game's blind-choice card (functions/UI_definitions.lua).
+    -- Build the inner card column; prepend the trail marker plate when this is the marked option.
+    local inner = {}
+    if marked then
+        inner[#inner + 1] = { n = G.UIT.R, config = { align = 'cm', r = 0.1, colour = G.C.PURPLE,
+            outline = 1, outline_colour = G.C.WHITE, minw = CARD_W + 0.2, padding = 0.06, emboss = 0.05 }, nodes = {
+            { n = G.UIT.T, config = { text = '> Eye of Ender <', scale = 0.34, colour = G.C.WHITE, shadow = true } },
+        } }
+    end
+    -- Name plate.
+    inner[#inner + 1] = { n = G.UIT.R, config = { align = 'cm', r = 0.1, colour = darken(b.colour, 0.2),
+        outline = 1, outline_colour = b.colour, minw = CARD_W + 0.2, padding = 0.07, emboss = 0.05 }, nodes = {
+        { n = G.UIT.T, config = { text = b.name, scale = 0.5, colour = G.C.WHITE, shadow = true } },
+    } }
+    -- Full-art sprite.
+    inner[#inner + 1] = { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = { art_node } }
+    -- Description (on the frame's dark panel).
+    inner[#inner + 1] = { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = {
+        { n = G.UIT.C, config = { align = 'cm' }, nodes = desc_rows },
+    } }
+    -- Select button (classic Balatro orange, commits on press).
+    inner[#inner + 1] = { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = {
+        { n = G.UIT.R, config = { align = 'cm', minw = CARD_W, minh = 0.55, r = 0.1,
+            colour = G.C.ORANGE, button = 'bc_select_biome', ref_table = { biome = id },
+            hover = true, shadow = true, one_press = true }, nodes = {
+            { n = G.UIT.T, config = { text = 'Select', scale = 0.45, colour = G.C.UI.TEXT_LIGHT, shadow = true } },
+        } },
+    } }
+
+    -- Each option is a framed card: a dark rounded panel with a biome-coloured (or purple, when
+    -- marked) outline, mirroring the base game's blind-choice card (functions/UI_definitions.lua).
     return {
         n = G.UIT.C, config = { align = 'cm', padding = 0.08 }, nodes = {
             { n = G.UIT.C, config = {
                 align = 'tm', padding = 0.12, r = 0.12,
                 colour = mix_colours(G.C.BLACK, G.C.L_BLACK, 0.5),
-                outline = 1, outline_colour = b.colour, emboss = 0.1,
+                outline = 1, outline_colour = marked and G.C.PURPLE or b.colour, emboss = 0.1,
                 minw = CARD_W + 0.5,
-            }, nodes = {
-                -- Name plate.
-                { n = G.UIT.R, config = { align = 'cm', r = 0.1, colour = darken(b.colour, 0.2),
-                    outline = 1, outline_colour = b.colour, minw = CARD_W + 0.2, padding = 0.07, emboss = 0.05 }, nodes = {
-                    { n = G.UIT.T, config = { text = b.name, scale = 0.5, colour = G.C.WHITE, shadow = true } },
-                } },
-                -- Full-art sprite.
-                { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = { art_node } },
-                -- Description (on the frame's dark panel).
-                { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = {
-                    { n = G.UIT.C, config = { align = 'cm' }, nodes = desc_rows },
-                } },
-                -- Select button (classic Balatro orange, commits on press).
-                { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = {
-                    { n = G.UIT.R, config = { align = 'cm', minw = CARD_W, minh = 0.55, r = 0.1,
-                        colour = G.C.ORANGE, button = 'bc_select_biome', ref_table = { biome = id },
-                        hover = true, shadow = true, one_press = true }, nodes = {
-                        { n = G.UIT.T, config = { text = 'Select', scale = 0.45, colour = G.C.UI.TEXT_LIGHT, shadow = true } },
-                    } },
-                } },
-            } },
+            }, nodes = inner },
         },
     }
 end
 
-function PB_UTIL.build_biome_select(choices)
+function PB_UTIL.build_biome_select(choices, marked_id)
     local card_row = { n = G.UIT.R, config = { align = 'cm', padding = 0.15 }, nodes = {} }
     for _, id in ipairs(choices) do
-        local node = biome_card_node(id)
+        local node = biome_card_node(id, marked_id ~= nil and id == marked_id)
         if node then card_row.nodes[#card_row.nodes + 1] = node end
     end
+    local prompt = marked_id and 'Follow the Eye of Ender' or 'Choose your next Biome'
 
     -- TRANSPARENT root (G.C.CLEAR) like the blind-select screen: the felt, left panel and
     -- background shader all stay visible -- only the prompt + cards are drawn.
@@ -85,8 +96,8 @@ function PB_UTIL.build_biome_select(choices)
         config = { align = 'cm', colour = G.C.CLEAR, padding = 0.1 },
         nodes = {
             { n = G.UIT.R, config = { align = 'cm', padding = 0.08 }, nodes = {
-                { n = G.UIT.O, config = { object = DynaText({ string = 'Choose your next Biome',
-                    colours = { G.C.WHITE }, shadow = true, bump = true, scale = 0.7, pop_in = 0.3, maxw = 9 }) } },
+                { n = G.UIT.O, config = { object = DynaText({ string = prompt,
+                    colours = { marked_id and G.C.PURPLE or G.C.WHITE }, shadow = true, bump = true, scale = 0.7, pop_in = 0.3, maxw = 9 }) } },
             } },
             { n = G.UIT.R, config = { align = 'cm', minh = 0.15 }, nodes = {} },
             card_row,
@@ -98,18 +109,27 @@ end
 -- cards float over the felt, like blind select. Returns false if there's nothing to offer.
 function PB_UTIL.open_biome_select()
     if G.balacraft_biome_select then return true end
-    -- The Explorer Tag grants one extra choice (4 instead of 3) at the next biome select.
-    local extra = G.GAME and G.GAME.balacraft and G.GAME.balacraft._biome_extra
-    local n = extra and 4 or 3
-    if extra and G.GAME and G.GAME.balacraft then G.GAME.balacraft._biome_extra = nil end
-    local choices = PB_UTIL.roll_biome_choices(PB_UTIL.current_dimension(), n, PB_UTIL.current_biome())
+    local bc = G.GAME and G.GAME.balacraft
+    local choices, marked_id
+    if bc and bc.end_eye_armed and PB_UTIL.roll_end_trail_choices then
+        -- Eye-of-Ender trail: forced/marked options for this step (Explorer Tag is ignored here).
+        choices, marked_id = PB_UTIL.roll_end_trail_choices()
+        bc.end_ritual_marked_id = marked_id
+    else
+        -- The Explorer Tag grants one extra choice (4 instead of 3) at the next biome select.
+        local extra = bc and bc._biome_extra
+        local n = extra and 4 or 3
+        if extra and bc then bc._biome_extra = nil end
+        choices = PB_UTIL.roll_biome_choices(PB_UTIL.current_dimension(), n, PB_UTIL.current_biome())
+    end
     if not choices or #choices == 0 then return false end
     PB_UTIL._biome_choices = choices
+    PB_UTIL._biome_marked_id = marked_id
     -- Position exactly like the blind-select screen: anchored to G.hand (so it's centered in
     -- the PLAYFIELD, not the whole screen -> equal left/right margins), tucked into the
     -- jokers->hand gap so the prompt sits below the joker row instead of overlapping it.
     G.balacraft_biome_select = UIBox {
-        definition = PB_UTIL.build_biome_select(choices),
+        definition = PB_UTIL.build_biome_select(choices, marked_id),
         config = { align = 'bmi', offset = { x = 0, y = G.ROOM.T.y + 29 }, major = G.hand, bond = 'Weak' },
     }
     G.balacraft_biome_select.alignment.offset.y =
@@ -128,11 +148,38 @@ end
 
 -- Click handler: theme the next ante, close the panel, and clear the pending flag so the
 -- shop-hold (update_shop wrap in utilities/biomes.lua) releases and the shop slides in.
+-- Also advances (or resets) the Eye-of-Ender trail when a selection was armed.
 G.FUNCS.bc_select_biome = function(e)
     local id = e and e.config and e.config.ref_table and e.config.ref_table.biome
     if not id then return end
-    PB_UTIL.set_biome(id)
+    local bc = G.GAME and G.GAME.balacraft
+
+    -- Eye-of-Ender trail bookkeeping (only when this selection was armed by an Eye this ante).
+    if bc and bc.end_eye_armed then
+        if id == bc.end_ritual_marked_id then
+            bc.end_ritual_step      = (bc.end_ritual_step or 0) + 1   -- followed the direction
+            bc.end_ritual_last_ante = bc.end_eye_ante
+        else
+            bc.end_ritual_step = 0                                    -- wrong way: the trail resets
+        end
+        bc.end_eye_armed       = nil
+        bc.end_eye_ante        = nil
+        bc.end_ritual_marked_id = nil
+    end
+
+    -- Apply the biome. A cross-dimension pick (The End at the trail's end) switches dimension via
+    -- start_in_biome and counts a lifetime End entry (unlocks the End deck at the threshold).
+    local b = PB_UTIL.get_biome(id)
+    if b and b.dimension ~= PB_UTIL.current_dimension() then
+        if PB_UTIL.start_in_biome then PB_UTIL.start_in_biome(id) end
+        if b.dimension == 'end' and PB_UTIL.bump_progression then
+            PB_UTIL.bump_progression('end_entries')
+        end
+    else
+        PB_UTIL.set_biome(id)
+    end
+
     pcall(play_sound, 'card1', 1, 0.7)
     PB_UTIL.close_biome_select()
-    if G.GAME and G.GAME.balacraft then G.GAME.balacraft._biome_pending = nil end
+    if bc then bc._biome_pending = nil end
 end

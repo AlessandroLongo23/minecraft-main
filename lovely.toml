@@ -96,67 +96,49 @@ if G.GAME.balacraft then
 end
 '''
 
-# ── Generated-card overflow -> inventory bench ──────────────────────────────────────────────
-# Base-game consumables that GENERATE cards (Emperor/High Priestess -> 2 consumables; Judgement/
-# The Soul -> 1 joker) cap their spawn at the active area's free slots and silently drop the rest.
-# With the BalaCraft inventory bench on, the overflow should land on the bench instead (and stay
-# usable). The used consumable is removed from its area BEFORE use() runs (button_callbacks.lua
-# :2239), so `card_limit - #cards` inside use() already reflects the slot it just freed.
-
-# Block A: Emperor (2 Tarots) / High Priestess (2 Planets). The base loop just above fills the
-# active area up to its free slots; this handler creates whatever didn't fit and benches it. Sized
-# from the SAME `card_limit - #cards` the base loop's bound uses, so the two never double-create.
+# Axe tool consumable (WEAPON mode): a HYBRID buff -- a flat +Chips AND an xMult this blind, applied
+# together. Anchored just after hand_chips is finalized (hand_chips = mod_chips(nu_chip or hand_chips))
+# so BOTH hand_chips and mult are in scope; uses mod_chips/mod_mult so the changes sync into
+# SMODS.Scoring_Parameters (the values the score reads). Set in the Axe's use() (no wood selected) and
+# reset each blind by reset_game_globals (resources.lua). Only one axe can be used per blind.
 [[patches]]
 [patches.pattern]
-target = 'card.lua'
-pattern = "if self.ability.name == 'Judgement' or self.ability.name == 'The Soul' then"
-position = 'before'
+target = 'functions/state_events.lua'
+pattern = 'hand_chips = mod_chips(nu_chip or hand_chips)'
+position = 'after'
 match_indent = true
 payload = '''
-if (self.ability.name == 'The Emperor' or self.ability.name == 'The High Priestess')
-    and PB_UTIL and PB_UTIL.inventory_enabled and PB_UTIL.inventory_enabled()
-    and PB_UTIL.bench_free and PB_UTIL.bench_new_card then
-    local _n = self.ability.consumeable.tarots or self.ability.consumeable.planets or 0
-    local _free = math.max(0, G.consumeables.config.card_limit - #G.consumeables.cards)
-    local _overflow = math.min(math.max(0, _n - _free), PB_UTIL.bench_free('consumable'))
-    local _set = (self.ability.name == 'The Emperor') and 'Tarot' or 'Planet'
-    local _key = (self.ability.name == 'The Emperor') and 'emp' or 'pri'
-    for _i = 1, _overflow do
-        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
-            play_sound('timpani')
-            local _c = create_card(_set, G.consumeables, nil, nil, nil, nil, nil, _key)
-            PB_UTIL.bench_new_card(_c, 'consumable')
-            used_tarot:juice_up(0.3, 0.5)
-            return true
-        end}))
+if G.GAME.balacraft then
+    local _bc = G.GAME.balacraft
+    local _c = _bc.axe_chips and _bc.axe_chips ~= 0
+    local _x = _bc.axe_xmult and _bc.axe_xmult ~= 1
+    if _c then hand_chips = mod_chips(hand_chips + _bc.axe_chips) end
+    if _x then mult = mod_mult(mult * _bc.axe_xmult) end
+    if (_c or _x) and PB_UTIL and PB_UTIL.axe_score_message then
+        PB_UTIL.axe_score_message()
     end
-    if _overflow > 0 then delay(0.6) end
 end
 '''
 
-# Block B-1: let Judgement / The Soul be USED when jokers are full but the bench has room (the base
-# gate hard-blocks at a full joker area). Unique line in Card:can_use_consumeable.
+# Potion of Strength: a PARTIAL Plasma -- pull this blind's hand_chips and mult `strength_pct` of
+# the way toward their average (0.10 base, 0.20 with Glowstone). Same anchor as the Axe (both
+# hand_chips and mult in scope; mod_chips/mod_mult sync into SMODS.Scoring_Parameters). The formula
+# mirrors AllinJest's calculate_balance_percent_values. strength_pct is set in the potion's use()
+# (utilities/potions.lua) and cleared when the effect expires (Blind:set_blind wrap there).
 [[patches]]
 [patches.pattern]
-target = 'card.lua'
-pattern = "if #G.jokers.cards < G.jokers.config.card_limit or self.area == G.jokers then"
-position = 'at'
+target = 'functions/state_events.lua'
+pattern = 'hand_chips = mod_chips(nu_chip or hand_chips)'
+position = 'after'
 match_indent = true
-payload = "if #G.jokers.cards < G.jokers.config.card_limit or self.area == G.jokers or ((self.ability.name == 'Judgement' or self.ability.name == 'The Soul') and PB_UTIL and PB_UTIL.inventory_enabled and PB_UTIL.inventory_enabled() and PB_UTIL.bench_has_room and PB_UTIL.bench_has_room('joker')) then"
-
-# Block B-2: route the generated joker to the bench when the active joker area is full (replaces the
-# unconditional add_to_deck + emplace for Judgement / The Soul). Regex matches the unique 3-line
-# create/add/emplace sequence and keeps the vanilla path when there IS active room.
-[[patches]]
-[patches.regex]
-target = 'card.lua'
-pattern = '''(?<indent>[\t ]*)local card = create_card\('Joker', G\.jokers, self\.ability\.name == 'The Soul', nil, nil, nil, nil, self\.ability\.name == 'Judgement' and 'jud' or 'sou'\)\n[\t ]*card:add_to_deck\(\)\n[\t ]*G\.jokers:emplace\(card\)'''
-position = 'at'
-line_prepend = '$indent'
-payload = '''local card = create_card('Joker', G.jokers, self.ability.name == 'The Soul', nil, nil, nil, nil, self.ability.name == 'Judgement' and 'jud' or 'sou')
-if PB_UTIL and PB_UTIL.inventory_enabled and PB_UTIL.inventory_enabled() and PB_UTIL.active_has_room and not PB_UTIL.active_has_room('joker') and PB_UTIL.bench_has_room and PB_UTIL.bench_has_room('joker') then
-    PB_UTIL.bench_new_card(card, 'joker')
-else
-    card:add_to_deck()
-    G.jokers:emplace(card)
-end'''
+payload = '''
+if G.GAME.balacraft and G.GAME.balacraft.strength_pct and G.GAME.balacraft.strength_pct ~= 0 then
+    local _p = G.GAME.balacraft.strength_pct
+    local _cm = _p * hand_chips
+    local _mm = _p * mult
+    local _avg = (_cm + _mm) / 2
+    hand_chips = mod_chips(hand_chips + (_avg - _cm))
+    mult = mod_mult(mult + (_avg - _mm))
+    if PB_UTIL and PB_UTIL.strength_score_message then PB_UTIL.strength_score_message() end
+end
+'''

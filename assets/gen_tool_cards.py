@@ -224,7 +224,7 @@ MATERIALS = [
     ("DIAMOND",   "diamond",   "diamond",   "diamond"),
     ("NETHERITE", "netherite", "netherite", "netherite"),
 ]
-TOOLS = [("SWORD", "sword"), ("PICKAXE", "pickaxe"), ("SHOVEL", "shovel")]
+TOOLS = [("SWORD", "sword"), ("PICKAXE", "pickaxe"), ("SHOVEL", "shovel"), ("AXE", "axe")]
 
 if __name__ == "__main__":
     os.makedirs(OUT1, exist_ok=True); os.makedirs(OUT2, exist_ok=True)

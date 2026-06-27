@@ -3,12 +3,23 @@
 --     used_vouchers; the book consumable-type's shop rate is switched on here), and
 --   * grants +1 consumable slot (mirrors the base-game Crystal Ball voucher).
 --
--- Only offered when the enchanting system is enabled. PLACEHOLDER ART: reuses a bc_vouchers
--- cell (the atlas currently holds only the two portal cells; dedicated art is a follow-up).
+-- Only offered when the enchanting system is enabled.
+--
+-- Registers the shared enchanting-pair voucher atlas (also used by Sorcerer's Tome, which loads
+-- after this file). Art (assets/gen_enchant_vouchers.py): a side-view enchanting room built from
+-- authentic MC textures -- the table flanked by a COUPLE of bookshelves (vs the Tome's full library).
+-- Cell order MUST match the pos here: enchanting_table (x=0), sorcerers_tome (x=1).
+SMODS.Atlas {
+    key = 'bc_enchant_vouchers',
+    path = 'enchant_voucher_cards.png',
+    px = 71,
+    py = 95,
+}
+
 SMODS.Voucher {
     key = 'enchanting_table',
-    atlas = 'bc_vouchers',
-    pos = { x = 0, y = 0 },                 -- PLACEHOLDER (shares the Nether Portal cell)
+    atlas = 'bc_enchant_vouchers',
+    pos = { x = 0, y = 0 },
     loc_txt = {
         name = 'Enchanting Table',
         text = {

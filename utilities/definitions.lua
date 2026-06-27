@@ -100,9 +100,10 @@ PB_UTIL.ENABLED_TAGS = {
     'tags',
 }
 
+-- NOTE: the Nether/End Portal vouchers were removed -- dimensions are now reached via the
+-- Ruined Portal blind (Flint & Steel + Obsidian) and the Eye-of-Ender trail (utilities/structures.lua,
+-- utilities/biomes.lua). Only the enchanting pair remains.
 PB_UTIL.ENABLED_VOUCHERS = {
-    'nether_portal',
-    'end_portal',         -- sequential: requires nether_portal (loads after it)
     'enchanting_table',   -- enchanting pair (gated on enhancements_enabled via in_pool)
     'sorcerers_tome',     -- sequential: requires enchanting_table (loads after it)
 }
@@ -130,12 +131,21 @@ PB_UTIL.ENABLED_TOOLS = {
     'bone_meal',  -- Bone mob-drop sink: select cards -> +Chips + buff that poker hand
     'tnt',        -- Gunpowder sink (explosives): destroy a card + its two neighbours
     'firework',   -- Gunpowder sink (explosives): load a card with Chips, scales with Gunpowder held
+    'flint_and_steel', -- Nether key: light a Ruined Portal blind (spends 1 Obsidian) -> warp to the Nether
+    'ender_eye',       -- End trail: use one per ante for 3 consecutive antes, following the marked biome
 }
 
 -- Loaded from content/foods/ (registry before consumabletype, which the packs depend on).
 PB_UTIL.ENABLED_FOODS = {
     'registry',
     'food_consumabletype',
+}
+
+-- Loaded from content/sheets/ (registry before consumabletype). Sheets are crafted at the Anvil
+-- (2 ore -> 1 sheet) and applied to a playing card as an enhancement. See main.lua's sheets block.
+PB_UTIL.ENABLED_SHEETS = {
+    'registry',
+    'sheet_consumabletype',
 }
 
 -- Loaded from content/boosters/ (gated with the rest of the food system).
@@ -152,4 +162,18 @@ PB_UTIL.ENABLED_TOOL_PACKS = {
     'tool_pack',
     'tool_pack_jumbo',
     'tool_pack_mega',
+}
+
+-- Potions (brewed at the Brewing Stand; drink/throw consumables). 'registry' (POTIONS data +
+-- the bc_potion_cards atlas) loads before 'potion_consumabletype' (the ConsumableType + the
+-- 8 potion centers). Brewing logic/UI + the effect helpers (utilities/potions.lua, brewing.lua,
+-- brewing_ui.lua) are loaded explicitly in main.lua's potions block.
+PB_UTIL.ENABLED_POTIONS = {
+    'registry',
+    'potion_consumabletype',
+}
+
+-- Potion booster packs (gated with the potions system in main.lua, like the food/tool packs).
+PB_UTIL.ENABLED_POTION_PACKS = {
+    'potion_pack',
 }

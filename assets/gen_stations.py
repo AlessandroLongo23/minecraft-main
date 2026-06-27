@@ -34,6 +34,7 @@ CELLS = {
     "anvil":          (3, 0),
     "brewing_stand":  (0, 1),
     "chest":          (1, 1),   # composited from the MC chest entity front face (see reference/stations)
+    "enchanting_table": (2, 1),  # MC enchanting-table side face (staged from reference/enchant_voucher)
 }
 
 

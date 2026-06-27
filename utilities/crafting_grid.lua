@@ -18,13 +18,15 @@ PB_UTIL.furnace_cells = PB_UTIL.furnace_cells or nil
 local CELL_W = 0.7   -- grid cell width  (world-units) -- tune in-game
 local CELL_H = 0.7   -- grid cell height (world-units) -- tune in-game
 
--- Inventory is a fixed generic grid: INV_COLS x INV_ROWS slots, NONE pre-assigned to a
--- resource. populate_inventory fills the first N slots with the items the player owns
--- (count > 0, registry order) and leaves the rest blank; it reflows when the owned set
--- changes. Slots are draggable sources into the craft grid (same as before).
-local INV_COLS  = 8
-local INV_ROWS  = 3
-local INV_SLOTS = INV_COLS * INV_ROWS   -- 24
+-- Inventory is a generic grid: INV_COLS wide, NONE pre-assigned to a resource. populate_inventory
+-- fills the first N slots with the items the player owns (count > 0, registry order) and leaves the
+-- rest blank; it reflows when the owned set changes. Slots are draggable sources into the craft grid.
+-- The slot COUNT is the live inventory capacity (utilities/inventory_model.lua) -- 18 by default
+-- (2 rows of 9), growing when the Chest station is built. Rebuilt each open so it stays current.
+local INV_COLS  = 9
+local function inv_slot_count()
+    return (PB_UTIL.inv_capacity and PB_UTIL.inv_capacity()) or 18
+end
 
 -- ---- Grid cell construction ----
 
@@ -96,7 +98,7 @@ function PB_UTIL.build_inventory()
     end
 
     local cells = {}
-    for _ = 1, INV_SLOTS do
+    for _ = 1, inv_slot_count() do
         local area = CardArea(
             G.ROOM.T.x, G.ROOM.T.y,
             CELL_W, CELL_H,
@@ -180,10 +182,11 @@ function PB_UTIL.build_inventory_node()
             },
         }
     end
+    local total = #PB_UTIL.inv_cells
     local rows = {}
-    for i = 1, INV_SLOTS, INV_COLS do
+    for i = 1, total, INV_COLS do
         local row = { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = {} }
-        for j = i, math.min(i + INV_COLS - 1, INV_SLOTS) do
+        for j = i, math.min(i + INV_COLS - 1, total) do
             row.nodes[#row.nodes + 1] = slot_node(PB_UTIL.inv_cells[j])
         end
         rows[#rows + 1] = row
@@ -327,12 +330,6 @@ if not PB_UTIL._craft_release_hooked then
     local _orig_lrelease = Controller.L_cursor_release
     function Controller:L_cursor_release(x, y)
         local dropped = self.dragging.target   -- still valid at release time
-        -- Inventory overlay (loadout/bench swap) takes precedence when open. The handler does its
-        -- own emplace + dragging.target null (same win-the-release trick as below), so on a handled
-        -- drop we just defer to the original release and skip the crafting branch.
-        if PB_UTIL.inventory_release and PB_UTIL.inventory_release(self, dropped, x, y) then
-            return _orig_lrelease(self, x, y)
-        end
         -- Furnace drop slots (input/fuel). Mutually exclusive with craft_cells (different overlay),
         -- so this is a self-contained parallel branch that leaves the crafting path untouched. Same
         -- reserve accounting as the grid: a SOURCE deposits a fresh reserved tile into the slot under
@@ -563,6 +560,26 @@ function PB_UTIL.build_furnace_cells()
     return PB_UTIL.furnace_cells
 end
 
+-- Build the two Anvil "Forge Sheets" drop slots. Both accept an ORE the Anvil can press into a Sheet
+-- (PB_UTIL.anvil_ore_accepts; the two must hold the SAME ore, checked at forge time). Same single-slot
+-- CardAreas + reserve accounting as the Furnace, built into PB_UTIL.furnace_cells so the shared drag
+-- router (above) and destroy_furnace_cells drive them with NO extra code. See utilities/furnace.lua.
+function PB_UTIL.build_anvil_forge_cells()
+    PB_UTIL.destroy_furnace_cells()
+    local function mk_area()
+        return CardArea(G.ROOM.T.x, G.ROOM.T.y, CELL_W, CELL_H,
+            { card_limit = 1, type = 'title_2', highlight_limit = 0, card_w = CELL_W, no_card_count = true })
+    end
+    PB_UTIL.anvil_in_a = mk_area()
+    PB_UTIL.anvil_in_b = mk_area()
+    local accepts = function(rid) return PB_UTIL.anvil_ore_accepts and PB_UTIL.anvil_ore_accepts(rid) end
+    PB_UTIL.furnace_cells = {
+        { area = PB_UTIL.anvil_in_a, kind = 'anvil_a', accepts = accepts },
+        { area = PB_UTIL.anvil_in_b, kind = 'anvil_b', accepts = accepts },
+    }
+    return PB_UTIL.furnace_cells
+end
+
 -- An overlay node embedding one furnace slot CardArea (same dark inset square as a craft cell).
 function PB_UTIL.furnace_slot_node(area)
     return {
@@ -603,6 +620,8 @@ function PB_UTIL.destroy_furnace_cells()
         PB_UTIL.furnace_cells = nil
         PB_UTIL.furnace_input_area = nil
         PB_UTIL.furnace_fuel_area = nil
+        PB_UTIL.anvil_in_a = nil   -- Anvil "Forge Sheets" reuses furnace_cells; clear its refs too
+        PB_UTIL.anvil_in_b = nil
     end
     -- Inventory sources are INERT (never reserved) -- NO credit.
     if PB_UTIL.inv_cells then

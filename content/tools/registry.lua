@@ -10,25 +10,39 @@
 
 -- Per-material metadata. `tier` (1..6) indexes the per-tool value/cost tables below.
 -- `pos` is the material's cell on bc_resource_cards. 'cobblestone' is the Stone tier.
+-- `mining_level` is the Minecraft-faithful pickaxe/axe harvest level (utilities/mining.lua +
+-- PB_UTIL.ORE_MINING_LEVEL): wood=0, stone=1, iron=2, GOLD=0 (the famous golden-pickaxe quirk:
+-- fast but mines no better than wood), diamond=3, netherite=4.
 local MATERIALS = {
-    { id = 'wood',        adj = 'Wooden',  tier = 1, pos = { x = 0, y = 0 } },
-    { id = 'cobblestone', adj = 'Stone',   tier = 2, pos = { x = 1, y = 0 } },
-    { id = 'iron',        adj = 'Iron',    tier = 3, pos = { x = 0, y = 1 } },
-    { id = 'gold',        adj = 'Golden',  tier = 4, pos = { x = 1, y = 1 } },
-    { id = 'diamond',     adj = 'Diamond', tier = 5, pos = { x = 2, y = 1 } },
-    { id = 'netherite',   adj = 'Netherite', tier = 6, pos = { x = 2, y = 2 } },
+    { id = 'wood',        adj = 'Wooden',  tier = 1, mining_level = 0, pos = { x = 0, y = 0 } },
+    { id = 'cobblestone', adj = 'Stone',   tier = 2, mining_level = 1, pos = { x = 1, y = 0 } },
+    { id = 'iron',        adj = 'Iron',    tier = 3, mining_level = 2, pos = { x = 0, y = 1 } },
+    { id = 'gold',        adj = 'Golden',  tier = 4, mining_level = 0, pos = { x = 1, y = 1 } },
+    { id = 'diamond',     adj = 'Diamond', tier = 5, mining_level = 3, pos = { x = 2, y = 1 } },
+    { id = 'netherite',   adj = 'Netherite', tier = 6, mining_level = 4, pos = { x = 2, y = 2 } },
 }
 
--- Per-tool noun + the value per tier (1..5) + sell/cost per tier.
+-- Per-tool noun + the value per tier (1..6) + sell/cost per tier.
 --   sword  -> X-Mult for the rest of the blind (diamond/netherite: Mult exponent, see tool_consumabletype)
---   pickaxe-> +N of a random ore on the next blind defeated
+--   pickaxe-> mines ore-block cards you select (gated by mining_level); Fortune adds bonus yield
 --   shovel -> CHANCE to find +$N on the next blind defeated (a gamble; Fortune raises the odds)
+--   axe    -> DUAL: used alone it is a WEAPON (hybrid +Chips AND xMult this blind, see weapon_chips/
+--             weapon_xmult); used on selected WOOD card(s) it harvests `values` wood per card and may
+--             select multiple cards. Like the pickaxe it carries mining_level (but only mines wood).
 local TOOL_SPECS = {
     { tool = 'sword',   noun = 'Sword',   values = { 1.25, 1.5, 2, 4, 8, 16 } },
     { tool = 'pickaxe', noun = 'Pickaxe', values = { 1, 2, 3, 4, 5, 6 } },
     -- Shovel toned down from {1,2,3,5,10,15}: a top shovel was guaranteed +$15, a no-brainer.
     -- Now caps at $6 AND only pays on a successful dig roll (PB_UTIL.shovel_find_chance).
     { tool = 'shovel',  noun = 'Shovel',  values = { 1, 2, 3, 4, 5, 6 } },
+    -- Axe: `values` = wood harvested per wood card (always >= bare-hand's +1). weapon_* = the
+    -- per-tier weapon-mode bonuses (applied together; smaller than the sword's pure xMult column).
+    {
+        tool = 'axe', noun = 'Axe',
+        values       = { 1, 2, 2, 3, 4, 5 },                  -- wood per card, by material tier
+        weapon_chips = { 20, 40, 70, 110, 160, 240 },         -- +Chips this blind, by tier (doubled)
+        weapon_xmult = { 1.2, 1.3, 1.5, 1.8, 2.2, 3.0 },      -- xMult this blind, by tier
+    },
 }
 local COST_BY_TIER = { 3, 4, 5, 6, 8, 10 }
 
@@ -42,17 +56,22 @@ for _, spec in ipairs(TOOL_SPECS) do
     for _, m in ipairs(MATERIALS) do
         PB_UTIL.TOOLS[#PB_UTIL.TOOLS + 1] = {
             id        = spec.tool .. '_' .. m.id,    -- 'sword_diamond'
-            tool      = spec.tool,                   -- 'sword' | 'pickaxe' | 'shovel'
+            tool      = spec.tool,                   -- 'sword' | 'pickaxe' | 'shovel' | 'axe'
             material  = m.id,                        -- 'wood' .. 'netherite'
             name      = m.adj .. ' ' .. spec.noun,   -- 'Diamond Sword'
             tier      = m.tier,                      -- 1..6 (material tier)
-            value     = spec.values[m.tier],         -- X-mult / ore count / dollars
+            value     = spec.values[m.tier],         -- X-mult / ore count / dollars / wood-per-card
             cost      = COST_BY_TIER[m.tier],
             pos       = m.pos,                        -- placeholder material cell
             base_uses = BASE_USES[m.id],             -- durability budget (uses before breaking)
+            -- MC harvest level (pickaxe/axe gate). nil for sword/shovel (they never mine).
+            mining_level = (spec.tool == 'pickaxe' or spec.tool == 'axe') and m.mining_level or nil,
+            -- Axe weapon-mode bonuses (nil for the other tools).
+            weapon_chips = spec.weapon_chips and spec.weapon_chips[m.tier] or nil,
+            weapon_xmult = spec.weapon_xmult and spec.weapon_xmult[m.tier] or nil,
             -- 0-based row, shared by BOTH the base card sheet (bc_tools) and the enchant atlas
-            -- (bc_tool_cards): stable build order (swords, then pickaxes, then shovels; 6
-            -- materials each) => 0..17.
+            -- (bc_tool_cards): stable build order (swords, pickaxes, shovels, then axes; 6
+            -- materials each) => 0..23.
             atlas_row = #PB_UTIL.TOOLS,
         }
     end

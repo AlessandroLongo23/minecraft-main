@@ -10,10 +10,11 @@ return {
     vouchers_enabled = true,
     resources_enabled = true,
     villager_enabled = true,
-    inventory_enabled = true,
     health_enabled = true,
     xp_enabled = true,
     food_enabled = true,
     biomes_enabled = true,
+    sheets_enabled = true,
+    potions_enabled = true,
 }
   

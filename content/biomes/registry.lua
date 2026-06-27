@@ -91,9 +91,18 @@ PB_UTIL.BIOMES = {
     {
         id = 'badlands', name = 'Badlands', dimension = 'overworld',
         colour = HEX('B0542F'), pos = { x = 7, y = 0 },
-        resource_bias = { gold = 4, iron = 2 },
+        resource_bias = { gold = 4, iron = 2, redstone = 2 },
         on_enter = { dollars = 3 },
         desc = { 'Terracotta mesa.', 'Gold-rich & iron.', '+$3 prospecting.' },
+    },
+    -- Stronghold: a RITUAL-ONLY biome (ritual_only = true => excluded from every normal biome roll;
+    -- see roll_biome_choices). It is offered ONLY as step 2 of the Eye-of-Ender trail (the marked
+    -- option after the second Eye), the waypoint toward The End. pos = col 8 (assets/gen_biomes.py).
+    {
+        id = 'stronghold', name = 'Stronghold', dimension = 'overworld', ritual_only = true,
+        colour = HEX('6E6A5A'), pos = { x = 8, y = 0 },
+        resource_bias = { cobblestone = 3, redstone = 2 },
+        desc = { 'Ancient stone halls.', 'The Eye points here.', 'The End portal waits.' },
     },
 
     -- --- Nether (reached via the Nether Portal voucher / Nether deck) ---
@@ -122,39 +131,22 @@ PB_UTIL.BIOMES = {
     {
         id = 'basalt_deltas', name = 'Basalt Deltas', dimension = 'nether',
         colour = HEX('5E565E'), pos = { x = 3, y = 1 },
-        resource_bias = { cobblestone = 2, diamond = 2, netherite = 3 },
+        resource_bias = { cobblestone = 2, diamond = 2, netherite = 3, redstone = 2 },
         bosses = { 'bl_balacraft_magma_lord' },
         desc = { 'Volcanic ash wastes.', 'Stone & diamond favored.', 'A magma lord rules.' },
     },
 
-    -- --- The End (reached via the End Portal voucher / End deck) ---
-    -- Harsh, high-reward dimension. End-exclusive resources (Ender Pearl / Chorus) are Phase 4.
+    -- --- The End (reached via the Eye-of-Ender trail; see utilities/biomes.lua) ---
+    -- Collapsed to the SINGLE central island, matching Minecraft (the outer-island biomes were
+    -- retired). Because the End dimension now holds only one biome, should_offer_biome_select stops
+    -- offering further choices once you arrive -- you simply stay in The End. Keeps id 'central_end'
+    -- (ender_sentinel's in_pool already targets it); only the display name changed to 'The End'.
     {
-        id = 'central_end', name = 'Central End', dimension = 'end',
+        id = 'central_end', name = 'The End', dimension = 'end',
         colour = HEX('2A2440'), pos = { x = 0, y = 2 },
         resource_bias = { diamond = 3, gold = 2 },
         bosses = { 'bl_balacraft_ender_sentinel' },
         desc = { 'The obsidian heart.', 'Diamond & gold favored.', 'A sentinel watches.' },
-    },
-    {
-        id = 'end_highlands', name = 'End Highlands', dimension = 'end',
-        colour = HEX('3A2E50'), pos = { x = 1, y = 2 },
-        resource_bias = { diamond = 3, iron = 2 },
-        on_enter = { dollars = 3 },
-        desc = { 'Chorus-grown isles.', 'Diamond & iron favored.', '+$3 chorus trade.' },
-    },
-    {
-        id = 'end_midlands', name = 'End Midlands', dimension = 'end',
-        colour = HEX('322A46'), pos = { x = 2, y = 2 },
-        resource_bias = { gold = 3, coal = 2 },
-        desc = { 'Pale stone plains.', 'Gold & coal favored.' },
-    },
-    {
-        id = 'end_barrens', name = 'End Barrens', dimension = 'end',
-        colour = HEX('1E1A30'), pos = { x = 3, y = 2 },
-        resource_bias = { diamond = 3 },
-        on_enter = { dollars = -3 },
-        desc = { 'Empty void-edge.', 'Diamond favored.', '-$3, nothing grows here.' },
     },
 }
 

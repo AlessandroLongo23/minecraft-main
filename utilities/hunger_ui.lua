@@ -31,7 +31,9 @@ function PB_UTIL.build_hunger_bar()
 
     local cells = {}
     for i = 1, sticks do
-        local filled = hunger - (i - 1) * 2
+        -- Reverse the slot index so the LEFTMOST drumstick empties first -> hunger drains from
+        -- the left (the rightmost stick, against the screen edge, is the last to go).
+        local filled = hunger - (sticks - i) * 2
         local pos = (filled >= 2 and { x = 0, y = 0 })
                  or (filled == 1 and { x = 1, y = 0 })
                  or { x = 2, y = 0 }

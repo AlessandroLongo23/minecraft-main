@@ -75,12 +75,40 @@ local function queue_resource_row(res, amount, pitch)
     }))
 end
 
+-- One muted "N lost (inventory full)" row, queued like a resource row, when capacity swallowed
+-- part of the drop. Drawn in red with no icon so it reads as a warning, not a reward.
+local function queue_lost_row(amount, pitch)
+    G.E_MANAGER:add_event(Event({
+        trigger = 'after', delay = 0.22,
+        func = function()
+            if not (G.round_eval and G.round_eval:get_UIE_by_ID('bonus_round_eval')) then
+                return true
+            end
+            local width = G.round_eval.T.w - 0.51
+            local full_row = {n = G.UIT.R, config = {align = "cm", minw = 5}, nodes = {
+                {n = G.UIT.C, config = {padding = 0.05, minw = width, minh = 0.61, align = "cm"}, nodes = {
+                    {n = G.UIT.T, config = {text = tostring(amount), scale = 0.72, colour = G.C.RED,
+                        shadow = true}},
+                    {n = G.UIT.O, config = {object = DynaText({string = {" lost (inventory full)"},
+                        colours = {G.C.UI.TEXT_INACTIVE}, shadow = true, pop_in = 0, scale = 0.36,
+                        silent = true})}},
+                }},
+            }}
+            G.round_eval:add_child(full_row, G.round_eval:get_UIE_by_ID('bonus_round_eval'))
+            play_sound('cancel', pitch or 1, 0.4)
+            return true
+        end
+    }))
+end
+
 -- Public entry point, called from grant_blind_drop after it records the drop.
 function PB_UTIL.show_cashout_resource_rows()
     if G.STATE ~= G.STATES.ROUND_EVAL then return end
     if not G.round_eval then return end
-    local drop = G.GAME and G.GAME.balacraft and G.GAME.balacraft.last_drop
-    if not (drop and #drop > 0) then return end
+    local bc = G.GAME and G.GAME.balacraft
+    local drop = bc and bc.last_drop
+    local lost = (bc and bc.last_drop_lost) or 0
+    if not ((drop and #drop > 0) or lost > 0) then return end
 
     -- Honor vanilla's round-eval row budget. The base game caps the screen at 7 rows via the
     -- global total_cashout_rows (functions/common_events.lua, incremented in add_round_eval_row).
@@ -94,7 +122,7 @@ function PB_UTIL.show_cashout_resource_rows()
     ensure_divider()
     local pitch = 1.1
     local shown = 0
-    for _, e in ipairs(drop) do
+    for _, e in ipairs(drop or {}) do
         if shown >= budget then break end
         local res = e.id and PB_UTIL.RESOURCE_BY_ID[e.id]
         if res and e.amount and e.amount > 0 then
@@ -103,5 +131,10 @@ function PB_UTIL.show_cashout_resource_rows()
             queue_resource_row(res, e.amount, pitch)
             pitch = pitch + 0.06
         end
+    end
+    -- A single warning row if capacity swallowed any of the drop (reserve one row from the budget).
+    if lost > 0 and shown < budget then
+        total_cashout_rows = (total_cashout_rows or 0) + 1
+        queue_lost_row(lost, pitch)
     end
 end

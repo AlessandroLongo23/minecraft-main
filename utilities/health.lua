@@ -126,7 +126,9 @@ function Game:update_hand_played(dt)
             func = function()
                 if G.GAME and G.GAME.blind and G.GAME.chips and G.GAME.blind.chips
                     and (G.GAME.chips - G.GAME.blind.chips < 0)
-                    and G.GAME.current_round and (G.GAME.current_round.hands_left >= 1) then
+                    and G.GAME.current_round and (G.GAME.current_round.hands_left >= 1)
+                    -- Potion of Invisibility: no boss-blind damage while active (utilities/potions.lua).
+                    and not (PB_UTIL.boss_damage_blocked and PB_UTIL.boss_damage_blocked()) then
                     PB_UTIL.damage(PB_UTIL.mob_damage(blind_key))
                 end
                 return true

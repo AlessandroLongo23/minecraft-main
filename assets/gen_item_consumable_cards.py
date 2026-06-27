@@ -19,8 +19,10 @@ OUT2 = os.path.join(HERE, "2x")
 
 # (output filename, reference sprite filename, nameplate label, sprite scale)
 CARDS = [
-    ("tnt",      "tnt",             "TNT",      3),
-    ("firework", "firework_rocket", "FIREWORK", 3),
+    ("tnt",             "tnt",             "TNT",      3),
+    ("firework",        "firework_rocket", "FIREWORK", 3),
+    ("flint_and_steel", "flint_and_steel", "FLINT",    3),
+    ("ender_eye",       "ender_eye",       "EYE",      3),
 ]
 
 GREY   = (151, 151, 151, 255)

@@ -1,47 +1,17 @@
 -- SMODS.Enhancement centers for BalaCraft "block-cards".
--- Tarot-applied: Obsidian, Hay Bale, Lapis. Ore Blocks: one per gathered ore resource,
--- spawned naturally and mined on play (Phase B).
+-- Tarot-applied: Hay Bale, Lapis. Ore Blocks: one per ore-block resource
+-- (PB_UTIL.is_oreblock_resource), spawned naturally and pickaxe-mined (Phase B).
 
 -- Atlas: bc_ore_blocks (71x95) -- each cell is the genuine MC block texture tiled to fill the card,
 -- clipped to the rounded card mask (built by assets/gen_ore_blocks.py). Drawn UNDER the card's
--- rank/suit/pips. The ore blocks use their resource registry `pos`; the 3 tarot-applied block cards
+-- rank/suit/pips. The ore blocks use their resource registry `pos`; the 2 tarot-applied block cards
 -- below use dedicated free cells (must match the CELLS table in gen_ore_blocks.py).
-
--- Obsidian — Steel-like but weaker: x1.25 Mult while HELD in hand, and immune to debuff.
--- Deliberately below Steel (x1.5): the debuff immunity is the trade-off for the lower mult.
-SMODS.Enhancement {
-    key = 'obsidian',
-    atlas = 'bc_ore_blocks',
-    pos = { x = 1, y = 6 },                 -- obsidian block cell
-    config = { extra = { x_mult = 1.25 } },
-    loc_txt = {
-        name = 'Obsidian Card',
-        text = {
-            '{X:mult,C:white}X#1#{} Mult while this',
-            'card is {C:attention}held in hand{}.',
-            '{C:inactive}Immune to debuffs.',
-        },
-    },
-    loc_vars = function(self, info_queue, card)
-        local x = (card and card.ability and card.ability.extra and card.ability.extra.x_mult) or 1.25
-        return { vars = { x } }
-    end,
-    -- Make the card undebuffable. (SMODS center hook; verify in-game.)
-    set_debuff = function(self, card)
-        return 'prevent_debuff'
-    end,
-    calculate = function(self, card, context)
-        if context.cardarea == G.hand and context.main_scoring then
-            return { x_mult = card.ability.extra.x_mult, card = card }
-        end
-    end,
-}
 
 -- Hay Bale — restores 1 hunger pip when this card SCORES.
 SMODS.Enhancement {
     key = 'hay_bale',
     atlas = 'bc_ore_blocks',
-    pos = { x = 2, y = 6 },                 -- hay bale block cell
+    pos = { x = 2, y = 7 },                 -- hay bale block cell
     config = { extra = { hunger = 1 } },
     loc_txt = {
         name = 'Hay Bale Card',
@@ -100,12 +70,31 @@ SMODS.Enhancement {
 
 -- Ore Blocks: one enhancement per GATHERED ore resource. These are art-only markers (they keep
 -- the card's rank/suit and add no scoring effect). They spawn naturally
--- (utilities/card_enhancements.lua) and are "mined" by playing the card, which grants the ore and
--- reverts the card. Keyed m_balacraft_block_<oreid>; art = the matching tiled-block cell on
--- bc_ore_blocks (pos from the resource registry, mirrored in gen_ore_blocks.py).
+-- (utilities/card_enhancements.lua). Mining now requires a TOOL: highlight ore-block cards and Use a
+-- Pickaxe (gated by its material's mining level, PB_UTIL.can_mine) to extract them. WOOD is the
+-- exception -- it can be chopped with an Axe OR by playing a single wood card by hand (+1). Keyed
+-- m_balacraft_block_<oreid>; art = the matching tiled-block cell on bc_ore_blocks (pos from the
+-- resource registry, mirrored in gen_ore_blocks.py).
 for _, r in ipairs(PB_UTIL.RESOURCES) do
-    if r.kind == 'gathered' and r.drop_class == 'ore' then   -- raw ores only: no mob / refined Ore Cards
+    if PB_UTIL.is_oreblock_resource(r) then   -- gathered ores + opt-ins (Obsidian); excludes Sand
         local res = r
+        local body
+        if res.id == 'wood' then
+            body = {
+                'Use an {C:attention}Axe{} on this card,',
+                'or play it alone, to gather {C:attention}Wood{}.',
+            }
+        elseif res.id == 'obsidian' then
+            body = {
+                'Use a {C:attention}Diamond Pickaxe{} on',
+                'this card to mine {C:attention}Obsidian{}.',
+            }
+        else
+            body = {
+                'Use a {C:attention}Pickaxe{} on this',
+                'card to mine {C:attention}' .. res.name .. '{}.',
+            }
+        end
         SMODS.Enhancement {
             key = 'block_' .. res.id,        -- => m_balacraft_block_iron, ...
             atlas = 'bc_ore_blocks',
@@ -113,10 +102,7 @@ for _, r in ipairs(PB_UTIL.RESOURCES) do
             config = { extra = { ore = res.id } },
             loc_txt = {
                 name = res.name .. ' Ore Card',
-                text = {
-                    '{C:attention}Play{} this card to',
-                    'mine {C:attention}' .. res.name .. '{}.',
-                },
+                text = body,
             },
         }
     end

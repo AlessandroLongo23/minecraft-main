@@ -14,13 +14,14 @@ PB_UTIL.RECIPES = {
     },
 }
 
--- Tool recipes: 3 tools x 6 materials = 18, derived from PB_UTIL.TOOLS (content/tools/registry.lua,
+-- Tool recipes: 4 tools x 6 materials = 24, derived from PB_UTIL.TOOLS (content/tools/registry.lua,
 -- which loads first -- see main.lua). Each outputs a consumable. The shaped matcher
 -- (crafting_match.lua) compares cell IDS, so e.g. Wooden Sword (wood/wood/stick) and Iron Sword
 -- (iron/iron/stick) are distinct recipes despite sharing a shape. Minecraft tool shapes:
 --   sword   = 2 material stacked + 1 stick below
 --   pickaxe = 3 material top row + 2 sticks (handle)
 --   shovel  = 1 material + 2 sticks (handle)
+--   axe     = 2 material + 1 material side + 2 sticks (the L-head + handle)
 local function tool_pattern(tool, M)
     if tool == 'sword' then
         return {
@@ -32,6 +33,12 @@ local function tool_pattern(tool, M)
         return {
             { M,     M,        M     },
             { false, 'sticks', false },
+            { false, 'sticks', false },
+        }
+    elseif tool == 'axe' then
+        return {
+            { M,     M,        false },
+            { M,     'sticks', false },
             { false, 'sticks', false },
         }
     else -- shovel
@@ -180,6 +187,104 @@ PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
     },
 }
 
+-- ── Nether / End progression items ──────────────────────────────────────────
+-- Eye of Ender: the genuine MC shapeless recipe, 1 Ender Pearl + 1 Blaze Powder. Same 1x2-column
+-- shape as the Torch but distinct cell ids, so the matcher keeps them separate. Used (one per ante,
+-- three consecutive antes) to follow the Eye-of-Ender trail to The End (utilities/biomes.lua).
+PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+    key = 'ender_eye',
+    name = 'Eye of Ender',
+    output = { type = 'consumable', id = 'c_balacraft_ender_eye', amount = 1 },
+    pattern = {
+        { false, 'ender_pearl',  false },
+        { false, 'blaze_powder', false },
+        { false, false,          false },
+    },
+}
+
+-- Flint and Steel: MC recipe = 1 Iron Ingot + 1 Flint (diagonal). Iron is smelt-only
+-- (drop_class='refined'), so this is naturally gated behind a Furnace. A single-use consumable:
+-- used in a Ruined Portal blind (with 1 Obsidian) to light it -> warp to the Nether
+-- (use logic in content/tools/flint_and_steel.lua + utilities/structures.lua).
+PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+    key = 'flint_and_steel',
+    name = 'Flint and Steel',
+    output = { type = 'consumable', id = 'c_balacraft_flint_and_steel', amount = 1 },
+    pattern = {
+        { 'iron', false,    false },
+        { false,  'flint',  false },
+        { false,  false,    false },
+    },
+}
+
+-- Glass Sheet: the one sheet crafted at the Crafting Table (the metal/mineral sheets are forged at
+-- the Anvil's "Forge Sheets" tab instead). MC's glass-pane row: 3 Glass across the middle, which
+-- normalizes to a unique 1x3 'glass' shape. Glass is furnace-only (smelt Sand, see furnace.lua), so
+-- this is naturally gated behind a Furnace. Guarded on sheets_enabled (the sheet consumable must
+-- exist; can_craft also gates on G.P_CENTERS at craft time).
+if PB_UTIL.config and PB_UTIL.config.sheets_enabled then
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'glass_sheet',
+        name = 'Glass Sheet',
+        output = { type = 'consumable', id = 'c_balacraft_sheet_glass', amount = 1 },
+        pattern = {
+            { false,   false,   false   },
+            { 'glass', 'glass', 'glass' },
+            { false,   false,   false   },
+        },
+    }
+end
+
+-- ── Potions: brewing-ingredient sub-crafts (Crafting Table) ─────────────────
+-- The MC sub-crafts that feed the Brewing Stand. The bottle-fill + potion brews themselves happen
+-- at the Brewing Stand (PB_UTIL.BREW_RECIPES, utilities/brewing.lua); these are the Crafting-Table
+-- intermediates. Gated on potions_enabled (the output resources/centers must exist; can_craft also
+-- re-checks at craft time). Single-cell shapes (Sugar, Blaze Powder) are distinguished by cell id.
+if PB_UTIL.config and PB_UTIL.config.potions_enabled then
+    -- Glass Bottle: MC's V of 3 Glass -> 3 bottles. Glass is furnace-only (smelt Sand).
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'glass_bottle', name = 'Glass Bottle',
+        output = { type = 'resource', id = 'glass_bottle', amount = 3 },
+        pattern = { { 'glass', false, 'glass' }, { false, 'glass', false }, { false, false, false } },
+    }
+    -- Sugar: 1 Sugar Cane -> 1 Sugar.
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'sugar', name = 'Sugar',
+        output = { type = 'resource', id = 'sugar', amount = 1 },
+        pattern = { { false, false, false }, { false, 'sugar_cane', false }, { false, false, false } },
+    }
+    -- Blaze Powder: 1 Blaze Rod -> 2 Blaze Powder (the MC craft; blaze_powder also drops in the Nether).
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'blaze_powder', name = 'Blaze Powder',
+        output = { type = 'resource', id = 'blaze_powder', amount = 2 },
+        pattern = { { false, false, false }, { false, 'blaze_rod', false }, { false, false, false } },
+    }
+    -- Glistering Melon: Melon Slice + Gold (MC's gold-nugget ring, simplified to 1 Gold above).
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'glistering_melon', name = 'Glistering Melon',
+        output = { type = 'resource', id = 'glistering_melon', amount = 1 },
+        pattern = { { false, 'gold', false }, { false, 'melon_slice', false }, { false, false, false } },
+    }
+    -- Golden Carrot: Carrot + Gold (same simplification as the melon).
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'golden_carrot', name = 'Golden Carrot',
+        output = { type = 'resource', id = 'golden_carrot', amount = 1 },
+        pattern = { { false, 'gold', false }, { false, 'carrot', false }, { false, false, false } },
+    }
+    -- Fermented Spider Eye: Spider Eye + Sugar + Brown Mushroom (shapeless -> a 1x3 row).
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'fermented_spider_eye', name = 'Fermented Spider Eye',
+        output = { type = 'resource', id = 'fermented_spider_eye', amount = 1 },
+        pattern = { { false, false, false }, { 'spider_eye', 'sugar', 'brown_mushroom' }, { false, false, false } },
+    }
+    -- Brewing Stand station: MC's 1 Blaze Rod over 3 Cobblestone. Unlocks the Brewing Stand in the Base.
+    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+        key = 'brewing_stand', name = 'Brewing Stand',
+        output = { type = 'station', id = 'brewing_stand', amount = 1 },
+        pattern = { { false, 'blaze_rod', false }, { 'cobblestone', 'cobblestone', 'cobblestone' }, { false, false, false } },
+    }
+end
+
 -- ── The Base: crafted stations ──────────────────────────────────────────────
 -- output.type='station' is a one-time unlock (utilities/crafting.lua): crafting it flips the
 -- station on in "Your Base" (PB_UTIL.build_station). The Furnace is the MC ring of 8 Cobblestone.
@@ -195,8 +300,9 @@ PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
     },
 }
 
--- Chest: the MC ring of 8 (planks -> Wood here). A PASSIVE Base station: once built it adds +1 to
--- each loadout bench (utilities/inventory.lua bench_cap). Same station-unlock mechanism as the Furnace.
+-- Chest: the MC ring of 8 (planks -> Wood here). A PASSIVE station: once built it EXPANDS the
+-- inventory's capacity by PB_UTIL.CHEST_SLOTS (utilities/inventory_model.lua inv_capacity). Same
+-- station-unlock mechanism as the Furnace.
 PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
     key = 'chest',
     name = 'Chest',
@@ -211,7 +317,8 @@ PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
 -- Anvil: an anvil silhouette of Iron (3 across the top + a 2-cell neck). Iron is smelt-only
 -- (drop_class='refined'), so the Anvil is naturally GATED behind owning a Furnace -- thematic
 -- (you need a furnace to make iron, and iron to make an anvil). A Base station: once built it
--- opens the Anvil overlay (merge two same-type+material tools -> stack enchants + full repair).
+-- opens the Anvil overlay, a TABBED screen -- "Forge Sheets" (2 of one ore -> a Sheet) and
+-- "Combine Tools" (merge two same-type+material tools -> stack enchants + pool uses).
 -- 5 iron is the default cost (tunable); same shape as an iron pickaxe but the neck is iron not
 -- sticks, so the cell-id matcher keeps them distinct.
 PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {

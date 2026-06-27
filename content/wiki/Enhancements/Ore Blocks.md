@@ -39,6 +39,10 @@ So early on you mostly mine wood/stone/coal; deeper antes shift toward iron/gold
 diamond — Minecraft progression, in your deck.
 
 ## Rules
+- **Mining-level gate** — each ore needs a [[Pickaxe]] of a high-enough tier to break it (Minecraft-
+  faithful). Notably **[[Obsidian]]** is an ore block that requires a **Diamond pickaxe** (level 3) —
+  Diamond or Netherite only; anything lower flashes *"Need a better pickaxe."* (**Sand** is *not* an ore
+  block — it drops/packs normally but is never mined from a card.)
 - **One enhancement per card** — ore blocks never spawn on a card that already has an enhancement.
 - **Persist until mined** — an ore block stays on its card across rounds until you **play the card to
   mine it**. There's no end-of-round cleanup; the blind-select top-up just won't exceed the ante's

@@ -5,11 +5,13 @@
 --     voucher), and
 --   * grants another +1 consumable slot.
 --
--- PLACEHOLDER ART: reuses a bc_vouchers cell.
+-- Art (assets/gen_enchant_vouchers.py): the same enchanting table now ringed by a FULL LIBRARY of
+-- bookshelves. Atlas bc_enchant_vouchers is registered in content/vouchers/enchanting_table.lua,
+-- which loads before this file. Cell x=1 (enchanting_table is x=0).
 SMODS.Voucher {
     key = 'sorcerers_tome',
-    atlas = 'bc_vouchers',
-    pos = { x = 1, y = 0 },                 -- PLACEHOLDER (shares the End Portal cell)
+    atlas = 'bc_enchant_vouchers',
+    pos = { x = 1, y = 0 },
     loc_txt = {
         name = "Sorcerer's Tome",
         text = {

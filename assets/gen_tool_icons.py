@@ -75,12 +75,20 @@ def extra_cell(name, scale, crop):
     return centered(nn(spr, scale))
 
 
+# Axes get their own FULL row of 6 material icons, placed BELOW the extras (rows 3-4) at row 5 so
+# they never collide with torch/bow/tnt etc. MUST match the axe_* icon_pos (y=5) in
+# content/tools/tool_consumabletype.lua.
+AXE_ROW = 5
+
+
 def build():
-    nrows = max(len(TOOLS), max(e[2] for e in EXTRAS) + 1)   # rows 0..2 tools + extras rows
+    nrows = max(len(TOOLS), max(e[2] for e in EXTRAS) + 1, AXE_ROW + 1)   # tools + extras + axe row
     sheet = Image.new("RGBA", (CELL * len(MATERIALS), CELL * nrows), (0, 0, 0, 0))
     for row, tool in enumerate(TOOLS):
         for col, mat in enumerate(MATERIALS):
             sheet.alpha_composite(tool_cell(tool, mat), (col * CELL, row * CELL))
+    for col, mat in enumerate(MATERIALS):                    # axes -> row 5 (mc_tools/axe_<material>.png)
+        sheet.alpha_composite(tool_cell("axe", mat), (col * CELL, AXE_ROW * CELL))
     for name, col, row, scale, crop in EXTRAS:
         sheet.alpha_composite(extra_cell(name, scale, crop), (col * CELL, row * CELL))
     sheet.save("BalaCraft/assets/1x/tool_icons.png")

@@ -34,7 +34,7 @@ PB_UTIL.XP_BAR_STATES = {
 -- Tunables (tune in-game, like the resource_ui offsets).
 local BAR_W    = 11.0   -- fallback width; the bar otherwise spans the hand area (way longer)
 local BAR_H    = 0.30   -- bar thickness in world-units (thicker than MC's strict 182:5 aspect)
-local BAR_DROP = 2.4    -- how far below the hand's bottom edge to sit (clears the button row)
+local BAR_DROP = 2.2    -- how far below the hand's bottom edge to sit (clears the button row)
 local NUM_DY   = -0.04  -- level number's vertical nudge ON the bar (negative = up); it
                         -- overlaps the bar like MC. (UI nodes can't overlap within one
                         -- UIBox, so the number is a second UIBox bonded centred on the bar.)

@@ -1,29 +1,31 @@
 -- Cross-run PERSISTENT progression -- the one piece of state in BalaCraft that survives
 -- across runs and game restarts (everything else lives on G.GAME and resets per run).
 --
--- Lifetime counters (how many times each portal voucher has been bought, across all runs)
--- are stored in the Love2D save directory as a tiny Lua chunk, exactly the mechanism the
--- base game uses for its own profile files (e.g. '<profile>/meta.jkr' = "return {}").
--- Buying a portal voucher PB_UTIL.PORTAL_UNLOCK times unlocks that dimension's start-deck.
+-- Lifetime counters (how many times each dimension has been ENTERED, across all runs) are
+-- stored in the Love2D save directory as a tiny Lua chunk, exactly the mechanism the base game
+-- uses for its own profile files (e.g. '<profile>/meta.jkr' = "return {}"). Entering a dimension
+-- PB_UTIL.PORTAL_UNLOCK times unlocks that dimension's start-deck. The Nether is entered by lighting
+-- a Ruined Portal blind (Flint & Steel + Obsidian, utilities/structures.lua); the End by completing
+-- the Eye-of-Ender trail (utilities/biomes.lua). Both call PB_UTIL.bump_progression on entry.
 --
 -- Robustness: every filesystem touch is pcall-guarded, so a read/write failure degrades to
 -- "deck stays locked" rather than crashing the mod.
 
 local SAVE_FILE = 'balacraft_progression.jkr'   -- save-dir root => global across profiles
 
--- Buy a portal voucher this many times (lifetime) to unlock its deck.
+-- Enter a dimension this many times (lifetime) to unlock its deck.
 PB_UTIL.PORTAL_UNLOCK = 10
 
 -- Win this many antes (boss blinds) in a biome (lifetime) to unlock that biome's start-deck.
 PB_UTIL.BIOME_DECK_UNLOCK = 10
 
--- deck id -> the counter that unlocks it. (End is wired now; its content lands in Phase 3.)
+-- deck id -> the lifetime dimension-entry counter that unlocks it.
 PB_UTIL.DECK_UNLOCK_COUNTER = {
-    nether = 'nether_portal_buys',
-    ['end'] = 'end_portal_buys',
+    nether = 'nether_entries',
+    ['end'] = 'end_entries',
 }
 
-PB_UTIL.progression = { nether_portal_buys = 0, end_portal_buys = 0 }
+PB_UTIL.progression = { nether_entries = 0, end_entries = 0 }
 
 -- Serialize the flat numeric table to a loadable Lua chunk ("return {...}").
 local function serialize(t)
@@ -102,7 +104,8 @@ function PB_UTIL.record_biome_ante_win(biome_id)
 end
 
 -- Increment a lifetime counter, persist immediately, and unlock the matching deck if the
--- buy just crossed the threshold. Called from a portal voucher's redeem.
+-- entry just crossed the threshold. Called when a dimension is entered (Nether: light_nether_portal;
+-- End: the Eye-of-Ender trail in bc_select_biome).
 function PB_UTIL.bump_progression(counter_key)
     PB_UTIL.progression[counter_key] = (PB_UTIL.progression[counter_key] or 0) + 1
     PB_UTIL.save_progression()

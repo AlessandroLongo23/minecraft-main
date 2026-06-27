@@ -18,7 +18,7 @@ import os
 from PIL import Image, ImageDraw
 
 CELL_W, CELL_H = 90, 150
-COLS = 8       # row 0 (overworld) holds up to 8; nether/end use cols 0-3 of rows 1/2
+COLS = 9       # row 0 (overworld) holds 8 biomes + the ritual-only Stronghold at col 8
 HORIZON = 96   # sky above, ground below
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +46,8 @@ BIOMES = [
     {"col": 5, "row": 0, "sky": ((124, 132, 112), (156, 160, 142)), "ground": ((74, 86, 56), (42, 52, 34)),    "sil": (38, 50, 30),    "style": "hills"},
     {"col": 6, "row": 0, "sky": ((222, 210, 150), (240, 230, 182)), "ground": ((192, 180, 96), (150, 138, 70)),"sil": (120, 100, 54),  "style": "acacia"},
     {"col": 7, "row": 0, "sky": ((232, 182, 140), (246, 212, 176)), "ground": ((182, 92, 50), (126, 58, 32)),  "sil": (150, 72, 40),   "style": "mesa"},
+    # Stronghold (ritual-only Eye-of-Ender waypoint): a grey stone-hall poster.
+    {"col": 8, "row": 0, "sky": ((92, 94, 104), (140, 142, 150)),   "ground": ((112, 108, 98), (66, 62, 56)),  "sil": (52, 50, 46),    "style": "pillars"},
     # --- Nether (row 1) ---
     {"col": 0, "row": 1, "sky": ((96, 24, 22), (150, 46, 32)),    "ground": ((70, 18, 16), (32, 8, 8)),    "sil": (24, 6, 6),     "style": "lava"},
     {"col": 1, "row": 1, "sky": ((120, 32, 42), (158, 56, 58)),   "ground": ((78, 22, 30), (42, 12, 18)),  "sil": (44, 12, 18),   "style": "trees"},

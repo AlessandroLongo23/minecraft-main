@@ -3,8 +3,9 @@
 -- Pattern mirrors vanilla enhancement tarots: can_use checks exactly one highlighted card;
 -- use() calls card:set_ability(G.P_CENTERS[key]).
 
+-- Obsidian is no longer a Tarot-applied enhancement -- it is now a Diamond-Pickaxe-mined Ore Block
+-- (content/card_enhancements/blocks.lua), so only Hay Bale + Lapis have Tarot appliers here.
 local APPLIERS = {
-    { key = 'tarot_obsidian', center = 'm_balacraft_obsidian', name = 'Obsidian',  pos = { x = 1, y = 0 } },
     { key = 'tarot_hay_bale', center = 'm_balacraft_hay_bale', name = 'Hay Bale',  pos = { x = 0, y = 0 } },
     { key = 'tarot_lapis',    center = 'm_balacraft_lapis',    name = 'Lapis',     pos = { x = 2, y = 0 } },
 }
@@ -12,7 +13,7 @@ local APPLIERS = {
 for _, a in ipairs(APPLIERS) do
     local app = a
     SMODS.Consumable {
-        key = app.key,                       -- => c_balacraft_tarot_obsidian, ...
+        key = app.key,                       -- => c_balacraft_tarot_hay_bale, ...
         set = 'Tarot',
         atlas = 'bc_resource_cards',
         pos = app.pos,
