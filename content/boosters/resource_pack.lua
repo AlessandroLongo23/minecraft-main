@@ -9,6 +9,7 @@ SMODS.Booster {
     weight = 1,
     loc_txt = {
         name = 'Loot Chest',
+        group_name = 'Loot Chest',  -- open-pack title; without it the screen shows "ERROR"
         text = { 'Choose {C:attention}1{} of up to', '{C:attention}3{} Minecraft resources.' },
     },
     create_card = function(self, card, i)

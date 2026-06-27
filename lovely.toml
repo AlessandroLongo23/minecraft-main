@@ -43,6 +43,7 @@ position = 'after'
 match_indent = true
 payload = '''
 G.GAME.skipped_blinds_this_ante = G.GAME.skipped_blinds_this_ante + 1
+if PB_UTIL and PB_UTIL.hunger_on_skip then PB_UTIL.hunger_on_skip() end
 '''
 
 [[patches]]
@@ -65,3 +66,97 @@ match_indent = true
 payload = '''
     G.GAME.skipped_blinds_this_ante = 0
 '''
+
+# Sword tool consumable: apply the per-blind buff to the FINAL hand mult, just after the deck's
+# final_scoring_step (functions/state_events.lua:800, a unique anchor). Uses mod_mult so the
+# change is synced into SMODS.Scoring_Parameters (the value the score reads), not just the local.
+# Two flavors (mutually exclusive per blind -- only one sword can be used per blind):
+#   * sword_xmult (lower tiers): flat   mult = mult * x
+#   * sword_exp   (diamond/netherite): exponent  mult = mult ^ e   (Talisman overloads ^ for big
+#     numbers, mirroring its own e_mult idiom, so this is overflow-safe at ante 12+ scores).
+# Both are set in the consumable's use() and reset each blind by reset_game_globals (resources.lua).
+[[patches]]
+[patches.pattern]
+target = 'functions/state_events.lua'
+pattern = 'mult = mod_mult(nu_mult or mult)'
+position = 'after'
+match_indent = true
+payload = '''
+if G.GAME.balacraft then
+    local _bc = G.GAME.balacraft
+    local _x = _bc.sword_xmult and _bc.sword_xmult ~= 1
+    local _e = _bc.sword_exp and _bc.sword_exp ~= 1
+    if _x then mult = mod_mult(mult * _bc.sword_xmult) end
+    if _e then mult = mod_mult(mult ^ _bc.sword_exp) end
+    if (_x or _e) and PB_UTIL and PB_UTIL.sword_score_message then
+        -- Juice it like a joker: queue the "Xn Mult" / "^n Mult" pop (PB_UTIL.sword_score_message,
+        -- utilities/resources.lua). Guarded so the math above still works if that file is absent.
+        PB_UTIL.sword_score_message()
+    end
+end
+'''
+
+# ── Generated-card overflow -> inventory bench ──────────────────────────────────────────────
+# Base-game consumables that GENERATE cards (Emperor/High Priestess -> 2 consumables; Judgement/
+# The Soul -> 1 joker) cap their spawn at the active area's free slots and silently drop the rest.
+# With the BalaCraft inventory bench on, the overflow should land on the bench instead (and stay
+# usable). The used consumable is removed from its area BEFORE use() runs (button_callbacks.lua
+# :2239), so `card_limit - #cards` inside use() already reflects the slot it just freed.
+
+# Block A: Emperor (2 Tarots) / High Priestess (2 Planets). The base loop just above fills the
+# active area up to its free slots; this handler creates whatever didn't fit and benches it. Sized
+# from the SAME `card_limit - #cards` the base loop's bound uses, so the two never double-create.
+[[patches]]
+[patches.pattern]
+target = 'card.lua'
+pattern = "if self.ability.name == 'Judgement' or self.ability.name == 'The Soul' then"
+position = 'before'
+match_indent = true
+payload = '''
+if (self.ability.name == 'The Emperor' or self.ability.name == 'The High Priestess')
+    and PB_UTIL and PB_UTIL.inventory_enabled and PB_UTIL.inventory_enabled()
+    and PB_UTIL.bench_free and PB_UTIL.bench_new_card then
+    local _n = self.ability.consumeable.tarots or self.ability.consumeable.planets or 0
+    local _free = math.max(0, G.consumeables.config.card_limit - #G.consumeables.cards)
+    local _overflow = math.min(math.max(0, _n - _free), PB_UTIL.bench_free('consumable'))
+    local _set = (self.ability.name == 'The Emperor') and 'Tarot' or 'Planet'
+    local _key = (self.ability.name == 'The Emperor') and 'emp' or 'pri'
+    for _i = 1, _overflow do
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+            play_sound('timpani')
+            local _c = create_card(_set, G.consumeables, nil, nil, nil, nil, nil, _key)
+            PB_UTIL.bench_new_card(_c, 'consumable')
+            used_tarot:juice_up(0.3, 0.5)
+            return true
+        end}))
+    end
+    if _overflow > 0 then delay(0.6) end
+end
+'''
+
+# Block B-1: let Judgement / The Soul be USED when jokers are full but the bench has room (the base
+# gate hard-blocks at a full joker area). Unique line in Card:can_use_consumeable.
+[[patches]]
+[patches.pattern]
+target = 'card.lua'
+pattern = "if #G.jokers.cards < G.jokers.config.card_limit or self.area == G.jokers then"
+position = 'at'
+match_indent = true
+payload = "if #G.jokers.cards < G.jokers.config.card_limit or self.area == G.jokers or ((self.ability.name == 'Judgement' or self.ability.name == 'The Soul') and PB_UTIL and PB_UTIL.inventory_enabled and PB_UTIL.inventory_enabled() and PB_UTIL.bench_has_room and PB_UTIL.bench_has_room('joker')) then"
+
+# Block B-2: route the generated joker to the bench when the active joker area is full (replaces the
+# unconditional add_to_deck + emplace for Judgement / The Soul). Regex matches the unique 3-line
+# create/add/emplace sequence and keeps the vanilla path when there IS active room.
+[[patches]]
+[patches.regex]
+target = 'card.lua'
+pattern = '''(?<indent>[\t ]*)local card = create_card\('Joker', G\.jokers, self\.ability\.name == 'The Soul', nil, nil, nil, nil, self\.ability\.name == 'Judgement' and 'jud' or 'sou'\)\n[\t ]*card:add_to_deck\(\)\n[\t ]*G\.jokers:emplace\(card\)'''
+position = 'at'
+line_prepend = '$indent'
+payload = '''local card = create_card('Joker', G.jokers, self.ability.name == 'The Soul', nil, nil, nil, nil, self.ability.name == 'Judgement' and 'jud' or 'sou')
+if PB_UTIL and PB_UTIL.inventory_enabled and PB_UTIL.inventory_enabled() and PB_UTIL.active_has_room and not PB_UTIL.active_has_room('joker') and PB_UTIL.bench_has_room and PB_UTIL.bench_has_room('joker') then
+    PB_UTIL.bench_new_card(card, 'joker')
+else
+    card:add_to_deck()
+    G.jokers:emplace(card)
+end'''

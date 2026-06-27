@@ -25,7 +25,7 @@ end
 
 -- ── Enchanted-tool sprite (Phase D) ───────────────────────────────────────
 -- An enchanted tool swaps to a cell on the pre-baked bc_tool_cards atlas: row = the tool's
--- atlas_row (0..14, build order), column = a state index encoding the applied tiers. The base
+-- atlas_row (0..17, build order), column = a state index encoding the applied tiers. The base
 -- (un-enchanted) sprite stays on bc_resource_cards, so this is purely additive: if the atlas
 -- is missing, refresh just no-ops and un-enchanted tools are untouched.
 
@@ -50,20 +50,19 @@ function PB_UTIL.tool_sprite_fingerprint(card)
     return PB_UTIL.tool_enchant_state_index(tdef, e.enchants) .. '_' .. (tdef.atlas_row or 0)
 end
 
--- Point an enchanted tool card at its bc_tool_cards cell. No-op for un-enchanted tools (state
--- 0) and when the atlas isn't registered. Mirrors what Card:set_sprites does internally.
+-- RETIRED (2026-06-27): tools now keep their base bc_tools sprite at ALL times so the durability
+-- frame system (update_durability_frame, content/tools/tool_consumabletype.lua) can keep animating
+-- the wear bar -- on ENCHANTED tools too. Previously this swapped an enchanted tool's center onto the
+-- pre-baked bc_tool_cards atlas, whose columns encode enchant STATE (not durability frames), so once
+-- a tool was enchanted its wear bar froze (the durability updater bails when on that atlas). The
+-- enchant LOOK is now carried entirely by the glint shader -- the inert carrier edition
+-- e_balacraft_enchant_glint (Minecraft-violet, assets/shaders/balacraft_enchant.fs) -- which is
+-- independent of the sprite atlas, so nothing visual is lost beyond the distinct baked blade art.
+-- Kept as a no-op so existing callers (set_tool_enchant, the per-frame heal_tool_sprites) stay valid;
+-- the bc_tool_cards atlas + tool_sprite_fingerprint are now dormant. To restore distinct per-enchant
+-- sprites AND show durability, the enchant atlas would need durability columns (or a separate bar).
 function PB_UTIL.refresh_tool_sprite(card)
-    if not PB_UTIL.is_tool_card(card) then return end
-    if not (card.children and card.children.center) then return end
-    local tdef = PB_UTIL.tool_def_of(card)
-    if not tdef then return end
-    local e = (card.ability and card.ability.extra) or {}
-    local state = PB_UTIL.tool_enchant_state_index(tdef, e.enchants)
-    if state <= 0 then return end                  -- un-enchanted: keep the base sprite
-    local atlas = G.ASSET_ATLAS and G.ASSET_ATLAS['bc_tool_cards']
-    if not atlas then return end                   -- atlas absent: no-op (safe)
-    card.children.center.atlas = atlas
-    card.children.center:set_sprite_pos({ x = state, y = tdef.atlas_row or 0 })
+    return   -- no-op: durability frames own the tool sprite; the glint shader shows the enchant
 end
 
 -- ── Validity / cost ───────────────────────────────────────────────────────
@@ -88,6 +87,31 @@ function PB_UTIL.enchant_cost(tool, book)
     local btier = (book and book.ability and book.ability.extra and book.ability.extra.tier) or 1
     local mtier = (tdef and tdef.tier) or 1
     return btier + (mtier - 1)
+end
+
+-- Lapis cost to apply a book to a TOOL: scales with book tier (I->1, II->2, III->3).
+-- Spent IN ADDITION to the level cost (Minecraft-style: enchanting eats lapis + XP).
+function PB_UTIL.enchant_lapis_cost(tool, book)
+    return (book and book.ability and book.ability.extra and book.ability.extra.tier) or 1
+end
+
+-- Optional mob-material reagent to apply a book to a TOOL -- the SINK for the Night/Cave (Wave 2)
+-- mob drops. Mapped by the book's enchant type + tier so rarer enchants demand rarer loot:
+-- Sharpness II/III cost Bone / Spider Eye; Fortune II/III cost Gunpowder / Glow Ink Sac. Tier-I
+-- books and Durability cost no material (keeps the early/utility enchant flow unchanged). Spent
+-- ALONGSIDE the level + lapis cost, with the same check-before-spend ordering. Card enchants pay
+-- no material. Returns { id, amount } or nil. (Balance: amounts of 1 -- tune freely.)
+local ENCHANT_MATERIAL = {
+    sharpness = { [2] = 'bone',      [3] = 'spider_eye'   },
+    fortune   = { [2] = 'gunpowder', [3] = 'glow_ink_sac' },
+}
+function PB_UTIL.enchant_material_cost(book)
+    local e = book and book.ability and book.ability.extra
+    if not (e and e.etype and e.tier) then return nil end
+    local by_tier = ENCHANT_MATERIAL[e.etype]
+    local id = by_tier and by_tier[e.tier]
+    if not id then return nil end
+    return { id = id, amount = 1 }
 end
 
 -- Returns tool_card, book_card if exactly one of each is highlighted in G.consumeables.
@@ -136,35 +160,67 @@ end
 
 -- ── Apply ─────────────────────────────────────────────────────────────────
 
--- Apply `book` to `tool`: spend levels, write the enchant, re-scale durability, consume the
--- book, refresh the sprite. Returns true on success (false if invalid or unaffordable).
-function PB_UTIL.apply_enchant(tool, book)
-    if not PB_UTIL.enchant_is_valid(tool, book) then return false end
-    local cost = PB_UTIL.enchant_cost(tool, book)
-    -- Needs the level system (xp.lua). Guarded so enabling enhancements without xp can't crash.
-    if not (PB_UTIL.spend_level and PB_UTIL.spend_level(cost)) then return false end
-
-    local e = tool.ability.extra
+-- Write an enchant onto an existing tool card with NO cost. Shared by pack finds (create_tool_pack_card)
+-- and apply_enchant (the enchanting table). Rescales Durability max/uses (ceil) and refreshes the
+-- enchanted sprite. durability_mult / tool_def_of / refresh_tool_sprite are all from the enhancements
+-- block, which loads together with this file -- so they exist whenever this is called.
+function PB_UTIL.set_tool_enchant(card, etype, tier)
+    local e = card.ability and card.ability.extra
+    if not e then return end
     e.enchants = e.enchants or { sharpness = 0, durability = 0, fortune = 0 }
-    local etype, tier = book.ability.extra.etype, book.ability.extra.tier
     e.enchants[etype] = tier
-
-    -- Durability re-scales max uses (ceil) and grants the extra uses immediately.
     if etype == 'durability' then
-        local tdef = PB_UTIL.tool_def_of(tool)
+        local tdef = PB_UTIL.tool_def_of(card)
         local base = (tdef and tdef.base_uses) or e.max_uses or 1
         local newmax = math.ceil(base * PB_UTIL.durability_mult(tier))
         local delta  = newmax - (e.max_uses or base)
         e.max_uses  = newmax
         e.uses_left = math.max(0, (e.uses_left or 0) + delta)
     end
+    if PB_UTIL.refresh_tool_sprite then PB_UTIL.refresh_tool_sprite(card) end
+    card.bc_sprite_fp = nil   -- let the per-frame self-heal re-apply the enchanted cell
+
+    -- Route the tool through the live enchant glint shader by attaching the inert carrier edition
+    -- once (idempotent). The balacraft_enchant shader (content/editions/enchant_shader.lua) reads
+    -- the tool's stacked tiers off e.enchants via send_vars, so one carrier covers all three enchant
+    -- types at any tier. In this shared writer so BOTH the enchanting table (apply_enchant) and
+    -- booster-pack finds (create_tool_pack_card) get the glint. Guarded -- a hiccup here must never
+    -- undo the enchant we just wrote.
+    if not (card.edition and card.edition.key == 'e_balacraft_enchant_glint') then
+        pcall(function() card:set_edition('e_balacraft_enchant_glint', true) end)
+    end
+end
+
+-- Apply `book` to `tool`: spend levels, write the enchant, re-scale durability, consume the
+-- book, refresh the sprite. Returns true on success (false if invalid or unaffordable).
+function PB_UTIL.apply_enchant(tool, book)
+    if not PB_UTIL.enchant_is_valid(tool, book) then return false end
+    local cost = PB_UTIL.enchant_cost(tool, book)
+    -- Lapis is spent ALONGSIDE the level cost. Check affordability up front (before spending
+    -- anything) so neither resource can be half-committed. Guarded on get_resource_count so
+    -- enabling enhancements WITHOUT resources falls back to level-only (no crash).
+    local lcost = PB_UTIL.enchant_lapis_cost(tool, book)
+    if PB_UTIL.get_resource_count and lcost > 0
+        and PB_UTIL.get_resource_count('lapis') < lcost then return false end
+    -- Mob-material reagent (Sharpness/Fortune II-III). Same check-before-spend as lapis so nothing
+    -- is half-committed; guarded so it's inert when resources are off / no material applies.
+    local mat = PB_UTIL.enchant_material_cost(book)
+    if mat and PB_UTIL.get_resource_count
+        and PB_UTIL.get_resource_count(mat.id) < mat.amount then return false end
+    -- Needs the level system (xp.lua). Guarded so enabling enhancements without xp can't crash.
+    if not (PB_UTIL.spend_level and PB_UTIL.spend_level(cost)) then return false end
+    -- Levels are now committed; spend the lapis + material (no-op if resources are off).
+    if PB_UTIL.add_resource and lcost > 0 then PB_UTIL.add_resource('lapis', -lcost) end
+    if mat and PB_UTIL.add_resource then PB_UTIL.add_resource(mat.id, -mat.amount) end
+
+    -- Write the enchant (+ durability rescale + sprite refresh) via the shared cost-free helper.
+    local etype, tier = book.ability.extra.etype, book.ability.extra.tier
+    PB_UTIL.set_tool_enchant(tool, etype, tier)
 
     -- Consume the book (Card:remove handles area removal + cleanup).
     book:remove()
 
-    -- Visual feedback + sprite refresh (refresh is a no-op until the Phase D atlas exists).
-    if PB_UTIL.refresh_tool_sprite then PB_UTIL.refresh_tool_sprite(tool) end
-    tool.bc_sprite_fp = nil
+    -- Visual feedback.
     if tool.juice_up then tool:juice_up(0.3, 0.5) end
     if G.consumeables and G.consumeables.unhighlight_all then G.consumeables:unhighlight_all() end
     pcall(play_sound, 'tarot1', 1.0, 0.6)
@@ -243,11 +299,25 @@ function PB_UTIL.enchant_card_cost(book)
     return (e.tier or 1) + 1
 end
 
+-- Lapis cost to enchant a CARD: scaling types (sharpness/lucky) pay book tier (1/2/3); the flat
+-- Unbreaking edition (durability) pays a flat 1. Spent in addition to the level cost.
+function PB_UTIL.enchant_card_lapis_cost(book)
+    local e = book and book.ability and book.ability.extra
+    if not e then return 1 end
+    if e.etype == 'durability' then return 1 end   -- -> e_balacraft_unbreaking (flat)
+    return e.tier or 1
+end
+
 -- Apply a book's edition to a playing card: spend levels, set the edition, consume the book.
 function PB_UTIL.apply_card_enchant(card, book)
     if not PB_UTIL.enchant_card_is_valid(card, book) then return false end
     local cost = PB_UTIL.enchant_card_cost(book)
+    -- Lapis spent alongside levels; same check-before-spend ordering as apply_enchant.
+    local lcost = PB_UTIL.enchant_card_lapis_cost(book)
+    if PB_UTIL.get_resource_count and lcost > 0
+        and PB_UTIL.get_resource_count('lapis') < lcost then return false end
     if not (PB_UTIL.spend_level and PB_UTIL.spend_level(cost)) then return false end
+    if PB_UTIL.add_resource and lcost > 0 then PB_UTIL.add_resource('lapis', -lcost) end
 
     local key = PB_UTIL.book_card_edition_key(book)
     if not key then return false end
@@ -289,6 +359,20 @@ function PB_UTIL.enchant_target_cost(t)
     if not t then return 0 end
     if t.mode == 'tool' then return PB_UTIL.enchant_cost(t.tool, t.book) end
     return PB_UTIL.enchant_card_cost(t.book)
+end
+
+-- Lapis cost for whichever target kind is selected (parallels enchant_target_cost). 0 when no target.
+function PB_UTIL.enchant_target_lapis_cost(t)
+    if not t then return 0 end
+    if t.mode == 'tool' then return PB_UTIL.enchant_lapis_cost(t.tool, t.book) end
+    return PB_UTIL.enchant_card_lapis_cost(t.book)
+end
+
+-- Mob-material reagent for the selected target. Only TOOL enchants cost a material (card enchants
+-- pay none); returns { id, amount } or nil. Used by the Enchant bar (cost line + affordability gate).
+function PB_UTIL.enchant_target_material_cost(t)
+    if not t or t.mode ~= 'tool' then return nil end
+    return PB_UTIL.enchant_material_cost(t.book)
 end
 
 function PB_UTIL.enchant_target_valid(t)

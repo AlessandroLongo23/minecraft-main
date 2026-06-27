@@ -26,6 +26,42 @@ end
 local function build_enchant_bar(target)
     local cost  = PB_UTIL.enchant_target_cost(target)
     local label = (target.mode == 'card') and 'Enchant Card' or 'Enchant'
+
+    -- Single cost row: "Cost N Lv  + M [lapis]". The lapis part is appended only when a lapis
+    -- cost applies AND its bare atlas is loaded -- a frameless 16x16 sprite, same style/size as
+    -- the villager shop's emerald. Inert (level-only) when resources are off.
+    local cost_nodes = {
+        { n = G.UIT.T, config = { text = 'Cost ', scale = 0.26, colour = G.C.UI.TEXT_LIGHT } },
+        { n = G.UIT.T, config = { text = cost .. ' Lv', scale = 0.3, colour = G.C.BLUE } },
+    }
+    local lcost  = PB_UTIL.enchant_target_lapis_cost and PB_UTIL.enchant_target_lapis_cost(target) or 0
+    local latlas = PB_UTIL.lapis_atlas and G.ASSET_ATLAS[PB_UTIL.lapis_atlas.key]
+    if lcost > 0 and latlas then
+        cost_nodes[#cost_nodes + 1] = { n = G.UIT.T, config = {
+            text = '  + ' .. lcost .. ' ', scale = 0.3, colour = G.C.UI.TEXT_LIGHT } }
+        cost_nodes[#cost_nodes + 1] = { n = G.UIT.O, config = {
+            object = Sprite(0, 0, 0.3, 0.3, latlas, { x = 0, y = 0 }) } }
+    end
+
+    -- Mob-material reagent (tool enchants only): "+ N [icon]" using the resource icon sheet.
+    local mat    = PB_UTIL.enchant_target_material_cost and PB_UTIL.enchant_target_material_cost(target)
+    local matlas = mat and PB_UTIL.icon_atlas and G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
+    local mres   = mat and PB_UTIL.RESOURCE_BY_ID and PB_UTIL.RESOURCE_BY_ID[mat.id]
+    if mat and matlas and mres then
+        cost_nodes[#cost_nodes + 1] = { n = G.UIT.T, config = {
+            text = '  + ' .. mat.amount .. ' ', scale = 0.3, colour = G.C.UI.TEXT_LIGHT } }
+        cost_nodes[#cost_nodes + 1] = { n = G.UIT.O, config = {
+            object = Sprite(0, 0, 0.32, 0.32, matlas, mres.pos) } }
+    end
+
+    local col_nodes = {
+        { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+            { n = G.UIT.T, config = { text = label, scale = 0.38,
+                colour = G.C.UI.TEXT_LIGHT, shadow = true } },
+        } },
+        { n = G.UIT.R, config = { align = 'cm' }, nodes = cost_nodes },
+    }
+
     return {
         n = G.UIT.ROOT,
         config = { align = 'cm', padding = 0, colour = G.C.CLEAR },
@@ -35,16 +71,7 @@ local function build_enchant_bar(target)
                 colour = ENCHANT_COLOUR, hover = true, shadow = true, one_press = true,
                 button = 'bc_enchant', func = 'bc_can_enchant',
                 ref_table = { target = target },
-              }, nodes = {
-                { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-                    { n = G.UIT.T, config = { text = label, scale = 0.38,
-                        colour = G.C.UI.TEXT_LIGHT, shadow = true } },
-                } },
-                { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-                    { n = G.UIT.T, config = { text = 'Cost ', scale = 0.26, colour = G.C.UI.TEXT_LIGHT } },
-                    { n = G.UIT.T, config = { text = cost .. ' Lv', scale = 0.3, colour = G.C.BLUE } },
-                } },
-              } },
+              }, nodes = col_nodes },
         } } },
     }
 end
@@ -69,22 +96,28 @@ end
 
 -- ---- Per-frame driver ----
 
-function PB_UTIL.update_enchant_ui()
-    -- Self-heal enchanted tool sprites every frame (Card:load reverts them to the base cell;
-    -- the transient fingerprint is nil after load, so this re-applies once). Runs whenever the
-    -- consumable area exists -- not just during the Enchant-bar states -- so an enchanted tool
-    -- shows its sprite in the shop too.
-    if PB_UTIL.refresh_tool_sprite and G.consumeables and G.consumeables.cards then
-        for _, c in ipairs(G.consumeables.cards) do
-            if PB_UTIL.is_tool_card(c) then
-                local want = PB_UTIL.tool_sprite_fingerprint(c)
-                if c.bc_sprite_fp ~= want then
-                    PB_UTIL.refresh_tool_sprite(c)
-                    c.bc_sprite_fp = want
-                end
-            end
+-- Self-heal enchanted tool sprites in one card area. refresh_tool_sprite is IDEMPOTENT (it no-ops
+-- when the center is already on the right cell), so we call it every frame rather than gating on a
+-- fingerprint: that is what makes the enchanted cell RECOVER after anything rebuilds the center
+-- sprite -- Card:set_sprites on hover/enlarge, the carrier set_edition, or save/load -- none of
+-- which nil a fingerprint, so a gated heal would mark the card "done" and never restore it. Also
+-- covers pre-enchanted tools found in booster packs (G.pack_cards): refresh is self-guarded on
+-- children.center + the bc_tool_cards atlas, so it simply no-ops until the card has rendered.
+local function heal_tool_sprites(area)
+    if not (PB_UTIL.refresh_tool_sprite and area and area.cards) then return end
+    for _, c in ipairs(area.cards) do
+        if PB_UTIL.is_tool_card(c) then
+            PB_UTIL.refresh_tool_sprite(c)
         end
     end
+end
+
+function PB_UTIL.update_enchant_ui()
+    -- Self-heal enchanted tool sprites every frame, in the consumable area AND any open booster
+    -- pack (so a pre-enchanted pack tool shows its enchanted art on the selection screen, not only
+    -- after it's picked). Runs regardless of the Enchant-bar states handled below.
+    heal_tool_sprites(G.consumeables)
+    heal_tool_sprites(G.pack_cards)
 
     local active = G.consumeables and G.GAME and G.GAME.balacraft and enchant_state_ok()
         and (not PB_UTIL.get_view_mode or PB_UTIL.get_view_mode() ~= 'resources')
@@ -112,6 +145,18 @@ G.FUNCS.bc_can_enchant = function(e)
     local ok = target and PB_UTIL.enchant_target_valid(target)
         and PB_UTIL.can_spend_level
         and PB_UTIL.can_spend_level(PB_UTIL.enchant_target_cost(target))
+    -- Also require enough Lapis (skipped when resources are off / cost is 0).
+    local lcost = (target and PB_UTIL.enchant_target_lapis_cost
+        and PB_UTIL.enchant_target_lapis_cost(target)) or 0
+    if ok and PB_UTIL.get_resource_count and lcost > 0 then
+        ok = PB_UTIL.get_resource_count('lapis') >= lcost
+    end
+    -- And the mob-material reagent (tool enchants only; skipped when none applies / resources off).
+    local mat = target and PB_UTIL.enchant_target_material_cost
+        and PB_UTIL.enchant_target_material_cost(target)
+    if ok and mat and PB_UTIL.get_resource_count then
+        ok = PB_UTIL.get_resource_count(mat.id) >= mat.amount
+    end
     if ok then
         e.config.colour = ENCHANT_COLOUR
         e.config.button = 'bc_enchant'

@@ -21,12 +21,30 @@ function PB_UTIL.has_joker_room()
     return #G.jokers.cards < G.jokers.config.card_limit
 end
 
+function PB_UTIL.has_consumable_room()
+    if not G.consumeables then return false end
+    return #G.consumeables.cards < G.consumeables.config.card_limit
+end
+
 function PB_UTIL.can_craft(recipe)
     if not recipe then return false end
+    -- Crossbow is a Bow upgrade: it can only be crafted while you own a Bow (Cube->Big Cube
+    -- prerequisite gating). Checked before affordability so the grid greys it out cleanly.
+    if recipe.key == 'crossbow' and not PB_UTIL.has_joker('j_balacraft_bow') then
+        return false
+    end
+    -- Card outputs need both their center (else the *_add helper no-ops and ingredients
+    -- are lost) and a free slot in the relevant area.
     if recipe.output.type == 'joker' then
-        -- the joker center must exist (else joker_add no-ops and ingredients are lost)
         if not G.P_CENTERS[recipe.output.id] then return false end
         if not PB_UTIL.has_joker_room() then return false end
+    elseif recipe.output.type == 'consumable' then
+        if not G.P_CENTERS[recipe.output.id] then return false end
+        if not PB_UTIL.has_consumable_room() then return false end
+    elseif recipe.output.type == 'station' then
+        -- A Base station (Furnace, ...): a one-time unlock. Already built => can't re-craft
+        -- (so ingredients can't be wasted on a no-op).
+        if PB_UTIL.station_built and PB_UTIL.station_built(recipe.output.id) then return false end
     end
     if not PB_UTIL.can_afford(recipe) then return false end
     return true
@@ -42,6 +60,10 @@ function PB_UTIL.produce_output(recipe)
         PB_UTIL.add_resource(out.id, out.amount or 1)
     elseif out.type == 'joker' then
         joker_add(out.id)
+    elseif out.type == 'consumable' then
+        consumable_add(out.id)
+    elseif out.type == 'station' then
+        if PB_UTIL.build_station then PB_UTIL.build_station(out.id) end
     end
     play_sound('timpani', 0.8)
 end

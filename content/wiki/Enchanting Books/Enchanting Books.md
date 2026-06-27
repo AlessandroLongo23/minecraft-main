@@ -11,7 +11,7 @@ Implemented: 9 (3 types × 3 tiers)
 
 - A tool holds **one of each type**; a higher tier upgrades it.
 - **Tier III** books only appear once you own the [[Sorcerer's Tome]] voucher.
-- Books reuse ore-card art as a placeholder for now.
+- Each book is a tinted enchanted-book card — Sharpness orange, Durability cyan, Fortune green — with its tier (I/II/III) in the corner.
 
 > **All three books are dual-target** — each enchants a tool *or* a playing card. Sharpness → [[Editions/Sharpness\|+Mult edition]]; Durability → [[Editions/Unbreaking\|Unbreaking edition]]; Fortune → [[Editions/Lucky\|Lucky edition]]. A card holds one [[Editions|edition]] at a time.
 

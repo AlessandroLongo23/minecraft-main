@@ -3,9 +3,17 @@ return {
     boosters_enabled = true,
     decks_enabled = true,
     enhancements_enabled = true,
+    card_enhancements_enabled = true,
+    seals_enabled = true,
     jokers_enabled = true,
     tags_enabled = true,
     vouchers_enabled = true,
     resources_enabled = true,
+    villager_enabled = true,
+    inventory_enabled = true,
+    health_enabled = true,
+    xp_enabled = true,
+    food_enabled = true,
+    biomes_enabled = true,
 }
   

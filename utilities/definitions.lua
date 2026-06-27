@@ -58,9 +58,11 @@ PB_UTIL.ENABLED_ENHANCEMENTS = {
 -- Card editions applied through the Enchant flow (loaded with the enhancements block).
 -- Sharpness is the card side of the dual-target Sharpness book (tool ×Mult / card +Mult).
 PB_UTIL.ENABLED_EDITIONS = {
-    'sharpness',    -- e_balacraft_sharpness_{1,2,3}  (Sharpness book -> card)
-    'unbreaking',   -- e_balacraft_unbreaking         (Durability book -> card, flat)
-    'lucky',        -- e_balacraft_lucky_{1,2,3}      (Fortune book -> card)
+    'enchant_shader', -- registers the balacraft_enchant glint shader (MUST load before the editions below)
+    'enchant_glint',  -- e_balacraft_enchant_glint      (inert carrier: routes enchanted TOOLS through the shader)
+    'sharpness',      -- e_balacraft_sharpness_{1,2,3}  (Sharpness book -> card)
+    'unbreaking',     -- e_balacraft_unbreaking         (Durability book -> card, flat)
+    'lucky',          -- e_balacraft_lucky_{1,2,3}      (Fortune book -> card)
 }
 
 -- Balatro card enhancements ("block-cards") — DISTINCT from the Enchanting books above.
@@ -85,6 +87,10 @@ PB_UTIL.ENABLED_JOKERS = {
     'itshome',
     'crackedknuckles',
     '0164',
+    -- Wave 1 (Archery) craftable jokers (output of recipes in content/resources/recipes.lua).
+    'bow',
+    'fishing_rod',
+    'crossbow',
     -- 'disappointment',
     -- stone_pickaxe / iron_sword / iron_shovel are now crafted TOOL CONSUMABLES
     -- (content/tools/, ENABLED_TOOLS below). The joker files are left inert on disk.
@@ -120,6 +126,10 @@ PB_UTIL.ENABLED_TOOLS = {
     'registry',
     'tool_consumabletype',
     'torch',
+    'arrow',   -- Wave 1 (Archery) one-shot consumable; loaded with torch (post-resources block)
+    'bone_meal',  -- Bone mob-drop sink: select cards -> +Chips + buff that poker hand
+    'tnt',        -- Gunpowder sink (explosives): destroy a card + its two neighbours
+    'firework',   -- Gunpowder sink (explosives): load a card with Chips, scales with Gunpowder held
 }
 
 -- Loaded from content/foods/ (registry before consumabletype, which the packs depend on).
@@ -133,4 +143,13 @@ PB_UTIL.ENABLED_FOOD_PACKS = {
     'food_pack',
     'food_pack_jumbo',
     'food_pack_mega',
+}
+
+-- Tool booster packs (Toolbox trio). Gated with the tools system (the resources_enabled block in
+-- main.lua), since they hand out tool consumables. The enchant roll inside is independently
+-- runtime-guarded on PB_UTIL.ENCHANTS.
+PB_UTIL.ENABLED_TOOL_PACKS = {
+    'tool_pack',
+    'tool_pack_jumbo',
+    'tool_pack_mega',
 }

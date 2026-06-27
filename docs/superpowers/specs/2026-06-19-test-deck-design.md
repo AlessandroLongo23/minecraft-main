@@ -52,6 +52,7 @@ SMODS.Atlas { key = 'testDeck', path = 'OverworldDeck.png', px = 71, py = 95 }
 **Editable loadout lists** (top of file — this is the "what to force" surface):
 ```lua
 local DOLLARS     = 999                              -- extra starting cash (0 = skip)
+local LEVEL       = 100                              -- starting XP level (0 = skip)
 local RESOURCES   = 99                               -- every resource id set to this (0 = skip)
 local JOKERS      = {}                                -- joker keys to add, e.g. 'j_balacraft_elytra'
 local CONSUMABLES = { 'c_balacraft_enchant_smithing_1' } -- consumable keys to add (the multiplier book)
@@ -63,6 +64,9 @@ local CARD_MOD    = { seal = nil, enhancement = nil, edition = nil, count = 0 } 
 ```
 
 Default loadout rationale ("full sandbox, no dimension vouchers, with a multiplier book"):
+- `LEVEL = 100` — start at XP level 100 (set on `G.GAME.balacraft.xp_level` directly; no
+  set-funnel exists and `spend_level` writes the same field) so enchanting, which spends levels,
+  can be exercised immediately.
 - `DOLLARS = 999`, `RESOURCES = 99` — enough cash + every resource (gathered **and** crafted,
   since this is a sandbox) to craft/buy freely.
 - `VOUCHERS` includes the **enchanting pair** (`enchanting_table`, `sorcerers_tome`) so the
@@ -107,7 +111,7 @@ Add `'test'` to `PB_UTIL.ENABLED_DECKS` in `utilities/definitions.lua` (replacin
 No automated tests exist (interpreted Lua). Verification is in-game by the user:
 1. Launch Balatro, enable BalaCraft, confirm **Overworld** is gone from the deck list and
    **Test** is present and selectable.
-2. Start a run on the Test deck; confirm: ~999 dollars, every resource at 99 in the hotbar,
+2. Start a run on the Test deck; confirm: ~999 dollars, XP bar at level 100, every resource at 99 in the hotbar,
    the enchanting + sorcerer's tome voucher effects active, a Smithing book in the consumable
    slots, and (default) no dimension portal vouchers and an unmodified card composition.
 3. Sanity: no crash on run start; editing a list (e.g. add a joker key) reflects next run.

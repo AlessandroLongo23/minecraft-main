@@ -3,11 +3,11 @@
 -- Sharpness book; see utilities/enchanting.lua). One center per book tier so +Mult scales.
 --
 -- Effect: +Mult when the card scores, DOUBLED vs a boss (mob) blind.
--- PLACEHOLDER glint: reuses the vanilla holographic shader. prefix_config.shader = false keeps
--- 'holo' unprefixed (SMODS would otherwise make it 'balacraft_holo', which doesn't exist and crashes
--- the draw); the edition KEY is still prefixed (e_balacraft_sharpness_<tier>). The shader is purely
--- visual -- the +Mult comes from calculate below, NOT from any base holo effect. Never rolls in the
--- shop (in_shop = false, weight = 0); applied only via the Enchant flow.
+-- Glint: the custom BalaCraft enchant shader (content/editions/enchant_shader.lua) -- a subtle
+-- orange rim shimmer scaled by tier. shader = 'enchant' is prefixed to 'balacraft_enchant' (matches
+-- the registered SMODS.Shader), so NO prefix_config override is needed. The shader is purely visual
+-- -- the +Mult comes from calculate below. Never rolls in the shop (in_shop = false, weight = 0);
+-- applied only via the Enchant flow.
 
 local SHARP_MULT = { 10, 15, 20 }   -- +Mult per book tier (card side); doubled vs boss
 
@@ -16,8 +16,7 @@ for tier = 1, 3 do
     local boss = base * 2
     SMODS.Edition {
         key = 'sharpness_' .. tier,
-        shader = 'holo',
-        prefix_config = { shader = false },
+        shader = 'enchant',
         in_shop = false,
         weight = 0,
         config = { mult = base },

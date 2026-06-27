@@ -54,6 +54,16 @@ SMODS.current_mod.config_tab = function()
 								ref_table = PB_UTIL.config,
 								ref_value = 'resources_enabled',
 							},
+							create_toggle {
+								label = "Health",
+								ref_table = PB_UTIL.config,
+								ref_value = 'health_enabled',
+							},
+							create_toggle {
+								label = "Food",
+								ref_table = PB_UTIL.config,
+								ref_value = 'food_enabled',
+							},
 						}
 					},
 					{

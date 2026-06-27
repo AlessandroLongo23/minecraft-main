@@ -17,6 +17,19 @@ PB_UTIL.tool_atlas = SMODS.Atlas {
     key = 'bc_tool_cards', path = 'tool_cards.png', px = 71, py = 95,
 }
 
+-- Enchanting-book card art (3 cols x 3 rows of 71x95 cells; see assets/gen_enchant_books.py).
+-- col = tier-1 (I/II/III), row = type index in PB_UTIL.ENCHANT_ORDER (sharpness/durability/fortune).
+PB_UTIL.enchant_book_atlas = SMODS.Atlas {
+    key = 'bc_enchant_cards', path = 'enchant_cards.png', px = 71, py = 95,
+}
+
+-- Small 34x34 book ICONS (frameless; assets/gen_enchant_icons.py) for the villager (Librarian)
+-- shop offers -- the offers show icons, not scaled-down cards. 3 cols (tier) x 3 rows (type);
+-- a book's card `pos` ({x=tier-1, y=type-1}) indexes this sheet directly.
+PB_UTIL.enchant_icon_atlas = SMODS.Atlas {
+    key = 'bc_enchant_icons', path = 'enchant_icons.png', px = 34, py = 34,
+}
+
 PB_UTIL.ENCHANTS = {
     -- Sharpness is DUAL-TARGET: on a sword these tiers multiply X-mult; on a playing card the
     -- same book applies the tiered e_balacraft_sharpness_<tier> edition (+Mult -- see content/editions/).
@@ -24,13 +37,11 @@ PB_UTIL.ENCHANTS = {
         name = 'Sharpness',
         applies = { sword = true },          -- tool side; cards are handled in the enchant flow
         mult = { 1.25, 1.5, 1.75 },          -- X-mult multiplier per tier (tool side)
-        pos = { x = 0, y = 1 },              -- PLACEHOLDER: iron cell on bc_resource_cards
     },
     durability = {
         name = 'Durability',
         applies = { sword = true, pickaxe = true, shovel = true },
         mult = { 1.25, 1.5, 2 },             -- max-uses multiplier per tier (ceil)
-        pos = { x = 2, y = 1 },              -- PLACEHOLDER: diamond cell
     },
     fortune = {
         name = 'Fortune',
@@ -39,7 +50,6 @@ PB_UTIL.ENCHANTS = {
         -- CARD side ("Lucky" edition): Emeralds dropped per score, as per-tier weight tables.
         -- Index = emerald count (1st weight is count 0); value = weight. Averages 0.5 / 1.5 / 2.5.
         card_drops = { { 60, 30, 10 }, { 20, 30, 30, 20 }, { 0, 20, 30, 30, 20 } },
-        pos = { x = 1, y = 1 },              -- PLACEHOLDER: gold cell
     },
 }
 
@@ -55,7 +65,7 @@ local BOOK_COST = { 4, 7, 10 }
 -- Build the 9 books (3 types x 3 tiers) as pure data; the consumable type and the booster
 -- sampler both iterate this list.
 PB_UTIL.ENCHANT_BOOKS = {}
-for _, etype in ipairs(PB_UTIL.ENCHANT_ORDER) do
+for ti, etype in ipairs(PB_UTIL.ENCHANT_ORDER) do
     local def = PB_UTIL.ENCHANTS[etype]
     for tier = 1, 3 do
         PB_UTIL.ENCHANT_BOOKS[#PB_UTIL.ENCHANT_BOOKS + 1] = {
@@ -64,7 +74,7 @@ for _, etype in ipairs(PB_UTIL.ENCHANT_ORDER) do
             tier  = tier,
             name  = def.name .. ' ' .. PB_UTIL.ENCHANT_ROMAN[tier], -- 'Sharpness II'
             cost  = BOOK_COST[tier],
-            pos   = def.pos,                                       -- placeholder cell (by type)
+            pos   = { x = tier - 1, y = ti - 1 },                  -- bc_enchant_cards cell
         }
     end
 end
@@ -85,13 +95,24 @@ function PB_UTIL.durability_mult(tier)
     return (tier and tier >= 1 and m[tier]) or 1
 end
 
--- Fortune: random integer in 0..bonus[tier], run-seeded; varies per card so two tools
--- don't always roll alike. Returns 0 when tier is 0/nil.
+-- Fortune (PICKAXE side): random integer in 0..bonus[tier], run-seeded; varies per card so two
+-- tools don't always roll alike. Returns 0 when tier is 0/nil.
 function PB_UTIL.fortune_bonus(tier, card)
     if not tier or tier < 1 then return 0 end
     local max = PB_UTIL.ENCHANTS.fortune.bonus[tier] or tier
     local key = 'bc_fortune_' .. tostring(card and card.sort_id or 'x')
     return math.floor(pseudorandom(pseudoseed(key)) * (max + 1))
+end
+
+-- Shovel find chance: the shovel is a gamble (pays its tier value only on a hit). Base 50%,
+-- and Fortune now raises the ODDS rather than the loot: +15% per Fortune tier, capped at 95%.
+-- (0.5 / 0.65 / 0.80 / 0.95 for Fortune 0..3.) Tunable.
+PB_UTIL.SHOVEL_BASE_CHANCE = 0.5
+function PB_UTIL.shovel_find_chance(fortune_tier)
+    local c = PB_UTIL.SHOVEL_BASE_CHANCE
+    if fortune_tier and fortune_tier >= 1 then c = c + 0.15 * fortune_tier end
+    if c > 0.95 then c = 0.95 end
+    return c
 end
 
 -- Whether an enchant type can be applied to a tool kind ('sword'|'pickaxe'|'shovel').

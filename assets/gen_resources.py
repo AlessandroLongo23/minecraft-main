@@ -1,126 +1,110 @@
-"""Procedurally generate the resource sprite sheets (deterministic, no RNG).
+"""Generate the resource sprite sheets from the genuine 16x16 Minecraft textures.
 
-Outputs (1x):
-  assets/1x/resource_icons.png  -> 34x34 cells, 3x3 grid (102x102)
-  assets/1x/resource_cards.png  -> 71x95 cells, 3x3 grid (213x285)
-Run `utils.py` afterwards to produce the 2x sheets.
-Ore order (row-major): wood, cobblestone, coal, iron, gold, diamond, sticks.
+Source textures live in `assets/reference/resources/<id>.png` (downloaded from the
+PrismarineJS minecraft-assets mirror; oak_planks/cobblestone/coal/iron_ingot/
+gold_ingot/diamond/emerald/stick/lapis_lazuli). Both sheets (1x + 2x) are written here.
+
+Outputs:
+  assets/1x/resource_icons.png  -> 34x34 cells, 3x7 grid (102x238)
+  assets/1x/resource_cards.png  -> 71x95 cells, 3x7 grid (213x665)
+Order is row-major and MUST match content/resources/registry.lua `pos` values: the 10 ores +
+sticks, then the Wave-1 archery drops (string/feather/flint), the Wave-2 Night/Cave drops
+(gunpowder/bone/spider_eye/glow_ink_sac), then the raw ores (raw_iron/raw_gold). 19 resources in a
+3x7 grid (last 2 cells free). NB: keep ROWS=7 -- shrinking it would truncate raw_iron/raw_gold.
+
+The ICON sheet is the bare texture scaled 2x (nearest-neighbor), centered in each cell --
+frameless, for clean readability in the hotbar/recipe/villager UIs. The CARD sheet (booster
+pack art) keeps its tier-coloured face.
 """
+import os
 from PIL import Image
+from utils import scale_image
 
 ICON = 34
 CARD_W, CARD_H = 71, 95
-COLS, ROWS = 3, 3
-ICON_ROWS = 3
+COLS, ROWS = 3, 7       # 19 resources -> 7 rows (raw_iron fills cell 17, raw_gold opens row 6; cells 19-20 free)
+ICON_ROWS = 7
 
-# Palette
-STONE      = (124, 124, 124, 255)
-STONE_HI   = (150, 150, 150, 255)
-STONE_LO   = (98, 98, 98, 255)
-WOOD       = (150, 116, 67, 255)
-WOOD_LINE  = (110, 82, 44, 255)
-COBBLE_LO  = (96, 96, 96, 255)
-COBBLE_HI  = (160, 160, 160, 255)
-COAL       = (32, 32, 32, 255)
-IRON       = (208, 170, 140, 255)
-GOLD       = (250, 224, 70, 255)
-DIAMOND    = (90, 220, 215, 255)
-CARD_BG    = (40, 44, 52, 255)
-TIER_TINT  = {1: (90, 110, 90, 255), 2: (110, 100, 70, 255), 3: (70, 110, 130, 255)}
+CARD_BG   = (40, 44, 52, 255)
+TIER_TINT = {1: (90, 110, 90, 255), 2: (110, 100, 70, 255), 3: (70, 110, 130, 255), 4: (95, 60, 75, 255)}
 
-# Fixed speckle clusters (x,y) for ore blobs on a stone base, 16x16 space.
-SPECKLES = [(4, 4), (5, 4), (4, 5), (10, 6), (11, 6), (6, 10), (7, 11), (11, 11), (12, 11)]
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_REF = os.path.normpath(os.path.join(_HERE, "..", "..", "assets", "reference", "resources"))
 
-def base_stone():
-    img = Image.new("RGBA", (16, 16), STONE)
-    px = img.load()
-    for (x, y) in [(2, 3), (9, 2), (13, 5), (3, 12), (12, 13), (7, 7)]:
-        px[x, y] = STONE_LO
-    for (x, y) in [(1, 8), (8, 9), (14, 9), (5, 14)]:
-        px[x, y] = STONE_HI
-    return img
+# Row-major order MUST match content/resources/registry.lua positions.
+# Indices 10-12 (string, feather, flint) are the Wave 1 Archery mob drops.
+# Indices 13-16 (gunpowder, bone, spider_eye, glow_ink_sac) are the Wave 2 Night/Cave mob drops.
+ORDER = ["wood", "cobblestone", "coal", "iron", "gold", "diamond", "sticks", "emerald", "netherite", "lapis",
+         "string", "feather", "flint",
+         "gunpowder", "bone", "spider_eye", "glow_ink_sac",
+         "raw_iron", "raw_gold"]   # MC-faithful smelt set: drop raw, smelt to iron/gold
+TIERS = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond": 3, "sticks": 1, "emerald": 2, "netherite": 4, "lapis": 3,
+         "string": 1, "feather": 1, "flint": 1,
+         "gunpowder": 1, "bone": 1, "spider_eye": 1, "glow_ink_sac": 1,
+         "raw_iron": 2, "raw_gold": 2}
 
-def ore(color):
-    img = base_stone()
-    px = img.load()
-    for (x, y) in SPECKLES:
-        px[x, y] = color
-    return img
 
-def wood():
-    img = Image.new("RGBA", (16, 16), WOOD)
-    px = img.load()
-    for x in (2, 3, 8, 9, 13):
-        for y in range(16):
-            if (x + y) % 3 != 0:
-                px[x, y] = WOOD_LINE
-    return img
+def load(rid):
+    return Image.open(os.path.join(_REF, rid + ".png")).convert("RGBA")
 
-def cobblestone():
-    img = Image.new("RGBA", (16, 16), STONE)
-    px = img.load()
-    for (x, y) in [(2, 2), (3, 2), (2, 3), (9, 3), (10, 3), (4, 9), (5, 9), (11, 10), (12, 10), (7, 12)]:
-        px[x, y] = COBBLE_LO
-    for (x, y) in [(6, 5), (12, 6), (3, 11), (13, 12)]:
-        px[x, y] = COBBLE_HI
-    return img
-
-def sticks():
-    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    px = img.load()
-    for (x, y) in [(6, 2), (7, 3), (6, 4), (7, 5), (6, 6), (7, 7), (6, 8), (7, 9), (6, 10), (7, 11)]:
-        px[x, y] = WOOD
-        px[x + 1, y] = WOOD_LINE
-    for (x, y) in [(9, 4), (10, 5), (9, 6), (10, 7), (9, 8), (10, 9), (9, 10), (10, 11), (9, 12), (10, 13)]:
-        px[x, y] = WOOD
-        px[x + 1, y] = WOOD_LINE
-    return img
-
-ORES = [
-    ("wood", wood()),
-    ("cobblestone", cobblestone()),
-    ("coal", ore(COAL)),
-    ("iron", ore(IRON)),
-    ("gold", ore(GOLD)),
-    ("diamond", ore(DIAMOND)),
-]
-
-ICONS = ORES + [("sticks", sticks())]
 
 def nn(img, factor):
     return img.resize((img.width * factor, img.height * factor), Image.NEAREST)
 
+
 def build_icons():
+    # Frameless: each texture scaled 2x (16 -> 32, crisp nearest-neighbor) and centered in its
+    # 34x34 cell (a 1px transparent margin). Cell size + grid are unchanged, so the registry
+    # `pos` values and the bc_resource_icons atlas (px=py=34) need no edits.
     sheet = Image.new("RGBA", (ICON * COLS, ICON * ICON_ROWS), (0, 0, 0, 0))
-    for i, (_id, tex) in enumerate(ICONS):
+    for i, rid in enumerate(ORDER):
         cx, cy = (i % COLS) * ICON, (i // COLS) * ICON
-        slot = Image.new("RGBA", (ICON, ICON), (20, 22, 26, 255))
-        for x in range(ICON):
-            slot.putpixel((x, 0), (70, 74, 82, 255)); slot.putpixel((x, ICON - 1), (70, 74, 82, 255))
-        for y in range(ICON):
-            slot.putpixel((0, y), (70, 74, 82, 255)); slot.putpixel((ICON - 1, y), (70, 74, 82, 255))
-        block = nn(tex, 2)
-        slot.alpha_composite(block, (1, 1))
-        sheet.alpha_composite(slot, (cx, cy))
+        block = nn(load(rid), 2)
+        ox = cx + (ICON - block.width) // 2
+        oy = cy + (ICON - block.height) // 2
+        sheet.alpha_composite(block, (ox, oy))
     sheet.save("BalaCraft/assets/1x/resource_icons.png")
+    scale_image("BalaCraft/assets/1x/resource_icons.png", "BalaCraft/assets/2x/resource_icons.png", 2)
     print("wrote resource_icons.png", sheet.size)
+
+
+def build_emerald_plain():
+    # Bare, frameless emerald (the genuine 16x16 texture) for the villager UI's
+    # emerald counter + prices -- no tag badge, no neutral backdrop.
+    em = load("emerald")
+    em.save("BalaCraft/assets/1x/emerald_plain.png")
+    scale_image("BalaCraft/assets/1x/emerald_plain.png", "BalaCraft/assets/2x/emerald_plain.png", 2)
+    print("wrote emerald_plain.png", em.size)
+
+
+def build_lapis_plain():
+    # Bare, frameless lapis (the genuine 16x16 texture) for the enchant bar's cost line --
+    # no tag badge, no neutral backdrop (mirrors emerald_plain for the villager UI).
+    la = load("lapis")
+    la.save("BalaCraft/assets/1x/lapis_plain.png")
+    scale_image("BalaCraft/assets/1x/lapis_plain.png", "BalaCraft/assets/2x/lapis_plain.png", 2)
+    print("wrote lapis_plain.png", la.size)
+
 
 def build_cards():
     sheet = Image.new("RGBA", (CARD_W * COLS, CARD_H * ROWS), (0, 0, 0, 0))
-    tiers = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond": 3, "sticks": 1}
-    for i, (_id, tex) in enumerate(ICONS):
+    for i, rid in enumerate(ORDER):
         cx, cy = (i % COLS) * CARD_W, (i // COLS) * CARD_H
         face = Image.new("RGBA", (CARD_W, CARD_H), CARD_BG)
-        tint = TIER_TINT[tiers[_id]]
+        tint = TIER_TINT[TIERS[rid]]
         for x in range(CARD_W):  # top tier-coloured band
             for y in range(6):
                 face.putpixel((x, y), tint)
-        block = nn(tex, 3)  # 16 -> 48
+        block = nn(load(rid), 3)  # 16 -> 48
         face.alpha_composite(block, ((CARD_W - 48) // 2, (CARD_H - 48) // 2 - 4))
         sheet.alpha_composite(face, (cx, cy))
     sheet.save("BalaCraft/assets/1x/resource_cards.png")
+    scale_image("BalaCraft/assets/1x/resource_cards.png", "BalaCraft/assets/2x/resource_cards.png", 2)
     print("wrote resource_cards.png", sheet.size)
+
 
 if __name__ == "__main__":
     build_icons()
+    build_emerald_plain()
+    build_lapis_plain()
     build_cards()

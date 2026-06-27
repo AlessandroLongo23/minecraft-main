@@ -4,11 +4,11 @@
 -- Enchanting booster pack. A book is NOT "used" on its own (can_use = false): it is consumed
 -- by the Enchant action -- select a tool + a book, then click Enchant (utilities/enchanting.lua).
 --
--- PLACEHOLDER ART: books reuse cells on bc_resource_cards (one per type). A dedicated
--- bc_enchant_cards atlas is a follow-up once book art exists.
+-- ART: each book is a per-type tinted enchanted-book card on the bc_enchant_cards atlas
+-- (col = tier I/II/III, row = type). Baked by assets/gen_enchant_books.py.
 --
--- Depends on PB_UTIL.ENCHANTS / PB_UTIL.ENCHANT_BOOKS (content/enhancements/registry.lua,
--- loads first) and the bc_resource_cards atlas (content/resources/registry.lua).
+-- Depends on PB_UTIL.ENCHANTS / PB_UTIL.ENCHANT_BOOKS and the bc_enchant_cards atlas, both
+-- in content/enhancements/registry.lua (loads first).
 
 SMODS.ConsumableType {
     key = 'balacraft_enchant',
@@ -16,6 +16,12 @@ SMODS.ConsumableType {
     secondary_colour = HEX('c39bd3'),
     collection_rows = { 3, 3, 3 },          -- 9 books, three rows of three (by type)
     shop_rate = 0,                          -- base 0; the voucher enables shop appearance (Phase C)
+    -- From a booster pack a book is SELECTED into the consumable area (like a Buffoon-pack joker),
+    -- NOT "used" (books are can_use = false; they're consumed later by the Enchant action, which
+    -- reads tool + book from G.consumeables). The Select button auto-greys when the consumable
+    -- area is full (SMODS' can_select_from_booster checks card_limit), giving the "only if there's
+    -- room" behavior for free. See SMODS.card_select_area / use_card's select_to branch.
+    select_card = 'consumeables',
     default = 'c_balacraft_enchant_sharpness_1',
     loc_txt = { name = 'Enchant', collection = 'Enchanting Books' },
 }
@@ -68,7 +74,7 @@ for _, book in ipairs(PB_UTIL.ENCHANT_BOOKS) do
     SMODS.Consumable {
         key = 'enchant_' .. b.id,               -- => c_balacraft_enchant_sharpness_1
         set = 'balacraft_enchant',
-        atlas = 'bc_resource_cards',            -- PLACEHOLDER cell (by type)
+        atlas = 'bc_enchant_cards',             -- per-type tinted book, col = tier, row = type
         pos = b.pos,
         cost = b.cost,
         discovered = true,

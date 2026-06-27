@@ -12,16 +12,6 @@ SMODS.ConsumableType {
     loc_txt = { name = 'Resource', collection = 'Resources' },
 }
 
--- Display metadata for each ore (name shown on the pack card's tooltip).
-local ORE_LOC = {
-    wood        = 'Wood',
-    cobblestone = 'Cobblestone',
-    coal        = 'Coal',
-    iron        = 'Iron',
-    gold        = 'Gold',
-    diamond     = 'Diamond',
-}
-
 for _, r in ipairs(PB_UTIL.RESOURCES) do
     if r.kind == 'gathered' then
         local id = r.id
@@ -34,8 +24,8 @@ for _, r in ipairs(PB_UTIL.RESOURCES) do
             discovered = true,
             no_collection = true,
             loc_txt = {
-                name = ORE_LOC[id],
-                text = { 'Adds {C:attention}1{} ' .. ORE_LOC[id], 'to your resources.' },
+                name = r.name,
+                text = { 'Adds {C:attention}1{} ' .. r.name, 'to your resources.' },
             },
             can_use = function(self, card) return true end,
             use = function(self, card, area, copier)

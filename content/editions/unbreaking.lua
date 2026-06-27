@@ -4,13 +4,13 @@
 -- The protection itself is implemented by one-time wraps in utilities/enchanting.lua:
 --   * Blind:debuff_card -> an Unbreaking card is forced un-debuffed,
 --   * SMODS.shatters    -> an Unbreaking Glass card never breaks.
--- This center only provides the glint + tooltip. PLACEHOLDER glint: vanilla polychrome (visual only;
--- prefix_config.shader = false keeps it unprefixed). Never rolls (in_shop = false, weight = 0).
+-- This center only provides the glint + tooltip. Glint: the custom BalaCraft enchant shader
+-- (content/editions/enchant_shader.lua) -- a subtle cyan rim shimmer. shader = 'enchant' is
+-- prefixed to 'balacraft_enchant'. Never rolls (in_shop = false, weight = 0).
 
 SMODS.Edition {
     key = 'unbreaking',
-    shader = 'polychrome',
-    prefix_config = { shader = false },
+    shader = 'enchant',
     in_shop = false,
     weight = 0,
     loc_txt = {

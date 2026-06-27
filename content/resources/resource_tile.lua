@@ -21,7 +21,14 @@ function PB_UTIL.make_resource_tile(rid, x, y)
     local card = Card(x or 0, y or 0, G.CARD_W, G.CARD_H, nil, base,
         { bypass_discovery_center = true, bypass_discovery_ui = true, discover = false })
     if card.children and card.children.center then
-        card.children.center.atlas = G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
+        local atlas = G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
+        card.children.center.atlas = atlas
+        -- Sprite quad WIDTH/HEIGHT come from center.scale, which was cached at init from the
+        -- 71x95 base-center atlas (sprite.lua:9,36-37). The icon sheet is 34x34, so without
+        -- resetting scale the quad samples a 71x95 block = several neighbouring icons. Match
+        -- the new cell size so exactly one icon is clipped (and drawn at the right scale,
+        -- since draw_self maps scale.x px -> VT.w, sprite.lua:147).
+        card.children.center.scale = { x = atlas.px, y = atlas.py }
         card.children.center:set_sprite_pos(r.pos)
     end
     -- Shrink to small square (Minecraft slot size). Sprite scale may need in-game tuning
@@ -46,7 +53,14 @@ function PB_UTIL.make_resource_source(rid, x, y)
     local card = Card(x or 0, y or 0, G.CARD_W, G.CARD_H, nil, base,
         { bypass_discovery_center = true, bypass_discovery_ui = true, discover = false })
     if card.children and card.children.center then
-        card.children.center.atlas = G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
+        local atlas = G.ASSET_ATLAS[PB_UTIL.icon_atlas.key]
+        card.children.center.atlas = atlas
+        -- Sprite quad WIDTH/HEIGHT come from center.scale, which was cached at init from the
+        -- 71x95 base-center atlas (sprite.lua:9,36-37). The icon sheet is 34x34, so without
+        -- resetting scale the quad samples a 71x95 block = several neighbouring icons. Match
+        -- the new cell size so exactly one icon is clipped (and drawn at the right scale,
+        -- since draw_self maps scale.x px -> VT.w, sprite.lua:147).
+        card.children.center.scale = { x = atlas.px, y = atlas.py }
         card.children.center:set_sprite_pos(r.pos)
     end
     card.T.w = TILE_SZ

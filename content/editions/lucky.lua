@@ -3,9 +3,9 @@
 -- 0.5 / 1.5 / 2.5; see PB_UTIL.lucky_emeralds + ENCHANTS.fortune.card_drops in
 -- content/enhancements/registry.lua). One center per book tier.
 --
--- PLACEHOLDER glint: vanilla foil shader (visual only -- the boolean flag set is the edition type,
--- NOT card.edition.foil, so the base foil +chips do NOT apply; the only effect is the emerald drop).
--- prefix_config.shader = false keeps 'foil' unprefixed. Never rolls (in_shop = false, weight = 0).
+-- Glint: the custom BalaCraft enchant shader (content/editions/enchant_shader.lua) -- a subtle
+-- green rim shimmer scaled by tier. shader = 'enchant' is prefixed to 'balacraft_enchant'. Visual
+-- only: the sole effect is the emerald drop in calculate below. Never rolls (in_shop = false).
 
 local AVG = { '0.5', '1.5', '2.5' }   -- display only
 
@@ -13,8 +13,7 @@ for tier = 1, 3 do
     local t = tier
     SMODS.Edition {
         key = 'lucky_' .. t,
-        shader = 'foil',
-        prefix_config = { shader = false },
+        shader = 'enchant',
         in_shop = false,
         weight = 0,
         loc_txt = {
