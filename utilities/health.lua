@@ -124,8 +124,16 @@ function Game:update_hand_played(dt)
         G.E_MANAGER:add_event(Event({
             trigger = 'immediate',
             func = function()
-                if G.GAME and G.GAME.blind and G.GAME.chips and G.GAME.blind.chips
-                    and (G.GAME.chips - G.GAME.blind.chips < 0)
+                -- Talisman: G.GAME.chips / blind.chips may be big-number TABLES (always so in
+                -- omeganum mode, even at tiny values). Their difference is then a table, and
+                -- `table < 0` crashes under LuaJIT/Lua 5.1, which only invokes __lt for same-type
+                -- operands. Collapse to a plain number via Talisman's to_number (no-op without it).
+                local short
+                if G.GAME and G.GAME.blind and G.GAME.chips and G.GAME.blind.chips then
+                    short = G.GAME.chips - G.GAME.blind.chips
+                    if type(short) == 'table' then short = to_number and to_number(short) or 0 end
+                end
+                if short and short < 0
                     and G.GAME.current_round and (G.GAME.current_round.hands_left >= 1)
                     -- Potion of Invisibility: no boss-blind damage while active (utilities/potions.lua).
                     and not (PB_UTIL.boss_damage_blocked and PB_UTIL.boss_damage_blocked()) then

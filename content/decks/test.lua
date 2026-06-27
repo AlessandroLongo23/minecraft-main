@@ -9,14 +9,11 @@
 -- ── EDIT THESE TO PICK WHAT TO FORCE ──────────────────────────────────────────
 local DOLLARS     = 999                                    -- extra starting cash (0 = skip)
 local LEVEL       = 100                                    -- starting XP level (0 = skip)
-local RESOURCES   = 99                                     -- set EVERY resource id to this (0 = skip)
+local RESOURCES   = 16                                     -- set EVERY resource id to this (0 = skip); 16 = one full PB_UTIL.STACK_MAX stack
+local RES_FIRST   = { 'blaze_rod' }                        -- grant these resource ids FIRST so they always make the 18-slot cut
+local RES_SKIP    = { glow_ink_sac = true }                -- resource ids to NEVER grant (only 18 inv slots; frees room for RES_FIRST)
 local JOKERS      = {}                                     -- joker keys, e.g. 'j_balacraft_elytra'
-local CONSUMABLES = {
-    'c_balacraft_enchant_sharpness_3',
-    'c_balacraft_enchant_durability_3',
-    'c_balacraft_enchant_fortune_3',
-    'c_balacraft_tool_sword_diamond'
-}  -- consumable keys (the Sharpness, Durability, and Fortune books)
+local CONSUMABLES = {}                                     -- consumable keys (none: start with no consumables)
 local VOUCHERS    = {                                      -- vouchers to force-redeem
     'v_balacraft_enchanting_table',
     'v_balacraft_sorcerers_tome',
@@ -48,8 +45,8 @@ SMODS.Back {
         name = 'Test Deck',
         text = {
             '{C:attention}DEV{} sandbox: start loaded',
-            'with cash, resources,',
-            'vouchers and an enchant book.',
+            'with cash, a stack of every',
+            'resource, and vouchers.',
         },
     },
 
@@ -67,12 +64,22 @@ SMODS.Back {
                     G.GAME.balacraft.xp = 0
                 end
 
-                -- Resources: every id (gathered + crafted — it's a sandbox). PB_UTIL.RESOURCES
-                -- is an ARRAY of {id=...} defs, so iterate with ipairs and read r.id (matching
-                -- the init_game_object seeding in utilities/resources.lua).
+                -- Resources: every id (gathered + crafted — it's a sandbox), one stack each. The
+                -- inventory only has PB_UTIL.INV_BASE_SLOTS (18) slots and add_resource enforces that
+                -- capacity, so the loop fills in registry order until full and the rest silently drop.
+                -- RES_FIRST is granted up front (so those ids always make the cut) and RES_SKIP ids are
+                -- never granted (freeing their slot). PB_UTIL.RESOURCES is an ARRAY of {id=...} defs, so
+                -- iterate with ipairs and read r.id (matching init_game_object seeding in resources.lua).
                 if RESOURCES ~= 0 and PB_UTIL.RESOURCES then
+                    local granted = {}
+                    for _, id in ipairs(RES_FIRST) do
+                        PB_UTIL.add_resource(id, RESOURCES)
+                        granted[id] = true
+                    end
                     for _, r in ipairs(PB_UTIL.RESOURCES) do
-                        PB_UTIL.add_resource(r.id, RESOURCES)
+                        if not RES_SKIP[r.id] and not granted[r.id] then
+                            PB_UTIL.add_resource(r.id, RESOURCES)
+                        end
                     end
                 end
 
