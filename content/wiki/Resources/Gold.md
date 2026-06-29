@@ -1,19 +1,21 @@
-*Gathered resource — Tier 2*
+*Refined resource — Furnace only*
 
 ![[res_gold.png|105]]
 
 | Attribute | Value |
 | --- | --- |
 | Tier | 2 |
-| Kind | Gathered ore |
+| Kind | Refined (smelt-only) |
+| Drop type | None — Furnace output |
 | Resource id | `gold` |
 
 ## How to get it
-- Tier-2 roll from bosses **once you reach ante 3+**.
-- From [[Booster Packs|Loot Chests]] (tier-2, medium weight).
-- Biased high in the [[Desert]], [[Badlands]], [[Nether Wastes]] and [[End Midlands]] biomes.
+**Smelting only.** Gold ingots no longer drop, pack, mine or trade directly — you obtain **[[Raw Gold]]** and smelt it at the [[Crafting|Furnace]].
 
 ## Used in
-- **Golden tools** — Golden [[Sword]] (×4 Mult), [[Pickaxe]] (+4 ore), [[Shovel]] (+$5).
+- **Golden tools** — Golden [[Sword]], [[Pickaxe]], [[Shovel]] (and the Golden [[Axe]]).
+- **Glistering Melon** — [[Melon Slice]] + Gold (→ Instant Health potion).
+- **Golden Carrot** — [[Resources/Carrot|Carrot]] + Gold (→ Night Vision potion).
+- **Gold [[Sheets|Sheet]]** — forged at the Anvil.
 
 [[Resources|← Back to Resources]]

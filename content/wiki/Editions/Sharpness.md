@@ -3,8 +3,8 @@
 | Attribute | Value |
 | --- | --- |
 | Lane | Combat |
-| Applied by | the dual-target [[Enchanting Books/Sharpness\|Sharpness book]] (highlight a card in hand + the book → **Enchant Card**) |
-| Apply cost | `book tier + 1` [[Experience\|levels]] (I = 2, II = 3, III = 4) |
+| Applied by | the dual-target [[Enchanting Books/Sharpness\|Sharpness book]] (highlight a card in hand + the book → **Enchant**) |
+| Apply cost | **free** — the cost is paid at the [[Enchanting Table]] when you generate the book |
 | Internal key | `e_balacraft_sharpness_1` / `_2` / `_3` |
 
 ## Effect
@@ -20,10 +20,12 @@ A card with the **Sharpness** glint gives **+Mult** when it scores, **doubled ag
 The MC enchantment that adds damage, turned into a card edition that hits hardest against mobs.
 
 ## Notes
-- Applied via the [[Enchanting]] flow: select the card + the Sharpness book, click **Enchant Card**,
-  spend levels. Gated by the [[Enchanting Table]] voucher.
+- Applied via the [[Enchanting]] flow: select the card + the Sharpness book and click **Enchant** —
+  applying is free, because you already paid (levels + Lapis + a Book) to forge the book at the
+  [[Enchanting Table]].
 - The applier is the **dual-target [[Enchanting Books/Sharpness|Sharpness book]]**: on a **tool** it
-  gives ×Mult, on a **card** it applies this Sharpness edition (+Mult). One book, two targets.
+  gives ×Mult (at the [[Anvil]]), on a **card** it applies this Sharpness edition (+Mult). One book,
+  two targets.
 - Boss check is the same signal jokers use (`G.GAME.blind.boss`).
 - Editions are mutually exclusive — a card holds one of Sharpness / Unbreaking / Lucky at a time.
 

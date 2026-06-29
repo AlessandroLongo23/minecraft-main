@@ -14,10 +14,13 @@ PB_UTIL.RECIPES = {
     },
 }
 
--- Tool recipes: 4 tools x 6 materials = 24, derived from PB_UTIL.TOOLS (content/tools/registry.lua,
--- which loads first -- see main.lua). Each outputs a consumable. The shaped matcher
--- (crafting_match.lua) compares cell IDS, so e.g. Wooden Sword (wood/wood/stick) and Iron Sword
--- (iron/iron/stick) are distinct recipes despite sharing a shape. Minecraft tool shapes:
+-- Tool recipes: 4 tools x 5 craftable materials = 20, derived from PB_UTIL.TOOLS
+-- (content/tools/registry.lua, which loads first -- see main.lua). NETHERITE is excluded: like in
+-- Minecraft, netherite tools can't be crafted at a table -- you craft the Diamond tool and UPGRADE
+-- it at the Anvil's "Upgrade" tab (Diamond tool + Netherite -> Netherite tool; see utilities/furnace.lua).
+-- Each outputs a consumable. The shaped matcher (crafting_match.lua) compares cell IDS, so e.g.
+-- Wooden Sword (wood/wood/stick) and Iron Sword (iron/iron/stick) are distinct recipes despite
+-- sharing a shape. Minecraft tool shapes:
 --   sword   = 2 material stacked + 1 stick below
 --   pickaxe = 3 material top row + 2 sticks (handle)
 --   shovel  = 1 material + 2 sticks (handle)
@@ -51,12 +54,14 @@ local function tool_pattern(tool, M)
 end
 
 for _, t in ipairs(PB_UTIL.TOOLS or {}) do
-    PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
-        key = 'tool_' .. t.id,
-        name = t.name,
-        output = { type = 'consumable', id = 'c_balacraft_tool_' .. t.id, amount = 1 },
-        pattern = tool_pattern(t.tool, t.material),
-    }
+    if t.material ~= 'netherite' then   -- netherite tools are Anvil-upgrade-only (see utilities/furnace.lua)
+        PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+            key = 'tool_' .. t.id,
+            name = t.name,
+            output = { type = 'consumable', id = 'c_balacraft_tool_' .. t.id, amount = 1 },
+            pattern = tool_pattern(t.tool, t.material),
+        }
+    end
 end
 
 -- Torch: Minecraft recipe = coal directly above a stick. Normalizes to a 1x2 column
@@ -359,6 +364,21 @@ PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
         { 'iron', 'iron', 'iron' },
         { false,  'iron', false  },
         { false,  'iron', false  },
+    },
+}
+
+-- Composter: MC's open-topped bin (7 wooden slabs -> Wood here, a U with a hollow top). A Base station:
+-- once built it opens the Composter overlay, where ORGANIC items (flowers + farm plants) are turned into
+-- Bone Meal (utilities/composter.lua). 7 Wood -- distinct from the Chest's 8-Wood ring (the top-middle
+-- cell is empty here), so the cell-id matcher keeps them apart.
+PB_UTIL.RECIPES[#PB_UTIL.RECIPES + 1] = {
+    key = 'composter',
+    name = 'Composter',
+    output = { type = 'station', id = 'composter', amount = 1 },
+    pattern = {
+        { 'wood', false,  'wood' },
+        { 'wood', false,  'wood' },
+        { 'wood', 'wood', 'wood' },
     },
 }
 

@@ -14,7 +14,7 @@ A Food Pack gives you **[[Food]]** to keep your [[Hunger]] topped up. Pick from 
 
 ## Contents
 Any of the six [[Food|foods]] can appear. Sampling is tier-weighted **4 : 2 : 1**:
-- Tier 1 (each ≈23.5%/slot): [[Potato]], [[Carrot]], [[Apple]]
+- Tier 1 (each ≈23.5%/slot): [[Potato]], [[Food/Carrot|Carrot]], [[Apple]]
 - Tier 2 (each ≈11.8%/slot): [[Baked Potato]], [[Cooked Chicken]]
 - Tier 3 (≈5.9%/slot): [[Cooked Porkchop]]
 

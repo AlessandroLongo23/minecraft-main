@@ -215,7 +215,8 @@ end
 PB_UTIL.BLIND_DROPS = {
     bl_balacraft_creeper  = { { id = 'coal', amount = 2 } },
     bl_balacraft_skeleton = { { id = 'raw_iron', amount = 1 } },
-    bl_balacraft_zombie   = { { id = 'wood', amount = 2 } },
+    -- (Zombie's old {wood,2} override is gone: Wood is now a GUARANTEED per-blind roll, so the boss
+    -- WOOD_PMF already pays it out -- a themed override here would only double-dip.)
 }
 
 -- Themed MOB drops: granted ADDITIVELY on top of the ore path (so the Spider boss still pays an
@@ -275,17 +276,45 @@ function PB_UTIL.blind_location(blind)
     return nil
 end
 
--- Night/Cave drop-pool balance (all tunable). Night guarantees Wood + a chance of one surface ore;
--- Cave is ore-heavy with a chance to roll the highest unlocked tier; MOB_DROP_CHANCE is the per-win
--- odds of an ADDITIVE mob material on top (keeps drops "mostly resources, occasionally mob").
-local SURFACE_WOOD_AMOUNT      = 1
-local SURFACE_EXTRA_ORE_CHANCE = 0.35
-local CAVE_HIGH_TIER_CHANCE    = 0.5
-local CAVE_ORE_AMOUNT          = 1
-local MOB_DROP_CHANCE          = 0.25
+-- ── Blind-drop balance (all tunable; full model in content/wiki/New mechanics/Resource Drops.md) ──
+-- Wood + Cobblestone are GUARANTEED per-blind rolls (no longer diluted into the random ore pool):
+-- one small discrete distribution per blind profile (surface = Night, cave = Cave, boss). The table
+-- is 1-indexed by amount+1, i.e. PMF[i] = P(amount == i-1), so {.05,.20,.45,.30} means
+-- P0=.05 P1=.20 P2=.45 P3=.30 (mu = 2.00). Night biases Wood, Cave biases Cobble, Boss is balanced;
+-- each averages ~1.57/blind -> ~84% chance of the 8-Cobblestone Furnace by end of ante 2.
+local WOOD_PMF = {
+    surface = { 0.05, 0.20, 0.45, 0.30 },   -- mu 2.00
+    cave    = { 0.20, 0.55, 0.25, 0.00 },   -- mu 1.05
+    boss    = { 0.05, 0.40, 0.40, 0.15 },   -- mu 1.65
+}
+local COBBLE_PMF = {
+    surface = { 0.20, 0.55, 0.25, 0.00 },   -- mu 1.05
+    cave    = { 0.05, 0.20, 0.45, 0.30 },   -- mu 2.00
+    boss    = { 0.05, 0.40, 0.40, 0.15 },   -- mu 1.65
+}
+-- Organic (flower) roll -- overworld only, Composter fuel (useless otherwise). mu 1.25/blind, var 0.79.
+local ORGANIC_PMF = { 0.20, 0.45, 0.25, 0.10 }
+-- Metal ores are DEMOTED to a rare per-blind bonus -- the player MINES metals from the deck instead.
+-- Pool excludes Wood+Cobble (random_metal_ore_of_tier_at); ~0.45 avg/blind.
+local METAL_ORE_CHANCE      = { surface = 0.30, cave = 0.45, boss = 0.60 }
+local CAVE_HIGH_TIER_CHANCE = 0.5   -- on a Cave/Boss metal roll, odds it rolls the highest unlocked tier
+local MOB_DROP_CHANCE       = 0.40  -- per-win odds of an ADDITIVE mob material (string/flint/leather/...)
 -- Nether/End progression-item drop odds.
-local CAVE_OBSIDIAN_CHANCE     = 0.25   -- a Cave (underground) win also yields 1 Obsidian this often
-local DIMENSION_MAT_CHANCE     = 0.30   -- any Nether/End win trickles 1 Blaze Powder / Ender Pearl
+local CAVE_OBSIDIAN_CHANCE  = 0.25  -- a Cave (underground) win also yields 1 Obsidian this often
+local DIMENSION_MAT_CHANCE  = 0.30  -- a Nether win trickles Blaze Powder / an End win trickles Ender Pearl
+local NETHER_PEARL_CHANCE   = 0.25  -- a Nether win ALSO trickles an Ender Pearl (Piglin / warped-forest)
+
+-- Walk a discrete PMF (PMF[i] = P(amount i-1)) with one seeded roll; returns the integer amount. The
+-- final bucket absorbs any residual probability, so the table need not sum to exactly 1.
+local function roll_pmf(pmf, seed_key)
+    local r = pseudorandom(seed_key)
+    local acc = 0
+    for i = 1, #pmf do
+        acc = acc + pmf[i]
+        if r < acc then return i - 1 end
+    end
+    return #pmf - 1
+end
 
 -- Returns a random ore id of exactly `tier` (run-seeded deterministic). The current biome
 -- biases WHICH ore within the tier by repeating favored ids in the draw pool (weight 1 = none).
@@ -328,6 +357,23 @@ function PB_UTIL.random_ore_of_tier_at(tier, location, seed_key)
             if not (location == 'cave' and r.id == 'wood') then
                 for _ = 1, biome_ore_weight(r.id) do pool[#pool + 1] = r.id end
             end
+        end
+    end
+    if #pool == 0 then return PB_UTIL.random_ore_of_tier(tier, seed_key) end
+    return pseudorandom_element(pool, pseudoseed(seed_key))
+end
+
+-- Metal-only sibling of random_ore_of_tier_at, used ONLY by the blind drop's rare metal bonus. Same
+-- biome biasing, but ALSO excludes Wood + Cobblestone (now guaranteed per-blind drops, not part of the
+-- random roll). So the tier-1 pool collapses to {coal, sand} and basics never dilute the metal roll.
+-- `location` is accepted for signature parity (Wood is already excluded outright). Safe fallback on an
+-- empty tier (none of tiers 1-4 are empty, so the fallback is unreachable in practice).
+function PB_UTIL.random_metal_ore_of_tier_at(tier, location, seed_key)
+    local pool = {}
+    for _, r in ipairs(PB_UTIL.RESOURCES) do
+        if r.kind == 'gathered' and r.drop_class == 'ore' and r.tier == tier
+            and r.id ~= 'wood' and r.id ~= 'cobblestone' then
+            for _ = 1, biome_ore_weight(r.id) do pool[#pool + 1] = r.id end
         end
     end
     if #pool == 0 then return PB_UTIL.random_ore_of_tier(tier, seed_key) end
@@ -405,6 +451,23 @@ function PB_UTIL.grant_mob_drop(blind)
     end
 end
 
+-- Overworld organic (flower) trickle: Composter fuel, useless otherwise. Rolls ORGANIC_PMF and grants
+-- that many flowers from PB_UTIL.FLOWERS (a run-seeded pick per unit). Inert until flowers are
+-- registered (Phase C) and only in the overworld -- the Nether/End run their own brewing-ingredient
+-- trickle (utilities/brewing.lua), so this won't fire there.
+function PB_UTIL.grant_organic_drop(blind)
+    local flowers = PB_UTIL.FLOWERS
+    if not (flowers and #flowers > 0) then return end
+    if PB_UTIL.current_dimension and PB_UTIL.current_dimension() ~= 'overworld' then return end
+    local ante = (G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante) or 1
+    local key  = 'bc_organic_' .. ante .. '_' .. tostring(blind and blind.name)
+    local n = roll_pmf(ORGANIC_PMF, key)
+    for i = 1, n do
+        local id = pseudorandom_element(flowers, pseudoseed(key .. '_pick_' .. i))
+        if id then record_drop(id, 1) end
+    end
+end
+
 -- Dimension-material trickle: while in the Nether, any win has a chance to drop Blaze Powder;
 -- while in the End, a chance to drop Ender Pearl. These (with the Enderman/Blaze themed drops)
 -- feed the Eye-of-Ender craft. drop_class='special' keeps them out of every other pool, so this
@@ -414,8 +477,11 @@ function PB_UTIL.grant_dimension_drop(blind)
     local dim  = PB_UTIL.current_dimension()
     local ante = (G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante) or 1
     local key  = 'bc_dimdrop_' .. ante .. '_' .. tostring(blind and blind.name)
-    if dim == 'nether' and pseudorandom(key) < DIMENSION_MAT_CHANCE then
-        record_drop('blaze_powder', 1)
+    if dim == 'nether' then
+        if pseudorandom(key) < DIMENSION_MAT_CHANCE then record_drop('blaze_powder', 1) end
+        -- The Nether ALSO trickles Ender Pearls (warped-forest Endermen / Piglin bartering) so the End
+        -- stays reachable by ante 7-8 without the ante-1 Enderman boss recurring.
+        if pseudorandom(key .. '_pearl') < NETHER_PEARL_CHANCE then record_drop('ender_pearl', 1) end
     elseif dim == 'end' and pseudorandom(key) < DIMENSION_MAT_CHANCE then
         record_drop('ender_pearl', 1)
     end
@@ -444,37 +510,40 @@ function PB_UTIL.grant_blind_drop(blind)
         G.GAME.balacraft.last_drop_lost = 0
     end
 
-    -- Ore path: a themed entry REPLACES the tier-roll (one or more {id, amount} stacks); else roll.
+    -- Ore path. Wood + Cobblestone are GUARANTEED per-blind rolls (biased by environment) on EVERY
+    -- blind type, so the Furnace/Chest economy never starves. Metal ores are a RARE bonus -- the player
+    -- mines them from the deck instead. Full model: content/wiki/New mechanics/Resource Drops.md.
+    local ante     = (G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante) or 1
+    local loc      = PB_UTIL.blind_location(blind)   -- 'surface' (Night) / 'cave' (Cave) / nil (boss)
+    local profile  = (loc == 'surface' and 'surface') or (loc == 'cave' and 'cave') or 'boss'
+    local max_tier = PB_UTIL.max_ore_tier(ante)
+    local key_base = ante .. '_' .. tostring(blind.name)
+
+    -- BASICS: rolled on every profile (incl. themed bosses), so basics are always supplied.
+    local w = roll_pmf(WOOD_PMF[profile],   'bc_wood_'   .. key_base)
+    local c = roll_pmf(COBBLE_PMF[profile], 'bc_cobble_' .. key_base)
+    if w > 0 then record_drop('wood', w) end
+    if c > 0 then record_drop('cobblestone', c) end
+
+    -- METAL slot: a themed entry (Creeper=coal, Skeleton=raw_iron) REPLACES it; else a rare bonus roll
+    -- from the metal-only pool (excludes wood/cobble, so tier-1 = {coal, sand}).
     local spec = blind.name and PB_UTIL.BLIND_DROPS[blind.name]
     if spec then
         for _, d in ipairs(spec) do record_drop(d.id, d.amount) end
-    else
-        local ante = (G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante) or 1
-        local loc = PB_UTIL.blind_location(blind)   -- 'surface' (Night) / 'cave' (Cave) / nil
-        local max_tier = PB_UTIL.max_ore_tier(ante)
-        if loc == 'surface' then
-            -- Night: Wood-heavy (Wood is surface-exclusive) + an occasional tier-1 surface ore.
-            record_drop('wood', SURFACE_WOOD_AMOUNT)
-            if pseudorandom('bc_surf_ore_' .. ante .. '_' .. tostring(blind.name)) < SURFACE_EXTRA_ORE_CHANCE then
-                record_drop(PB_UTIL.random_ore_of_tier_at(1, 'surface',
-                    'bc_surf_' .. ante .. '_' .. tostring(blind.name)), 1)
-            end
-        elseif loc == 'cave' then
-            -- Cave: ore-heavy, NO wood, scales with ante (chance to roll the highest unlocked tier).
-            local tier = (pseudorandom('bc_cave_tier_' .. ante) < CAVE_HIGH_TIER_CHANCE) and max_tier or 1
-            record_drop(PB_UTIL.random_ore_of_tier_at(tier, 'cave',
-                'bc_cave_' .. ante .. '_' .. tostring(blind.name)), CAVE_ORE_AMOUNT)
-            -- Deep underground also yields the occasional Obsidian (the Nether-portal fuel).
-            if pseudorandom('bc_cave_obs_' .. ante .. '_' .. tostring(blind.name)) < CAVE_OBSIDIAN_CHANCE then
-                record_drop('obsidian', 1)
-            end
-        else
-            -- Generic fallback (bosses without a themed entry, other modded blinds): unchanged.
-            local is_boss = blind.boss and true or false
-            local tier = is_boss and max_tier or 1
-            record_drop(PB_UTIL.random_ore_of_tier(tier,
-                'bc_drop_' .. ante .. '_' .. tostring(blind.name)), is_boss and 2 or 1)
+    elseif pseudorandom('bc_metal_' .. key_base) < (METAL_ORE_CHANCE[profile] or 0) then
+        local tier = 1
+        if profile == 'boss' then
+            tier = max_tier
+        elseif profile == 'cave' and pseudorandom('bc_cave_tier_' .. ante) < CAVE_HIGH_TIER_CHANCE then
+            tier = max_tier
         end
+        local id = PB_UTIL.random_metal_ore_of_tier_at(tier, loc, 'bc_metalpick_' .. key_base)
+        if id then record_drop(id, 1) end
+    end
+
+    -- Deep underground (Cave) also yields the occasional Obsidian (the Nether-portal fuel).
+    if loc == 'cave' and pseudorandom('bc_cave_obs_' .. key_base) < CAVE_OBSIDIAN_CHANCE then
+        record_drop('obsidian', 1)
     end
 
     -- Ruined Portal: beating it the NORMAL way banks 1 Obsidian (so you can light the NEXT one);
@@ -491,6 +560,9 @@ function PB_UTIL.grant_blind_drop(blind)
 
     -- Mob path: additive (themed mob material every time, else a low-rate loot roll).
     PB_UTIL.grant_mob_drop(blind)
+
+    -- Organic (flower) path: overworld Composter fuel (inert until flowers are registered).
+    PB_UTIL.grant_organic_drop(blind)
 
     -- Dimension trickle: Blaze Powder in the Nether / Ender Pearl in the End (Eye-of-Ender mats).
     PB_UTIL.grant_dimension_drop(blind)

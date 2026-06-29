@@ -6,6 +6,7 @@
 | --- | --- |
 | Tier | 1 |
 | Kind | Gathered (mob drop) |
+| Found in | Night (surface) **and** Cave (underground) |
 | Resource id | `flint` |
 
 ## How to get it
@@ -15,5 +16,6 @@
 
 ## Used in
 - **[[Arrow]]** — 1 Flint + 1 [[Sticks|Stick]] + 1 [[Feather]].
+- **[[Flint and Steel]]** — 1 [[Iron]] + 1 Flint (lights a Ruined Portal → the Nether).
 
 [[Resources|← Back to Resources]]

@@ -30,6 +30,9 @@ if PB_UTIL.config.resources_enabled then
     -- The Furnace (smelt raw->refined) + the "Your Base" launcher. Loads after crafting_ui so its
     -- Base slot can call open_crafting_table / the Back-to-Base helper can credit craft_cells.
     SMODS.load_file("utilities/furnace.lua")()
+    -- The Composter (organics -> Bone Meal). Loads after furnace.lua: it reuses open_base + the
+    -- station_built/build_station plumbing and its Back returns to the unified Base modal.
+    SMODS.load_file("utilities/composter.lua")()
     SMODS.load_file("utilities/torch.lua")()
     -- Tool registry FIRST: defines PB_UTIL.TOOLS, which content/resources/recipes.lua reads
     -- to build the 18 tool recipes.
@@ -103,10 +106,9 @@ if PB_UTIL.config.potions_enabled then
     -- Active-effects HUD row below the consumable area (reads the potion effect state seeded in
     -- potions.lua; uses the bc_effect_icons atlas registered by the registry above).
     SMODS.load_file("utilities/effects_ui.lua")()
-    -- The Brewing Stand: fuel + brew recipes + dimension drops (brewing.lua), then its Base-station
-    -- overlay (brewing_ui.lua), which also flips the Brewing Stand entry in PB_UTIL.BASE_STATIONS
-    -- (defined in furnace.lua, loaded in the resources block above) from a `soon` stub to active.
-    -- Guarded so potions still load if the resources block (and thus the Base) is disabled.
+    -- The Brewing Stand: fuel + brew recipes + dimension drops (brewing.lua), then its in-frame station
+    -- content (brewing_ui.lua), which renders inside the unified Inventory modal's Workbench picker once
+    -- the station is crafted. Guarded so potions still load if the resources block is disabled.
     if PB_UTIL.config.resources_enabled then
         SMODS.load_file("utilities/brewing.lua")()
         SMODS.load_file("utilities/brewing_ui.lua")()

@@ -64,7 +64,8 @@ local function res_count_slot(label, rid)
     } }
 end
 
--- One offer row: cost circle (i) + book icon + name + level requirement.
+-- One offer cell (compact vertical card): tier circle / book icon / name / level requirement.
+-- Sits beside the other two offers in a horizontal row.
 local function offer_row(i, offer)
     local def  = PB_UTIL.ENCHANTS and PB_UTIL.ENCHANTS[offer.etype]
     local roman = (PB_UTIL.ENCHANT_ROMAN and PB_UTIL.ENCHANT_ROMAN[offer.tier]) or tostring(offer.tier)
@@ -72,27 +73,27 @@ local function offer_row(i, offer)
     local req  = PB_UTIL.ENCHANT_TABLE_REQ[i] or 0
     local met  = (PB_UTIL.get_level and PB_UTIL.get_level() or 0) >= req
 
-    local circle = { n = G.UIT.C, config = { align = 'cm', padding = 0.04, r = 0.5, minw = 0.5, minh = 0.5,
+    local circle = { n = G.UIT.C, config = { align = 'cm', padding = 0.04, r = 0.5, minw = 0.4, minh = 0.4,
         colour = G.C.GREEN }, nodes = {
-        { n = G.UIT.T, config = { text = tostring(i), scale = 0.4, colour = G.C.UI.TEXT_LIGHT } } } }
+        { n = G.UIT.T, config = { text = tostring(i), scale = 0.3, colour = G.C.UI.TEXT_LIGHT } } } }
 
     local b     = PB_UTIL.ENCHANT_BOOK_BY_ID and PB_UTIL.ENCHANT_BOOK_BY_ID[offer.etype .. '_' .. offer.tier]
     local atlas = PB_UTIL.enchant_icon_atlas and G.ASSET_ATLAS[PB_UTIL.enchant_icon_atlas.key]
-    local bicon = (b and b.pos and atlas) and { n = G.UIT.O, config = { object = Sprite(0, 0, 0.5, 0.5, atlas, b.pos) } }
-        or { n = G.UIT.C, config = { align = 'cm', minw = 0.5, minh = 0.5 }, nodes = {} }
+    local bicon = (b and b.pos and atlas) and { n = G.UIT.O, config = { object = Sprite(0, 0, 0.55, 0.55, atlas, b.pos) } }
+        or { n = G.UIT.C, config = { align = 'cm', minw = 0.55, minh = 0.55 }, nodes = {} }
 
-    return { n = G.UIT.R, config = {
-        align = 'cm', padding = 0.06, r = 0.08, minw = 5.4, minh = 0.66,
+    return { n = G.UIT.C, config = {
+        align = 'cm', padding = 0.06, r = 0.08, minw = 2.7, minh = 2.1,
         colour = G.C.UI.TRANSPARENT_DARK,
         button = 'bc_ench_take', func = 'bc_can_ench_take', ref_table = { index = i },
         hover = true, shadow = true,
     }, nodes = {
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.05 }, nodes = { circle } },
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.05 }, nodes = { bicon } },
-        { n = G.UIT.C, config = { align = 'cl', padding = 0.05, minw = 2.8 }, nodes = {
-            { n = G.UIT.T, config = { text = name, scale = 0.32, colour = G.C.UI.TEXT_LIGHT } } } },
-        { n = G.UIT.C, config = { align = 'cr', padding = 0.05, minw = 1.1 }, nodes = {
-            { n = G.UIT.T, config = { text = 'Lv ' .. req, scale = 0.3,
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = { circle } },
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = { bicon } },
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.02, maxw = 2.5 }, nodes = {
+            { n = G.UIT.T, config = { text = name, scale = 0.28, colour = G.C.UI.TEXT_LIGHT } } } },
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = {
+            { n = G.UIT.T, config = { text = 'Lv ' .. req, scale = 0.28,
                 colour = met and G.C.GREEN or G.C.RED } } } },
     } }
 end
@@ -102,19 +103,19 @@ function PB_UTIL.enchant_station_content()
     PB_UTIL.ensure_enchant_offers()
     local b = bc()
     local offers = (b and b.enchant_offers) or {}
-    local rows = {}
+    local cells = {}
     for i = 1, 3 do
-        if offers[i] then rows[#rows + 1] = offer_row(i, offers[i]) end
+        if offers[i] then
+            cells[#cells + 1] = { n = G.UIT.C, config = { align = 'cm', padding = 0.04 },
+                nodes = { offer_row(i, offers[i]) } }
+        end
     end
-    return { n = G.UIT.C, config = { align = 'tm', padding = 0.06 }, nodes = {
-        { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-            { n = G.UIT.T, config = { text = 'Enchant', scale = 0.5, colour = G.C.UI.TEXT_LIGHT } } } },
-        { n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = {
+    return { n = G.UIT.C, config = { align = 'cm', padding = 0.06 }, nodes = {
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = {
             res_count_slot('Book', 'book'),
             res_count_slot('Lapis', 'lapis'),
         } },
-        { n = G.UIT.R, config = { align = 'cm', minh = 0.06 }, nodes = {} },
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.04, r = 0.1, colour = G.C.BLACK }, nodes = rows },
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = cells },
     } }
 end
 

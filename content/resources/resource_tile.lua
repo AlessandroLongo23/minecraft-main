@@ -77,6 +77,9 @@ function PB_UTIL.make_resource_source(rid, x, y)
         -- since draw_self maps scale.x px -> VT.w, sprite.lua:147).
         card.children.center.scale = { x = atlas.px, y = atlas.py }
         card.children.center:set_sprite_pos(r.pos)
+        -- Make the icon dimmable so populate_inventory can fade it to 40% when it isn't draggable at the
+        -- active station (e.g. a non-organic at the Composter). bc_overlay[4] is the alpha (default 1).
+        if PB_UTIL.make_dimmable then PB_UTIL.make_dimmable(card.children.center) end
     end
     card.T.w = TILE_SZ
     card.T.h = TILE_SZ

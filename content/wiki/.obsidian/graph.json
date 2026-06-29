@@ -1,5 +1,5 @@
 {
-  "collapse-filter": true,
+  "collapse-filter": false,
   "search": "",
   "showTags": false,
   "showAttachments": false,
@@ -8,77 +8,119 @@
   "collapse-color-groups": true,
   "colorGroups": [
     {
-      "query": "food",
-      "color": {
-        "a": 1,
-        "rgb": 14048348
-      }
-    },
-    {
-      "query": "tools",
-      "color": {
-        "a": 1,
-        "rgb": 14069084
-      }
-    },
-    {
-      "query": "biomes",
+      "query": "path:\"Biomes\"",
       "color": {
         "a": 1,
         "rgb": 11392604
       }
     },
     {
-      "query": "decks",
-      "color": {
-        "a": 1,
-        "rgb": 6084188
-      }
-    },
-    {
-      "query": "resrouces",
-      "color": {
-        "a": 1,
-        "rgb": 6084269
-      }
-    },
-    {
-      "query": "mechanics",
-      "color": {
-        "a": 1,
-        "rgb": 6073814
-      }
-    },
-    {
-      "query": "vouchers",
-      "color": {
-        "a": 1,
-        "rgb": 6053078
-      }
-    },
-    {
-      "query": "bosses",
-      "color": {
-        "a": 1,
-        "rgb": 11361494
-      }
-    },
-    {
-      "query": "jokers",
-      "color": {
-        "a": 1,
-        "rgb": 14048429
-      }
-    },
-    {
-      "query": "booster",
+      "query": "path:\"Booster packs\"",
       "color": {
         "a": 1,
         "rgb": 14048348
       }
     },
     {
-      "query": "enchanting",
+      "query": "path: \"Editions\" ",
+      "color": {
+        "a": 1,
+        "rgb": 6084188
+      }
+    },
+    {
+      "query": "path:\"Enchanting books\"",
+      "color": {
+        "a": 1,
+        "rgb": 14069084
+      }
+    },
+    {
+      "query": "path: \"Enhancements\"",
+      "color": {
+        "a": 1,
+        "rgb": 6053078
+      }
+    },
+    {
+      "query": "path:\"Food\"",
+      "color": {
+        "a": 1,
+        "rgb": 14048348
+      }
+    },
+    {
+      "query": "path:\"New Bosses\"",
+      "color": {
+        "a": 1,
+        "rgb": 11361494
+      }
+    },
+    {
+      "query": "path:\"New Decks\"",
+      "color": {
+        "a": 1,
+        "rgb": 6084188
+      }
+    },
+    {
+      "query": "path:\"New Jokers\"",
+      "color": {
+        "a": 1,
+        "rgb": 14048429
+      }
+    },
+    {
+      "query": "path:\"New Vouchers\"",
+      "color": {
+        "a": 1,
+        "rgb": 6053078
+      }
+    },
+    {
+      "query": "path: \"Potions\"",
+      "color": {
+        "a": 1,
+        "rgb": 11392604
+      }
+    },
+    {
+      "query": "path:\"Resources\"",
+      "color": {
+        "a": 1,
+        "rgb": 6084269
+      }
+    },
+    {
+      "query": "path: \"Seals\"",
+      "color": {
+        "a": 1,
+        "rgb": 6073814
+      }
+    },
+    {
+      "query": "path:\"mechanics\"",
+      "color": {
+        "a": 1,
+        "rgb": 6073814
+      }
+    },
+    {
+      "query": "path: \"Sheets\"",
+      "color": {
+        "a": 1,
+        "rgb": 6053078
+      }
+    },
+    {
+      "query": "path: \"Tags\" ",
+      "color": {
+        "a": 1,
+        "rgb": 6084269
+      }
+    },
+    {
+      "query": "path:\"tools\"",
       "color": {
         "a": 1,
         "rgb": 14069084
@@ -95,6 +137,6 @@
   "repelStrength": 12.2769097222222,
   "linkStrength": 1,
   "linkDistance": 154,
-  "scale": 0.5906415366798456,
+  "scale": 0.5489032848301133,
   "close": true
 }

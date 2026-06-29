@@ -93,11 +93,23 @@ PB_UTIL.RESOURCES = {
     { id = 'leather', name = 'Leather', kind = 'gathered', tier = 1, drop_class = 'mob', location = 'surface', pos = { x = 2, y = 13 } },
     { id = 'paper',   name = 'Paper',   kind = 'crafted', pos = { x = 0, y = 14 } },
     { id = 'book',    name = 'Book',    kind = 'crafted', pos = { x = 1, y = 14 } },
+    -- ── Flowers (Composter fuel) ────────────────────────────────────────────────
+    -- Pure organic items: kind='gathered', drop_class='special' so they stay OUT of every ore/mob pool
+    -- (granted ONLY by the overworld organic roll in grant_blind_drop). Useless except as Composter
+    -- input (utilities/composter.lua) -> Bone Meal. tier=1 is cosmetic only (the card-face backdrop).
+    { id = 'dandelion',   name = 'Dandelion',   kind = 'gathered', tier = 1, drop_class = 'special', pos = { x = 2, y = 14 } },
+    { id = 'poppy',       name = 'Poppy',       kind = 'gathered', tier = 1, drop_class = 'special', pos = { x = 0, y = 15 } },
+    { id = 'cornflower',  name = 'Cornflower',  kind = 'gathered', tier = 1, drop_class = 'special', pos = { x = 1, y = 15 } },
+    { id = 'oxeye_daisy', name = 'Oxeye Daisy', kind = 'gathered', tier = 1, drop_class = 'special', pos = { x = 2, y = 15 } },
 }
 
 -- Lookup by id (used by drops/UI).
 PB_UTIL.RESOURCE_BY_ID = {}
 for _, r in ipairs(PB_UTIL.RESOURCES) do PB_UTIL.RESOURCE_BY_ID[r.id] = r end
+
+-- Flower ids: the overworld organic drop pool (grant_blind_drop -> grant_organic_drop) AND the
+-- Composter's fuel list (utilities/composter.lua). Pure organics; useless except to make Bone Meal.
+PB_UTIL.FLOWERS = { 'dandelion', 'poppy', 'cornflower', 'oxeye_daisy' }
 
 -- ── Mining levels (Minecraft-faithful) ──────────────────────────────────────
 -- Each ore-block requires a pickaxe (or axe) of at least this MINING LEVEL to extract (see

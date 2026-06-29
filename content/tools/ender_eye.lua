@@ -9,6 +9,11 @@
 -- 71x95 card face from the authentic MC ender_eye item texture (gen_item_consumable_cards.py).
 SMODS.Atlas { key = 'bc_ender_eye', path = 'ender_eye.png', px = 71, py = 95 }
 
+-- Recipe-list icon: the frameless Eye of Ender item icon (bc_tool_icons cell {2,4},
+-- gen_tool_icons.py) so the crafting list shows an icon instead of the full card.
+PB_UTIL.tool_icon_pos = PB_UTIL.tool_icon_pos or {}
+PB_UTIL.tool_icon_pos['c_balacraft_ender_eye'] = { x = 2, y = 4 }
+
 SMODS.Consumable {
     key = 'ender_eye',
     set = 'balacraft_tool',

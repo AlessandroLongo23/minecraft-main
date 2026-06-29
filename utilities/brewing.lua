@@ -218,6 +218,11 @@ function PB_UTIL.brew_potion(potion_id, mods)
     if c.set_sprites then c:set_sprites(c.config.center, c.config.front) end   -- show the variant column now
     c:add_to_deck()
     G.consumeables:emplace(c)
+    -- Route it NOW into a free Minecraft slot, else the unified inventory (mirrors the netherite-forge
+    -- path in furnace.lua). brew_collect already verified there's room; doing it synchronously -- rather
+    -- than waiting for the per-frame sweep -- means a slots-full potion lands in inventory immediately,
+    -- so the Brewing Stand can refresh and show it instead of it seeming to vanish.
+    if PB_UTIL.reconcile_mc_consumables then PB_UTIL.reconcile_mc_consumables() end
     return true
 end
 

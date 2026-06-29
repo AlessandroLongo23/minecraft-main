@@ -21,6 +21,24 @@ PB_UTIL.PANEL_STATES = {
     [G.STATES.ROUND_EVAL]     = true,
 }
 
+-- Booster-pack states. The consumable tray is still on screen here and the player can use an OWNED
+-- consumable mid-pack -- a common vanilla pattern (e.g. use a Tarot from your tray on a hand card
+-- before picking from the pack). Treat these like PANEL_STATES *in the consumable-view driver only*
+-- (NOT in the shared PANEL_STATES, which also gates the enchant bar) so the toggle shows exactly ONE
+-- side. Otherwise the driver's inactive fallback force-shows BOTH overlapping areas with no toggle,
+-- and the G.bc_mc_consumeables area pinned on top swallows clicks meant for the vanilla tray.
+-- SMODS_BOOSTER_OPENED covers modded packs (e.g. Cryptid's Anarkana); guarded as it may be nil.
+PB_UTIL.PACK_STATES = {
+    [G.STATES.TAROT_PACK]    = true,
+    [G.STATES.SPECTRAL_PACK] = true,
+    [G.STATES.STANDARD_PACK] = true,
+    [G.STATES.BUFFOON_PACK]  = true,
+    [G.STATES.PLANET_PACK]   = true,
+}
+if G.STATES.SMODS_BOOSTER_OPENED ~= nil then
+    PB_UTIL.PACK_STATES[G.STATES.SMODS_BOOSTER_OPENED] = true
+end
+
 local BAR_GAP = 0.1   -- vertical gap between the toggle bar and the area's top edge
 
 -- Live-bound label for the flip button (re-rendered each frame by ui.lua, so the driver only
@@ -112,7 +130,7 @@ end
 
 -- ---- Per-frame driver ----
 function PB_UTIL.update_consumable_view()
-    local active = G.STATE and PB_UTIL.PANEL_STATES[G.STATE]
+    local active = G.STATE and (PB_UTIL.PANEL_STATES[G.STATE] or PB_UTIL.PACK_STATES[G.STATE])
         and G.consumeables and G.GAME and G.GAME.balacraft
 
     if not active then

@@ -1,6 +1,6 @@
 *Overworld biome*
 
-![[biome_jungle.png|130]]
+![[biome_jungle.png|105]]
 
 | Attribute | Value |
 | --- | --- |

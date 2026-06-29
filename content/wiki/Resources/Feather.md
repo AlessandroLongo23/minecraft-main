@@ -6,6 +6,7 @@
 | --- | --- |
 | Tier | 1 |
 | Kind | Gathered (mob drop) |
+| Found in | Night (surface) **and** Cave (underground) |
 | Resource id | `feather` |
 
 ## How to get it

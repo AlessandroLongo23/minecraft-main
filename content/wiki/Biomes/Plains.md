@@ -1,6 +1,6 @@
 *Overworld biome — default starting biome*
 
-![[biome_plains.png|130]]
+![[biome_plains.png|105]]
 
 | Attribute | Value |
 | --- | --- |
@@ -11,6 +11,6 @@
 | Start deck | [[Biome Decks\|Plains Deck]] (win 10 antes here) |
 | Biome id | `plains` |
 
-The biome every run starts in (unless a deck/portal says otherwise). Neutral, with a gentle bias toward the basic tier-1 building ores.
+The biome every run starts in (unless a [[Biome Decks|deck]] says otherwise). Neutral, with a gentle bias toward the basic tier-1 building ores [[Wood]] and [[Cobblestone]].
 
 [[Biomes|← Back to Biomes]]

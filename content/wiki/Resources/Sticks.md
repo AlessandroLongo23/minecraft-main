@@ -21,6 +21,10 @@
 The hotbar only shows Sticks once you own at least one.
 
 ## Used in
-- **Every tool recipe** — the handle of each [[Sword]], [[Pickaxe]], [[Shovel]] and the [[Torch]].
+- **The handle of every tool** — each [[Sword]], [[Pickaxe]], [[Shovel]] and [[Axe]].
+- **[[Torch]]** — Coal (or [[Glow Ink Sac]]) above a Stick.
+- **[[Bow]]**, **[[Fishing Rod]]**, **[[Crossbow]]** — the frame / pole.
+- **[[Arrow]]** — the shaft.
+- **[[Firework]]** — the body.
 
 [[Resources|← Back to Resources]]

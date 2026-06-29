@@ -1,7 +1,4 @@
-*Voucher*
-
-![[voucher_nether_portal.png|110]]
-*Placeholder art (reuses a portal cell for now).*
+*Voucher — base of the enchanting pair*
 
 | Attribute | Value |
 | --- | --- |
@@ -11,7 +8,7 @@
 
 ## Effect
 Unlocks the **[[Enchanting]]** system:
-- **[[Enchanting Books]]** start appearing in the shop, and the **[[Enchanting Pack]]** booster can roll.
+- **[[Enchanting Books]]** start appearing in the shop (a rare find — about 1-in-60 shop slots), and the **[[Enchanting Pack]]** booster can roll.
 - Grants **+1 consumable slot** (room for tools *and* books).
 
 ## See also

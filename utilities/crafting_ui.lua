@@ -10,9 +10,13 @@ PB_UTIL.crafting_selected = PB_UTIL.crafting_selected or nil
 
 -- Recipe square tunables (tune in-game).
 local RECIPE_ICON_SZ   = 0.5
-local RECIPES_PER_ROW  = 6
+-- 4 (not 6) per row keeps the side-by-side [Recipes | craft apparatus] inside the fixed left-column
+-- width LW. At 6/row the Crafting content (~10.9) OVERFLOWED LW=10, so the Crafting box grew wider
+-- than every other station's and the whole modal re-centred only for Crafting -- the "this workbench
+-- is aligned differently" symptom. 4/row (~9.3) fits LW with margin, so all six boxes share one width.
+local RECIPES_PER_ROW  = 4
 local RECIPE_PAGE_ROWS = 3                              -- rows shown per page
-local RECIPES_PER_PAGE = RECIPES_PER_ROW * RECIPE_PAGE_ROWS  -- 18; page nav appears past this
+local RECIPES_PER_PAGE = RECIPES_PER_ROW * RECIPE_PAGE_ROWS  -- 12; page nav appears past this
 
 -- Current recipe page (1-based). Persists across a page-flip reopen; reset to 1 on a fresh open.
 PB_UTIL.recipe_page = PB_UTIL.recipe_page or 1
@@ -180,8 +184,14 @@ function PB_UTIL.update_crafting_modal()
     -- driver; each updater early-returns unless its overlay is open (crafting_ui loads before
     -- furnace.lua, so guard on existence).
     if PB_UTIL.update_furnace_modal then PB_UTIL.update_furnace_modal() end
-    if PB_UTIL.update_anvil_forge then PB_UTIL.update_anvil_forge() end
+    if PB_UTIL.update_anvil_unified then PB_UTIL.update_anvil_unified() end
     if PB_UTIL.update_brew_modal then PB_UTIL.update_brew_modal() end
+    -- The Composter composts on a drag-drop (router sets _composter_dirty); rebuild the shell here, one
+    -- frame later, so it never re-enters the overlay build from inside Controller:L_cursor_release.
+    if PB_UTIL._composter_dirty then
+        PB_UTIL._composter_dirty = nil
+        if PB_UTIL.rebuild_inv_overlay then PB_UTIL.rebuild_inv_overlay() end
+    end
 end
 
 -- One state table living for the modal's lifetime. output_label is ALWAYS a string
@@ -358,12 +368,12 @@ function PB_UTIL.crafting_station_content()
         },
     }
 
-    -- Station content: [ recipes panel | crafting area ].
-    return { n = G.UIT.C, config = { align = 'tm' }, nodes = {
+    -- Station content: [ recipes | crafting area ], centred. The selected-workbench panel (shell)
+    -- provides the single black container + the "Crafting Table" title above it -- no inner panels.
+    return { n = G.UIT.C, config = { align = 'cm' }, nodes = {
         { n = G.UIT.R, config = { align = 'cm', padding = 0.08 }, nodes = {
-            { n = G.UIT.C, config = { align = 'tm', padding = 0.06, r = 0.1, colour = G.C.BLACK, minh = 3 },
-              nodes = left_nodes },
-            { n = G.UIT.C, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK, minw = 4.2, minh = 3 }, nodes = {
+            { n = G.UIT.C, config = { align = 'cm', padding = 0.06 }, nodes = left_nodes },
+            { n = G.UIT.C, config = { align = 'cm', padding = 0.06 }, nodes = {
                 craft_row, output_label, warn_label,
             } },
         } },
@@ -382,14 +392,15 @@ end
 
 PB_UTIL.active_station = PB_UTIL.active_station or 'crafting_table'
 
--- The picker stations. `inframe` render their content in the shell; `external` open their own
--- overlay (legacy, pending integration); `soon` are stubs; `station` ones need that station built.
+-- The picker stations. ALL render their content in the unified shell (`inframe`); `soon` are stubs;
+-- `station` ones need that station built first.
 local PICKER_STATIONS = {
-    { id = 'crafting_table', name = 'Crafting', icon = 'crafting_table',   inframe = true, always = true },
-    { id = 'furnace',        name = 'Furnace',  icon = 'furnace',          inframe = true, station = 'furnace' },
-    { id = 'anvil',          name = 'Anvil',    icon = 'anvil',            external = 'bc_open_anvil',   station = 'anvil' },
-    { id = 'brewing_stand',  name = 'Brewing',  icon = 'brewing_stand',    external = 'bc_open_brewing', station = 'brewing_stand' },
-    { id = 'enchant',        name = 'Enchant',  icon = 'enchanting_table', inframe = true, station = 'enchanting_table' },
+    { id = 'crafting_table', name = 'Crafting',  icon = 'crafting_table',   inframe = true, always = true },
+    { id = 'furnace',        name = 'Furnace',   icon = 'furnace',          inframe = true, station = 'furnace' },
+    { id = 'anvil',          name = 'Anvil',     icon = 'anvil',            inframe = true, station = 'anvil' },
+    { id = 'composter',      name = 'Composter', icon = 'composter',        inframe = true, station = 'composter' },
+    { id = 'brewing_stand',  name = 'Brewing',   icon = 'brewing_stand',    inframe = true, station = 'brewing_stand' },
+    { id = 'enchant',        name = 'Enchant',   icon = 'enchanting_table', inframe = true, station = 'enchanting_table' },
 }
 
 -- Transfers (equip / un-equip) are only allowed OUTSIDE a blind (shop / blind-select). During play
@@ -405,9 +416,32 @@ local function station_pick_icon(icon_id)
     return { n = G.UIT.T, config = { text = '?', scale = 0.4, colour = G.C.UI.TEXT_INACTIVE } }
 end
 
--- Top-right station picker: a small button per station; the active one is highlighted, unbuilt /
--- soon ones greyed and inert.
-local function station_picker_node()
+-- Display name shown ABOVE the Selected-Workbench container (every widget's title lives OUTSIDE it).
+local STATION_DISPLAY = {
+    crafting_table = 'Crafting Table', furnace = 'Furnace', anvil = 'Anvil',
+    composter = 'Composter', brewing_stand = 'Brewing Stand', enchant = 'Enchant',
+}
+
+-- A widget = a TITLE row (OUTSIDE, above) + a TRULY-FIXED-size black container with its content centred.
+-- "Fixed" is load-bearing: the box uses config.w/h + no_overflow='hv', which is the ONLY way the engine
+-- hard-pins a node's size (ui.lua:215-230, :588-603). Plain minw/minh are just FLOORS -- content wider
+-- or taller than them grows the box, which is what made each station's box (and the whole modal)
+-- a different size/position. With a hard w/h and align='cm', set_alignments centres the content inside
+-- the fixed box (ui.lua:634/638), so size AND position are identical for every station. Content MUST
+-- fit within (w,h) or it overflows the box edge -- so w/h are sized to the LARGEST station (Crafting).
+local function titled_panel(title, content, w, h)
+    return { n = G.UIT.C, config = { align = 'tm', padding = 0.04, no_overflow = 'h', w = w }, nodes = {
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.04, no_overflow = 'h', w = w }, nodes = {
+            { n = G.UIT.T, config = { text = title, scale = 0.36, colour = G.C.UI.TEXT_LIGHT } } } },
+        { n = G.UIT.C, config = { align = 'cm', padding = 0.1, r = 0.1, colour = G.C.BLACK,
+            minw = w, minh = h, w = w, h = h, no_overflow = 'hv' },
+          nodes = { content } },
+    } }
+end
+
+-- Top-right station picker cells, 3 per row (no title / panel of its own -- titled_panel wraps it).
+-- The active station is highlighted; unbuilt / soon ones are greyed and inert.
+local function picker_cells_node()
     local cells = {}
     for _, st in ipairs(PICKER_STATIONS) do
         local ready
@@ -415,7 +449,7 @@ local function station_picker_node()
         elseif st.station then ready = (PB_UTIL.station_built and PB_UTIL.station_built(st.station)) or false
         else ready = true end
         local active = (PB_UTIL.active_station == st.id)
-        local btn = ready and (st.inframe and 'bc_pick_station' or st.external) or nil
+        local btn = ready and 'bc_pick_station' or nil
         cells[#cells + 1] = {
             n = G.UIT.C, config = {
                 align = 'cm', padding = 0.06, r = 0.08, minw = 1.0, minh = 1.0,
@@ -431,81 +465,121 @@ local function station_picker_node()
         }
     end
     local rows = {}
-    for i = 1, #cells, 2 do
+    for i = 1, #cells, 3 do
         local row = { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = {} }
-        for j = i, math.min(i + 1, #cells) do row.nodes[#row.nodes + 1] = cells[j] end
+        for j = i, math.min(i + 2, #cells) do row.nodes[#row.nodes + 1] = cells[j] end
         rows[#rows + 1] = row
     end
-    return { n = G.UIT.C, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK }, nodes = {
-        { n = G.UIT.R, config = { align = 'cm' }, nodes = { { n = G.UIT.T, config = { text = 'Workbench', scale = 0.26, colour = G.C.UI.TEXT_LIGHT } } } },
-        { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = {} },
-        { n = G.UIT.C, config = { align = 'cm' }, nodes = rows },
-    } }
+    return { n = G.UIT.C, config = { align = 'cm' }, nodes = rows }
 end
 
--- The 2 Minecraft consumable slots: each shows the equipped card's icon (click to store it into the
--- inventory) or an empty square. View-only during a blind.
-local function mc_slots_node()
+-- The Minecraft consumables: the equipped card FACES rendered directly in the fixed container -- NO
+-- per-card slot background (the panel is the only bg). Click a face to store it back to the inventory;
+-- view-only during a blind. (We can't embed the live G.bc_mc_consumeables CardArea -- the overlay's
+-- teardown would :remove() and destroy that persistent area -- so this is a fixed row of faces.)
+--
+-- AT THE ANVIL the widget instead hosts the live tools/books SOURCE (anvil_src_area, a transient area
+-- rebuilt on every open so embedding it is safe): the player's tools/books are drained here and dragged
+-- straight into the Anvil's slots -- "everything you need is already in the consumable area". The Anvil
+-- content itself no longer carries a source box (build_anvil_consumable_source sizes the area to fit RW).
+local function consumables_content()
+    if PB_UTIL.active_station == 'anvil' and PB_UTIL.anvil_src_area then
+        return { n = G.UIT.C, config = { align = 'cm',
+            minw = PB_UTIL.anvil_src_area.T.w, minh = PB_UTIL.anvil_src_area.T.h },
+          nodes = { { n = G.UIT.O, config = { object = PB_UTIL.anvil_src_area } } } }
+    end
     local area = G.bc_mc_consumeables
     local editable = PB_UTIL.inv_editable()
-    local cells = {}
+    local CW, CH = G.CARD_W, G.CARD_H
+    local cards = {}
     for i = 1, (PB_UTIL.MC_SLOTS or 2) do
         local card = area and area.cards and area.cards[i]
-        local spr = card and PB_UTIL.center_icon_sprite(card.config and card.config.center, 0.6)
-        cells[#cells + 1] = {
+        local center = card and card.config and card.config.center
+        local spr = (center and center.atlas and G.ASSET_ATLAS[center.atlas] and center.pos)
+            and Sprite(0, 0, CW, CH, G.ASSET_ATLAS[center.atlas], center.pos) or nil
+        cards[#cards + 1] = {
             n = G.UIT.C, config = {
-                align = 'cm', padding = 0.04, r = 0.06, minw = 0.92, minh = 0.92,
-                colour = G.C.UI.TRANSPARENT_DARK,
+                align = 'cm', padding = 0.06, minw = CW, minh = CH,
                 button = (card and editable) and 'bc_mc_unequip' or nil,
-                ref_table = { index = i }, hover = (card and editable) or false, shadow = true,
-            },
+                ref_table = { index = i }, hover = (card and editable) or false },
             nodes = spr and { { n = G.UIT.O, config = { object = spr } } } or {},
         }
     end
-    return { n = G.UIT.C, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK }, nodes = {
-        { n = G.UIT.R, config = { align = 'cm' }, nodes = { { n = G.UIT.T, config = { text = 'Consumables', scale = 0.24, colour = G.C.UI.TEXT_LIGHT } } } },
-        { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = cells },
-    } }
+    return { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = cards }
 end
 
-local function inv_capacity_label()
+-- Inventory content: the paged grid + (when >1 page) the page-nav row. The "Inventory  x/y slots"
+-- header lives ABOVE the container (build_base_shell), so there's no capacity label here.
+local function inventory_content()
+    local nodes = { { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.build_inventory_node() } } }
+    local nav = PB_UTIL.build_inv_page_nav and PB_UTIL.build_inv_page_nav()
+    if nav then nodes[#nodes + 1] = nav end
+    return { n = G.UIT.C, config = { align = 'cm' }, nodes = nodes }
+end
+
+local function inv_title()
     local used = (PB_UTIL.inv_slots_used and PB_UTIL.inv_slots_used()) or 0
     local cap  = (PB_UTIL.inv_capacity and PB_UTIL.inv_capacity()) or 0
-    return { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-        { n = G.UIT.T, config = { text = 'Inventory   ' .. used .. '/' .. cap .. ' slots',
-            scale = 0.34, colour = G.C.UI.TEXT_LIGHT } } } }
+    return 'Inventory   ' .. used .. '/' .. cap .. ' slots'
 end
 
 local function station_content_node()
-    if PB_UTIL.active_station == 'furnace' and PB_UTIL.furnace_station_content then
-        return PB_UTIL.furnace_station_content()
-    end
-    if PB_UTIL.active_station == 'enchant' and PB_UTIL.enchant_station_content then
-        return PB_UTIL.enchant_station_content()
-    end
+    local s = PB_UTIL.active_station
+    if s == 'furnace'       and PB_UTIL.furnace_station_content   then return PB_UTIL.furnace_station_content() end
+    if s == 'enchant'       and PB_UTIL.enchant_station_content   then return PB_UTIL.enchant_station_content() end
+    if s == 'anvil'         and PB_UTIL.anvil_station_content     then return PB_UTIL.anvil_station_content() end
+    if s == 'brewing_stand' and PB_UTIL.brewing_station_content   then return PB_UTIL.brewing_station_content() end
+    if s == 'composter'     and PB_UTIL.composter_station_content then return PB_UTIL.composter_station_content() end
     return PB_UTIL.crafting_station_content()
 end
 
+-- TRULY-FIXED 2x2 grid. Every box is hard-pinned by titled_panel (config.w/h + no_overflow), so NO
+-- station can change any box's size OR position -- the modal is byte-identical across all six. CRITICAL:
+-- no_overflow does NOT clip or shrink content -- content larger than (w-0.2)x(h-0.2) (the box minus its
+-- 0.1 padding/side) spills PAST the box and overlaps neighbours. So each dimension is sized to the
+-- LARGEST content that lands in that slot. Measured maxima (world-units, default G.UIT.padding=0):
+--   WL 10.4 -> usable 10.2; widest = Anvil 9.63 / Crafting 9.50 / Brewing 9.18 / Enchant 8.62.
+--   WR 4.6  -> usable 4.4;  widest = Consumables 4.22 (two full G.CARD_W~2.05 faces, even when EMPTY);
+--                           the Workbench picker is only 3.16 but shares WR so the right column aligns.
+--   HT 4.1  -> usable 3.9;  tallest TOP = Crafting 3.72 (Recipes title + 3 rows + page-nav) / Enchant 3.62.
+--                           SEL & PICK share HT, so the Inventory and Consumables boxes below them start
+--                           at the SAME y (fixes "consumables not level with inventory").
+--   HB 4.7  -> usable 4.5;  tallest BOTTOM = Inventory 4.32 WHEN PAGED (3 slot rows + count labels + the
+--                           "< Page x/y >" nav row); single-page is 3.79.
+-- The inventory grid is spread (INV_SLOT_W in crafting_grid.lua) to FILL WL, closing the gap to the right
+-- column. If WL changes, re-tune INV_SLOT_W so 9*INV_SLOT_W + ~0.3 wrapper padding stays just UNDER
+-- WL-0.2 (overflow now CLIPS -- keep a small safety margin rather than filling to the pixel).
+local WL, WR = 10.4, 4.6     -- left / right column box width (HARD)
+local HT     = 4.1           -- top-row box height: Selected Workbench + Workbench picker (HARD)
+local HB     = 4.7           -- bottom-row box height: Inventory + Consumables (HARD)
+
+-- The 2x2 grid built as TWO fixed-width COLUMNS, NOT two rows. (Rows drift: the ROOT stretches every row
+-- to the widest one and re-centres its children, so any width difference between the rows offsets the
+-- panels.) Columns make alignment structural: the LEFT column stacks Selected-Workbench over Inventory,
+-- both width WL, so they physically share left+right edges; the RIGHT column stacks the picker over
+-- Consumables, both WR. Equal top/bottom box heights (HT for both top boxes, HB for both bottom boxes)
+-- line up the rows. Panels stack VERTICALLY only when each is wrapped in a UIT.R (R children stack; a
+-- bare UIT.C child lays out horizontally -- the engine keys layout off the CHILD's type, ui.lua:188-203).
+local function vstack(panel)
+    return { n = G.UIT.R, config = { align = 'cm', padding = 0.05 }, nodes = { panel } }
+end
+
 function PB_UTIL.build_base_shell()
+    local sel_title = STATION_DISPLAY[PB_UTIL.active_station] or 'Crafting Table'
+    local left_col = { n = G.UIT.C, config = { align = 'tm', padding = 0.16 }, nodes = {
+        vstack(titled_panel(sel_title, station_content_node(), WL, HT)),
+        vstack(titled_panel(inv_title(), inventory_content(), WL, HB)),
+    } }
+    local right_col = { n = G.UIT.C, config = { align = 'tm', padding = 0.16 }, nodes = {
+        vstack(titled_panel('Workbench', picker_cells_node(), WR, HT)),
+        vstack(titled_panel('Consumables', consumables_content(), WR, HB)),
+    } }
     return {
         n = G.UIT.ROOT,
-        config = { align = 'cm', padding = 0.12, r = 0.1, colour = G.C.GREY, minw = 11, minh = 7 },
+        config = { align = 'cm', padding = 0.12, r = 0.1, colour = G.C.GREY },
         nodes = {
-            -- ROW 1: selected-station content (left) + the Workbench station picker (right).
-            { n = G.UIT.R, config = { align = 'tm', padding = 0.08 }, nodes = {
-                { n = G.UIT.C, config = { align = 'tm' }, nodes = { station_content_node() } },
-                { n = G.UIT.C, config = { align = 'tm', padding = 0.06 }, nodes = { station_picker_node() } },
-            } },
-            { n = G.UIT.R, config = { align = 'cm', minh = 0.12 }, nodes = {} },
-            -- ROW 2: inventory (capacity label + grid) on the left, the Minecraft consumables on the right.
-            { n = G.UIT.R, config = { align = 'tm', padding = 0.08 }, nodes = {
-                { n = G.UIT.C, config = { align = 'tm', padding = 0.06 }, nodes = {
-                    inv_capacity_label(),
-                    { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.build_inventory_node() } },
-                } },
-                { n = G.UIT.C, config = { align = 'tm', padding = 0.06 }, nodes = { mc_slots_node() } },
-            } },
-            { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }, nodes = {} },
+            { n = G.UIT.R, config = { align = 'tm' }, nodes = { left_col, right_col } },
+            { n = G.UIT.R, config = { align = 'cm', minh = 0.4 }, nodes = {} },   -- gap before Close
             { n = G.UIT.R, config = { align = 'cm', minw = 8.6, padding = 0.1, r = 0.1, hover = true,
                 colour = G.C.ORANGE, button = 'exit_overlay_menu', shadow = true },
               nodes = { { n = G.UIT.T, config = { text = 'Close', scale = 0.5, colour = G.C.WHITE } } } },
@@ -513,23 +587,32 @@ function PB_UTIL.build_base_shell()
     }
 end
 
+-- Picker-id -> the built-station id it requires (derived from PICKER_STATIONS; nil = always open).
+local STATION_REQUIRES = {}
+for _, st in ipairs(PICKER_STATIONS) do if st.station then STATION_REQUIRES[st.id] = st.station end end
+
 -- Single entry point for the unified modal. `station` selects the active workbench (defaults to the
--- last one). Tears down any prior station's live cells, builds the active one's + the shared
--- inventory, then (re)builds the overlay in place.
+-- last one). Tears down EVERY prior station's live cells, builds the active one's + the shared
+-- inventory, then (re)builds the overlay in place. Every station now renders in-frame.
 function PB_UTIL.open_inventory(station, opts)
     station = station or PB_UTIL.active_station or 'crafting_table'
-    if station == 'furnace' and not (PB_UTIL.station_built and PB_UTIL.station_built('furnace')) then
-        station = 'crafting_table'
-    end
-    if station == 'enchant' and not (PB_UTIL.station_built and PB_UTIL.station_built('enchanting_table')) then
-        station = 'crafting_table'
+    local req = STATION_REQUIRES[station]
+    if req and not (PB_UTIL.station_built and PB_UTIL.station_built(req)) then
+        station = 'crafting_table'   -- not built yet -> fall back to the always-open table
     end
     PB_UTIL.active_station = station
 
-    if PB_UTIL.destroy_craft_cells then PB_UTIL.destroy_craft_cells() end
-    PB_UTIL.craft_on_change = nil
+    -- Tear down ALL station cell sets; only the active one is rebuilt below, so exactly one per-frame
+    -- updater is ever live and no stale drag slots linger. Each destroyer self-guards + credits its
+    -- reserved tiles (anvil also restores tools/books to MC/storage). They also drop the shared
+    -- inventory areas, which build_inventory() recreates.
+    if PB_UTIL.destroy_craft_cells   then PB_UTIL.destroy_craft_cells() end
     if PB_UTIL.destroy_furnace_cells then PB_UTIL.destroy_furnace_cells() end
+    if PB_UTIL.destroy_brew_cells    then PB_UTIL.destroy_brew_cells() end
+    if PB_UTIL.destroy_anvil_cells   then PB_UTIL.destroy_anvil_cells() end
+    PB_UTIL.craft_on_change   = nil
     PB_UTIL.furnace_on_change = nil
+    PB_UTIL.anvil_on_change   = nil
 
     if station == 'furnace' then
         PB_UTIL.recipe_sprites = nil   -- crafting's recipe squares aren't on screen
@@ -539,8 +622,23 @@ function PB_UTIL.open_inventory(station, opts)
         PB_UTIL.furnace_last_out = nil
         PB_UTIL.build_furnace_cells()
         PB_UTIL.furnace_on_change = PB_UTIL.update_furnace_modal
-    elseif station == 'enchant' then
-        PB_UTIL.recipe_sprites = nil   -- the enchant station has no 3x3 grid / recipe squares
+    elseif station == 'anvil' then
+        PB_UTIL.recipe_sprites = nil
+        PB_UTIL.build_anvil_unified_cells()       -- A/B input slots (accept ore tiles AND tool/book cards)
+        PB_UTIL.build_anvil_consumable_source()   -- drain equipped + materialize stored tools/books
+        PB_UTIL.anvil_on_change = PB_UTIL.update_anvil_unified
+        if PB_UTIL.update_anvil_unified then PB_UTIL.update_anvil_unified() end   -- seed label/hint pre-layout
+    elseif station == 'brewing_stand' then
+        PB_UTIL.recipe_sprites = nil
+        PB_UTIL.brew_state = PB_UTIL.brew_state or { fuel_label = '', can_brew = false, can_collect = false }
+        PB_UTIL.brew_state.fuel_label = 'Fuel: ' .. PB_UTIL.get_brew_fuel()
+        PB_UTIL.brew_state.can_brew = false
+        PB_UTIL.brew_state.can_collect = false
+        if PB_UTIL.brew_bottle_state then PB_UTIL.brew_bottle_state() end   -- ensure the persistent bottle is seeded
+        PB_UTIL.build_brew_cells()
+        PB_UTIL.furnace_on_change = PB_UTIL.update_brew_modal   -- the brew drop router uses furnace_on_change
+    elseif station == 'composter' or station == 'enchant' then
+        PB_UTIL.recipe_sprites = nil   -- these stations have no 3x3 grid / recipe squares
     else
         if not (opts and opts.keep_page) then PB_UTIL.recipe_page = 1 end
         PB_UTIL.crafting_selected = nil
@@ -552,7 +650,19 @@ function PB_UTIL.open_inventory(station, opts)
         PB_UTIL.craft_on_change = PB_UTIL.refresh_craft_state
     end
     PB_UTIL.build_inventory()
+    -- Equipping a stored item / flipping the inventory page rebuilds via a full re-open: refresh_overlay's
+    -- :remove() DESTROYS the embedded CardAreas (functions.lua), so the rebuild MUST create fresh cells
+    -- (open_inventory does: destroy_*_cells credits placed tiles, then builds new areas) -- reusing the
+    -- live cells would re-embed destroyed areas (cards=nil) and crash. keep_page preserves the recipe page.
+    PB_UTIL.inv_overlay_rebuild = function() PB_UTIL.open_inventory(PB_UTIL.active_station, { keep_page = true }) end
     PB_UTIL.refresh_overlay(PB_UTIL.build_base_shell())
+end
+
+-- Rebuild whichever overlay currently hosts the shared inventory grid (set by its opener). Falls back
+-- to the Base modal. Used by the equip / un-equip handlers so they refresh in place after moving an item.
+function PB_UTIL.rebuild_inv_overlay()
+    if PB_UTIL.inv_overlay_rebuild then PB_UTIL.inv_overlay_rebuild()
+    else PB_UTIL.open_inventory(PB_UTIL.active_station, { keep_page = true }) end
 end
 
 -- Back-compat alias (the recipe pager + any legacy caller route through the unified modal).
@@ -572,7 +682,7 @@ G.FUNCS.bc_inv_equip = function(e)
     local idx = e.config.ref_table and e.config.ref_table.index
     if idx and PB_UTIL.equip_stored_consumable and PB_UTIL.equip_stored_consumable(idx) then
         play_sound('cardSlide1')
-        PB_UTIL.open_inventory(PB_UTIL.active_station, { keep_page = true })
+        PB_UTIL.rebuild_inv_overlay()
     else play_sound('cancel') end
 end
 
@@ -583,7 +693,7 @@ G.FUNCS.bc_mc_unequip = function(e)
     local card = area and area.cards and area.cards[idx]
     if card and PB_UTIL.unequip_mc_consumable and PB_UTIL.unequip_mc_consumable(card) then
         play_sound('cardSlide1')
-        PB_UTIL.open_inventory(PB_UTIL.active_station, { keep_page = true })
+        PB_UTIL.rebuild_inv_overlay()
     else play_sound('cancel') end
 end
 
@@ -643,9 +753,24 @@ G.FUNCS.bc_grid_craft = function(e)
         end
     end
     PB_UTIL.clear_craft_cells(false)   -- destroy placed tiles in place, NO credit (spent)
-    PB_UTIL.produce_output(recipe)     -- produce-half only (resource/joker + sound)
-    -- Auto-refill: re-place the same recipe so Craft can be clicked again immediately. Only if
-    -- still affordable after producing; otherwise leave the grid empty (button greys out).
+    PB_UTIL.produce_output(recipe)     -- produce-half only (resource/joker/consumable/station + sound)
+    -- A consumable lands in the Consumables widget and a station unlocks in the Workbench picker -- both
+    -- are baked into the shell, so a full rebuild is the only way they refresh IMMEDIATELY (not just on
+    -- reopen). The rebuild re-builds an empty grid (auto-refill is skipped for these), which is fine: you
+    -- craft a station once, and a fresh consumable craft re-selecting the recipe is acceptable.
+    if recipe.output.type == 'consumable' or recipe.output.type == 'station' then
+        -- A crafted consumable lands in the VANILLA G.consumeables first; the per-frame reconcile then
+        -- routes MC items (tools/potions/etc.) into G.bc_mc_consumeables (or the inventory). Run that
+        -- reconcile NOW -- before the rebuild snapshots the Consumables widget -- so the new item shows
+        -- immediately; otherwise it only lands after the snapshot and appears only on the next reopen.
+        if recipe.output.type == 'consumable' and PB_UTIL.reconcile_mc_consumables then
+            PB_UTIL.reconcile_mc_consumables()
+        end
+        if PB_UTIL.rebuild_inv_overlay then PB_UTIL.rebuild_inv_overlay() end
+        return
+    end
+    -- Resource / joker outputs don't touch the shared widgets: keep the grid populated (auto-refill) so
+    -- Craft can be clicked again immediately. Only if still affordable; else leave it empty (button greys).
     if PB_UTIL.can_afford(recipe) then
         PB_UTIL.fill_grid_with_recipe(recipe)
         PB_UTIL.crafting_selected = recipe.key
@@ -667,17 +792,22 @@ G.FUNCS.bc_autofill = function(e)
     PB_UTIL.refresh_craft_state()
 end
 
--- Return all placed/mid-drag tiles whenever an overlay closes while our cells live,
--- BEFORE _orig_exit runs G.OVERLAY_MENU:remove() (which would area:remove the cells
--- with no credit). Forward whatever args are received (exit_overlay_menu ignores them).
+-- THE single overlay-close teardown (Close / ESC): return every reserved tile and restore the Anvil's
+-- tools/books whenever a station's cells are live, BEFORE _orig_exit runs G.OVERLAY_MENU:remove()
+-- (which would area:remove the cells with no credit). Each destroyer self-guards on its own cells, and
+-- only one station is ever active, so listing all four is safe. (Replaces the old per-station exit
+-- wraps in furnace.lua / brewing_ui.lua.) Forward whatever args are received (exit_overlay_menu ignores them).
 if not PB_UTIL._craft_exit_hooked then
     PB_UTIL._craft_exit_hooked = true
     local _orig_exit = G.FUNCS.exit_overlay_menu
     G.FUNCS.exit_overlay_menu = function(...)
-        if PB_UTIL.craft_cells then
-            PB_UTIL.destroy_craft_cells()   -- credit + destroy all tiles + areas + inv
-            PB_UTIL.craft_on_change = nil
-        end
+        if PB_UTIL.craft_cells   then PB_UTIL.destroy_craft_cells()   end
+        if PB_UTIL.furnace_cells then PB_UTIL.destroy_furnace_cells() end
+        if PB_UTIL.brew_cells    then PB_UTIL.destroy_brew_cells()    end
+        if PB_UTIL.anvil_unified_cells or PB_UTIL.anvil_src_area then PB_UTIL.destroy_anvil_cells() end
+        PB_UTIL.craft_on_change   = nil
+        PB_UTIL.furnace_on_change = nil
+        PB_UTIL.anvil_on_change   = nil
         return _orig_exit(...)
     end
 end

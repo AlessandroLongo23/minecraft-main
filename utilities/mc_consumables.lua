@@ -52,6 +52,11 @@ end
 -- (type='joker', highlight_limit=1, negative_info) so the base game's Use/Sell buttons appear for a
 -- highlighted MC consumable automatically (Card:highlight gates on ability.consumeable, not on the
 -- specific area), and so a card here behaves exactly like one in the vanilla area when used.
+--
+-- align_buttons=true is REQUIRED for the Use/Sell buttons to sit to the RIGHT of the card ("cr" in
+-- Card:highlight) like vanilla consumables. Without it they fall back to "bmi" -- Use below the card,
+-- Sell hidden behind it. The base game sets this flag directly on G.jokers/G.consumeables in
+-- Game:start_run (game.lua) but only on its own areas, so our custom area must set it itself.
 local _prev_custom_areas = SMODS.current_mod.custom_card_areas
 SMODS.current_mod.custom_card_areas = function(game)
     if _prev_custom_areas then _prev_custom_areas(game) end
@@ -59,7 +64,7 @@ SMODS.current_mod.custom_card_areas = function(game)
     local h = (game.consumeables and game.consumeables.T.h) or (0.95 * G.CARD_H)
     game.bc_mc_consumeables = CardArea(0, 0, w, h, {
         card_limit = PB_UTIL.MC_SLOTS, type = 'joker', highlight_limit = 1,
-        negative_info = 'consumable',
+        negative_info = 'consumable', align_buttons = true,
     })
 end
 
@@ -164,6 +169,18 @@ function PB_UTIL.center_icon_sprite(center, sz)
     return Sprite(0, 0, sz or 0.5, sz or 0.5, atlas, center.pos)
 end
 
+-- An ICON sprite for a stored consumable in the small inventory slot. Tools/books/etc. have a dedicated
+-- small icon (bc_tool_icons, keyed by center key in PB_UTIL.tool_icon_pos); use THAT rather than squishing
+-- the full card face (center.atlas) into the tiny slot. Falls back to the card face for anything without
+-- a registered icon.
+function PB_UTIL.consumable_inv_icon(center, sz)
+    if not center then return nil end
+    local pos   = center.key and PB_UTIL.tool_icon_pos and PB_UTIL.tool_icon_pos[center.key]
+    local atlas = PB_UTIL.tool_icon_atlas and G.ASSET_ATLAS[PB_UTIL.tool_icon_atlas.key]
+    if pos and atlas then return Sprite(0, 0, sz or 0.5, sz or 0.5, atlas, pos) end
+    return PB_UTIL.center_icon_sprite(center, sz)
+end
+
 -- Iterate every persistent tool card across the MC area AND (defensively) the vanilla area, e.g. to
 -- clear the per-blind use lock or find the sword that scored. Shared by resources.lua's tool scans.
 function PB_UTIL.each_tool_card(fn)
@@ -189,6 +206,12 @@ end
 function PB_UTIL.sync_mc_consumable_area()
     local mc, cons = G.bc_mc_consumeables, G.consumeables
     if not (mc and cons) then return end
+    -- Re-assert align_buttons every frame (before the geometry early-return so it always runs).
+    -- Card:highlight reads self.area.config.align_buttons to place the Use/Sell buttons to the RIGHT
+    -- ("cr") instead of below the card ("bmi"); the base game sets this on G.consumeables but never on
+    -- our custom area. Mirror the codebase pattern of re-asserting MC-area config each run (the area is
+    -- rebuilt per run) so the right-aligned buttons survive even if construction order ever drops it.
+    if mc.config and not mc.config.align_buttons then mc.config.align_buttons = true end
     local t = cons.T
     if mc.T.x == t.x and mc.T.y == t.y and mc.T.w == t.w and mc.T.h == t.h then return end
     mc.T.x, mc.T.y, mc.T.w, mc.T.h = t.x, t.y, t.w, t.h

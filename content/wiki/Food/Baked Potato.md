@@ -11,9 +11,9 @@
 | Internal key | `c_balacraft_food_baked_potato` |
 
 ## Effect
-Eat to restore **5 hunger points**. A cooked upgrade over the raw [[Potato]]. Can't be eaten at full [[Hunger]].
+Eat to restore **5 hunger points**. A cooked upgrade over the raw [[Potato]]. Eating past full [[Hunger]] banks the overflow as saturation, which converts to [[Health|hearts]]. Can't be eaten when both hunger and saturation are full.
 
 ## Where to get it
-Shop, or any [[Booster Packs|Food Pack]] (tier-2, medium rarity).
+Shop, any [[Booster Packs|Food Pack]] (tier-2, medium rarity), or the Farmer in [[Villager Trading]].
 
 [[Food|← Back to Food]]

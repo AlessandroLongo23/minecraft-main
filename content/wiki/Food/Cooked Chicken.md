@@ -11,9 +11,9 @@
 | Internal key | `c_balacraft_food_cooked_chicken` |
 
 ## Effect
-Eat to restore **6 hunger points** — strong value at $4. Can't be eaten at full [[Hunger]].
+Eat to restore **6 hunger points** — strong value at $4. Eating past full [[Hunger]] banks the overflow as saturation, which converts to [[Health|hearts]]. Can't be eaten when both hunger and saturation are full.
 
 ## Where to get it
-Shop, or any [[Booster Packs|Food Pack]] (tier-2, medium rarity).
+Shop, any [[Booster Packs|Food Pack]] (tier-2, medium rarity), or the Farmer in [[Villager Trading]].
 
 [[Food|← Back to Food]]

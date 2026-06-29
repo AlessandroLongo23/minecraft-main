@@ -11,9 +11,9 @@
 | Internal key | `c_balacraft_food_potato` |
 
 ## Effect
-Eat to restore **1 hunger point**. The weakest food — but cheap and common. Can't be eaten at full [[Hunger]].
+Eat to restore **1 hunger point**. The weakest food — but cheap and common. Eating past full [[Hunger]] banks the overflow as saturation, which converts to [[Health|hearts]]. Can't be eaten when both hunger and saturation are full.
 
 ## Where to get it
-Shop, or any [[Booster Packs|Food Pack]] (tier-1, most common).
+Shop, any [[Booster Packs|Food Pack]] (tier-1, most common), or the Farmer in [[Villager Trading]].
 
 [[Food|← Back to Food]]

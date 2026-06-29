@@ -15,9 +15,11 @@ A Minecraft-style **health bar** of **10 hearts (20 HP)** — 1 HP is half a hea
 
 - **Starvation** — while your [[Hunger]] is at 0, each blind costs **2 HP (1 heart)**.
 
-## What heals you
-- **Well-fed regen** — while [[Hunger]] is **≥ 14 (7 drumsticks)**, you heal **1 HP (½ heart) per blind**.
-- Eating [[Food]] mainly restores hunger; staying well-fed is how you passively recover hearts.
+## What heals you — saturation
+Healing comes from **saturation**, Minecraft's "gold drumsticks". You build it by **over-eating**: when you eat [[Food]] past a full [[Hunger]] bar, the overflow is banked as saturation (capped at 10).
+
+- Each blind, banked saturation converts to health: **~2 saturation → 1 HP (½ heart)**, only while you're **below** max health (so a full reserve is never wasted — it waits as gold drumsticks until you take a hit).
+- So to heal, keep your hunger topped up and **keep eating** to bank a buffer.
 
 ## Dying
 At **0 HP** the run ends (game over). Death by mob/starvation **bypasses Mr. Bones** — he only saves you from falling short on chips, not from running out of hearts.

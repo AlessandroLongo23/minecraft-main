@@ -1,4 +1,4 @@
-Implemented: 0 / 3 — **all planned**
+Implemented: 3 / 3 — Cooked · Ore · Soul
 
 ---
 
@@ -12,18 +12,19 @@ alongside them.
 
 | Seal | Trigger | Effect |
 | --- | --- | --- |
-| [[Cooked Seal]] | held in hand at end of round | cooks the card into a [[Food]] card |
-| [[Ore Seal]] | on discard | mine a [[Resources\|resource]] |
-| [[Soul Seal]] | on play | gain [[Experience\|XP]] |
+| [[Cooked Seal]] | held in hand at end of round | cooks the card into a [[Food]] consumable |
+| [[Ore Seal]] | on discard | mine 1 random ore |
+| [[Soul Seal]] | on play (scored) | gain +5 [[Experience\|XP]] |
 
 ## Applying seals
-Like vanilla seals, these are applied by **Spectral cards** (one new spectral per seal — names TBD).
-The base game already applies its own seals via spectrals (Deja Vu, Trance, Talisman, Medium); ours
-follow the same pattern.
+Like vanilla seals, these are applied by **Spectral cards** — one new spectral per seal (Ore Seal,
+Soul Seal, Cooked Seal), each adding its seal to a single selected card in hand. They roll in the shop
+and in **Spectral packs**, the same as the base game's own seal spectrals (Deja Vu, Trance, Talisman,
+Medium).
 
 ## Status
-- [ ] **[[Cooked Seal]]** (planned) — Food lane
-- [ ] **[[Ore Seal]]** (planned) — Resources lane
-- [ ] **[[Soul Seal]]** (planned) — XP lane
+- [x] **[[Cooked Seal]]** — Food lane
+- [x] **[[Ore Seal]]** — Resources lane
+- [x] **[[Soul Seal]]** — XP lane
 
 [[Overview|← Back to Overview]]

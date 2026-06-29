@@ -1,6 +1,6 @@
 *Overworld biome*
 
-![[biome_desert.png|130]]
+![[biome_desert.png|105]]
 
 | Attribute | Value |
 | --- | --- |

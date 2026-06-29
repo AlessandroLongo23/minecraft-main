@@ -5,16 +5,18 @@
 
 -- ---- Spawn budget ----
 
--- Expected ore-block cards per tier this blind, by ante band (spec section 3b). `ante` sets
--- the total + tier depth; the biome sets WHICH ore (via PB_UTIL.random_oreblock_of_tier). Honors
--- the tier gate (T2 from ante 3, T3 from ante 6, T4 Netherite from ante 8) by leaving locked
--- tiers at 0.
+-- Ore-block cards ADDED to the deck per tier on EACH blind select (spawn_ore_blocks is additive --
+-- these accumulate on top of un-mined blocks, they are NOT a standing target). `ante` sets the tier
+-- depth; the biome sets WHICH ore (via PB_UTIL.random_oreblock_of_tier). Honors the tier gate (T2
+-- from ante 3, T3 from ante 6, T4 Netherite from ante 8) by leaving locked tiers at 0. Metal-focused:
+-- Wood/Cobble now come mostly from blind DROPS, so the tier-1 add is modest and the metal tiers (2+)
+-- carry the mining economy (~1 raw_iron/blind minable by ante 3). Tunable -- expect a playtest pass.
 function PB_UTIL.oreblock_budget(ante)
     ante = ante or 1
-    if ante <= 2 then return { 2.0,  0,    0,   0   }
-    elseif ante <= 5 then return { 1.5,  1.0,  0,   0   }
-    elseif ante <= 7 then return { 1.0,  1.5,  0.5, 0   }
-    else                 return { 0.75, 1.5,  1.0, 0.5 } end
+    if ante <= 2 then return { 1.0,  0,    0,   0   }
+    elseif ante <= 5 then return { 0.75, 1.25, 0,   0   }
+    elseif ante <= 7 then return { 0.5,  1.0,  1.0, 0   }
+    else                 return { 0.5,  1.0,  1.0, 0.5 } end
 end
 
 -- Deterministic probabilistic rounding: floor(x) plus a seeded Bernoulli on the remainder.
@@ -58,44 +60,30 @@ function PB_UTIL.revert_oreblock_card(card, delay)
     end }))
 end
 
--- Count ore blocks of a given tier currently on cards anywhere in the deck (draw pile + hand),
--- so the top-up never exceeds the ante target while blocks sit unmined ("persist until mined").
-local function count_oreblocks_of_tier(tier)
-    local n = 0
-    local areas = { G.deck and G.deck.cards, G.hand and G.hand.cards }
-    for _, list in ipairs(areas) do
-        for _, c in ipairs(list or {}) do
-            local ore = oreblock_ore(c)
-            if ore and PB_UTIL.RESOURCE_BY_ID[ore] and PB_UTIL.RESOURCE_BY_ID[ore].tier == tier then
-                n = n + 1
-            end
-        end
-    end
-    return n
-end
-
--- Place ore blocks onto random eligible draw-pile cards, topping up toward the ante target.
+-- Place ore blocks onto random eligible draw-pile cards. ADDITIVE: each blind ADDS `target` fresh
+-- blocks per tier on top of whatever is already there, so un-mined blocks ACCUMULATE across blinds
+-- (the deck steadily fills with ores until you mine them). Self-limiting: when no plain base cards
+-- remain eligible, placement stops. A per-blind nonce (G.GAME.round, which advances each blind) keeps
+-- the three blinds in an ante independent.
 function PB_UTIL.spawn_ore_blocks()
     if not (G.GAME and G.deck and G.deck.cards) then return end
     if not PB_UTIL.random_oreblock_of_tier then return end
-    local ante = (G.GAME.round_resets and G.GAME.round_resets.ante) or 1
+    local ante   = (G.GAME.round_resets and G.GAME.round_resets.ante) or 1
+    local nonce  = tostring(G.GAME.round or 0)
     local budget = PB_UTIL.oreblock_budget(ante)
 
     for tier = 1, 4 do
-        local target = prob_round(budget[tier] or 0, 'bc_oreblock_' .. ante .. '_t' .. tier)
-        local deficit = target - count_oreblocks_of_tier(tier)
-        if deficit > 0 then
-            -- Fresh eligible list each placement (a placed block makes its card ineligible).
-            for _ = 1, deficit do
-                local pool = {}
-                for _, c in ipairs(G.deck.cards) do if is_eligible(c) then pool[#pool + 1] = c end end
-                if #pool == 0 then break end
-                local seed = 'bc_oreplace_' .. ante .. '_t' .. tier .. '_' .. #pool
-                local target_card = pseudorandom_element(pool, pseudoseed(seed))
-                local ore = PB_UTIL.random_oreblock_of_tier(tier, 'bc_orepick_' .. ante .. '_t' .. tier .. '_' .. #pool)
-                if target_card and ore then
-                    target_card:set_ability(G.P_CENTERS['m_balacraft_block_' .. ore])
-                end
+        local target = prob_round(budget[tier] or 0, 'bc_oreblock_' .. ante .. '_t' .. tier .. '_' .. nonce)
+        -- Fresh eligible list each placement (a placed block makes its card ineligible).
+        for _ = 1, target do
+            local pool = {}
+            for _, c in ipairs(G.deck.cards) do if is_eligible(c) then pool[#pool + 1] = c end end
+            if #pool == 0 then break end
+            local seed = 'bc_oreplace_' .. ante .. '_t' .. tier .. '_' .. nonce .. '_' .. #pool
+            local target_card = pseudorandom_element(pool, pseudoseed(seed))
+            local ore = PB_UTIL.random_oreblock_of_tier(tier, 'bc_orepick_' .. ante .. '_t' .. tier .. '_' .. nonce .. '_' .. #pool)
+            if target_card and ore then
+                target_card:set_ability(G.P_CENTERS['m_balacraft_block_' .. ore])
             end
         end
     end

@@ -89,3 +89,10 @@ for _, s in ipairs(PB_UTIL.SHEETS) do
         end,
     }
 end
+
+-- The Glass Sheet is the only sheet crafted at the Crafting Table (the rest are Anvil-forged), so
+-- it's the only sheet that appears in the recipe list. Give it a frameless icon (the genuine iso
+-- glass-block render, bc_tool_icons cell {4,4}, gen_tool_icons.py) instead of falling back to its
+-- full card art.
+PB_UTIL.tool_icon_pos = PB_UTIL.tool_icon_pos or {}
+PB_UTIL.tool_icon_pos['c_balacraft_sheet_glass'] = { x = 4, y = 4 }

@@ -1,7 +1,4 @@
-*Voucher*
-
-![[voucher_end_portal.png|110]]
-*Placeholder art (reuses a portal cell for now).*
+*Voucher — upgrade of the enchanting pair*
 
 | Attribute | Value |
 | --- | --- |
@@ -11,7 +8,7 @@
 
 ## Effect
 Upgrades [[Enchanting]]:
-- **[[Enchanting Books]] appear more often** in the shop, and **Tier III** books unlock.
+- **[[Enchanting Books]] appear more often** in the shop (roughly double the Enchanting Table's rate, around rare-joker frequency), and **Tier III** books unlock.
 - **[[Enchanting Pack|Enchanting Packs]]** bias toward **higher tiers**.
 - Grants **+1 consumable slot**.
 

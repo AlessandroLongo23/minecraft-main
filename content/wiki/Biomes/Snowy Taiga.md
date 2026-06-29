@@ -1,6 +1,6 @@
 *Overworld biome*
 
-![[biome_snowy_taiga.png|130]]
+![[biome_snowy_taiga.png|105]]
 
 | Attribute | Value |
 | --- | --- |

@@ -2,10 +2,11 @@
 -- consumable: select a card in hand and blow it up along with the card on each side of it. Rides
 -- the craft-only 'balacraft_tool' consumable type (like Torch / Arrow / Bone Meal); consumed on use.
 
--- 71x95 card face from the authentic MC tnt_side block texture (assets/gen_item_consumable_cards.py).
+-- 71x95 card face from the authentic MC 3D iso TNT-block render (Invicon_TNT, like cobblestone/glass/wood;
+-- assets/gen_item_consumable_cards.py).
 SMODS.Atlas { key = 'bc_tnt', path = 'tnt.png', px = 71, py = 95 }
 
--- Authentic MC `tnt` recipe-list / output-preview icon (bc_tool_icons extras, cell {x=0,y=4}).
+-- Authentic MC 3D iso `tnt` recipe-list / output-preview icon (bc_tool_icons extras, cell {x=0,y=4}).
 PB_UTIL.tool_icon_pos = PB_UTIL.tool_icon_pos or {}
 PB_UTIL.tool_icon_pos['c_balacraft_tnt'] = { x = 0, y = 4 }
 

@@ -23,8 +23,8 @@ from utils import scale_image
 
 ICON = 34
 CARD_W, CARD_H = 71, 95
-COLS, ROWS = 3, 15      # +leather/paper/book (44 resources -> 15 rows, last cell free)
-ICON_ROWS = 15
+COLS, ROWS = 3, 16      # +4 flowers (dandelion/poppy/cornflower/oxeye_daisy) -> 48 resources, 16 full rows
+ICON_ROWS = 16
 
 # Wood, Cobblestone, Sand, Obsidian and Glass are BLOCKS, so (like Minecraft's inventory) they
 # render as 2:1 dimetric isometric cubes instead of a flat face -- top + two darker sides. Every
@@ -58,7 +58,9 @@ ORDER = ["wood", "cobblestone", "coal", "iron", "gold", "diamond", "sticks", "em
          "glass_bottle", "water_bottle", "sugar", "glistering_melon", "golden_carrot",
          "fermented_spider_eye", "awkward_potion",
          # Enchanting book chain: leather (surface mob drop) + paper/book (craft intermediates).
-         "leather", "paper", "book"]
+         "leather", "paper", "book",
+         # Flowers (Composter fuel, drop_class='special'): dandelion/poppy/cornflower/oxeye_daisy.
+         "dandelion", "poppy", "cornflower", "oxeye_daisy"]
 # TIERS only drives the resource-CARD backdrop tint here; the Nether/End items are drop_class='special'
 # (no real tier), so these values are purely cosmetic: obsidian -> tier-4 face, pearl -> 3, powder -> 2.
 TIERS = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond": 3, "sticks": 1, "emerald": 2, "netherite": 4, "lapis": 3,
@@ -71,7 +73,8 @@ TIERS = {"wood": 1, "cobblestone": 1, "coal": 1, "iron": 2, "gold": 2, "diamond"
          "ghast_tear": 3, "blaze_rod": 3, "glowstone_dust": 2, "dragon_breath": 4,
          "glass_bottle": 1, "water_bottle": 1, "sugar": 1, "glistering_melon": 2, "golden_carrot": 2,
          "fermented_spider_eye": 2, "awkward_potion": 2,
-         "leather": 1, "paper": 1, "book": 1}
+         "leather": 1, "paper": 1, "book": 1,
+         "dandelion": 1, "poppy": 1, "cornflower": 1, "oxeye_daisy": 1}
 
 
 def load(rid):

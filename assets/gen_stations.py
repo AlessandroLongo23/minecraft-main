@@ -1,14 +1,20 @@
-"""Generate the Base STATION-ICON atlas (bc_station_icons) from genuine 16x16 Minecraft block
-textures. These are the small framed icons shown on the station "cards" in the "Your Base" overlay
-(utilities/furnace.lua -> build_base_modal), one per craftable station.
+"""Generate the Base STATION-ICON atlas (bc_station_icons) from genuine Minecraft 3D INVENTORY
+renders. These are the small icons shown on the station "cards" in the "Your Base" overlay
+(utilities/furnace.lua -> build_base_modal) AND the station recipe squares + station picker in the
+unified Inventory modal (utilities/crafting_ui.lua), one per craftable station.
 
-Pipeline mirrors gen_resources.py: source textures live in `assets/reference/stations/<id>.png`
-(downloaded from the InventivetalentDev minecraft-assets mirror, a representative block FACE -- e.g.
-furnace_front, crafting_table_front, composter_side). Each is nearest-scaled into a 34x34 cell to
-match the resource/tool icon convention.
+Pipeline mirrors gen_resources.py: source art lives in `assets/reference/stations/<id>.png`, the
+genuine MC isometric inventory render downloaded from minecraft.wiki's `Invicon_<Name>.png`
+convenience URLs (the same source the food/hunger sheets use). These are authentic 3D iso cubes
+(crafting table, furnace, chest, composter, anvil, enchanting table) -- NOT flat block faces -- so
+they match how cobblestone/wood render in BalaCraft. Most are 32x32 (a 16px model at 2x); the
+brewing stand has no cube render, so its genuine icon is the flat 16x16 item sprite.
 
-Stations with no clean single-face texture (chest, ender_chest -- entity-rendered in Minecraft) get
-NO cell here; their base card falls back to a name-only card (see build_base_modal).
+cell_for() nearest-scales each source up to ~32px (16x16 -> x2; 32x32 kept as-is) and centers it on
+a transparent 34x34 cell, matching the resource/tool icon convention.
+
+Stations with no clean inventory render (ender_chest -- entity-only) get NO cell here; their base
+card falls back to a name-only card (see build_base_modal).
 
 Output:
   assets/1x/station_icons.png  -> 34x34 cells, 4x2 grid (136x68)  + 2x derived (272x136)
@@ -32,16 +38,19 @@ CELLS = {
     "furnace":        (1, 0),
     "composter":      (2, 0),
     "anvil":          (3, 0),
-    "brewing_stand":  (0, 1),
-    "chest":          (1, 1),   # composited from the MC chest entity front face (see reference/stations)
-    "enchanting_table": (2, 1),  # MC enchanting-table side face (staged from reference/enchant_voucher)
+    "brewing_stand":  (0, 1),   # no cube render -> genuine flat 16x16 brewing-stand item sprite
+    "chest":          (1, 1),
+    "enchanting_table": (2, 1),
 }
 
 
 def cell_for(idn):
-    """16x16 texture nearest-scaled x2 (=32) and centered on a transparent 34x34 cell."""
+    """Genuine MC inventory render nearest-scaled up to ~32px and centered on a 34x34 cell.
+    Iso renders arrive at 32x32 (kept as-is); the 16x16 brewing-stand sprite is x2'd to 32."""
     tex = Image.open(os.path.join(_REF, idn + ".png")).convert("RGBA")
-    tex = tex.resize((tex.width * 2, tex.height * 2), Image.NEAREST)   # 16 -> 32
+    factor = max(1, 32 // tex.width)                                  # 16 -> x2, 32 -> x1
+    if factor > 1:
+        tex = tex.resize((tex.width * factor, tex.height * factor), Image.NEAREST)
     cell = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
     ox = (CELL - tex.width) // 2
     oy = (CELL - tex.height) // 2

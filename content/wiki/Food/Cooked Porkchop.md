@@ -11,9 +11,9 @@
 | Internal key | `c_balacraft_food_cooked_porkchop` |
 
 ## Effect
-Eat to restore **8 hunger points** — the most filling food in the game (nearly half the bar). Can't be eaten at full [[Hunger]].
+Eat to restore **8 hunger points** — the most filling food in the game (nearly half the bar), and the best for banking saturation. Eating past full [[Hunger]] banks the overflow as saturation, which converts to [[Health|hearts]]. Can't be eaten when both hunger and saturation are full.
 
 ## Where to get it
-Shop, or any [[Booster Packs|Food Pack]] (tier-3, rarest — ~1 in 17 per pack slot).
+Shop, any [[Booster Packs|Food Pack]] (tier-3, rarest — ~1 in 17 per pack slot), or the Farmer in [[Villager Trading]].
 
 [[Food|← Back to Food]]

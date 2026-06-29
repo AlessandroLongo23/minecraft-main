@@ -11,6 +11,14 @@ Every BalaCraft boss blind is a Minecraft mob. On top of its blind effect, two n
 
 **Art note:** several bosses don't have finished art yet and render with the base-game blind-chip sprite as a placeholder (marked below).
 
+## Night & Cave (the non-boss blinds)
+The vanilla **Small** and **Big** blinds are reskinned as environments rather than bosses:
+
+- **Night** (Small Blind) — the **surface** environment.
+- **Cave** (Big Blind) — the **underground** environment.
+
+They stay mechanically vanilla — no debuff, still skippable, same chip requirement and reward — only the name and sprite change. What they *do* drive is the **environment-specific drop pool**: a **Night** win leans toward surface materials (more Wood, surface mobs) while a **Cave** win leans underground (more Cobblestone, cave-only mobs like Spider Eye and Glow Ink Sac, plus the occasional Obsidian). Bosses keep the generic tier-roll. See [[Resource Drops]].
+
 ## Overworld
 - [x] [[Creeper|The Creeper]] — destroy a random joker if you win on the last hand
 - [x] [[Drowned|The Drowned]] — each discard also discards a random card
@@ -22,7 +30,7 @@ Every BalaCraft boss blind is a Minecraft mob. On top of its blind effect, two n
 - [x] [[Husk|The Husk]] — lose $2 per discard
 - [x] [[Phantom|The Phantom]] — ×3 requirement if you skipped no blind this ante
 - [x] [[Slime|The Slime]] — after beating it, next ante's blinds are pumped
-- [x] [[Silverfish]] — requirement shifts after every hand
+- [x] [[Silverfish]] — requirement climbs ×1.5 after every hand played
 - [x] [[Guardian|The Guardian]] — destroys cards left in hand too long *(placeholder art)*
 - [x] [[Witch|The Witch]] — shuffles your hands & discards *(placeholder art)*
 
@@ -43,7 +51,7 @@ Every BalaCraft boss blind is a Minecraft mob. On top of its blind effect, two n
 These only appear while you are in their biome (see [[Biomes]]). They are mechanically **inert stubs** for now — flavor + placeholder art, no special effect yet.
 - [x] [[The Overgrowth]] — Forest biome only
 - [x] [[Magma Lord]] — Basalt Deltas (Nether) only
-- [x] [[Ender Sentinel]] — Central End only
+- [x] [[Ender Sentinel]] — [[The End]] only
 
 ## Planned / not yet enabled
 - [ ] **Creaking** (Overworld)

@@ -26,13 +26,6 @@ local function res_icon(id, sz)
     return { n = G.UIT.O, config = { object = Sprite(0, 0, sz or 0.5, sz or 0.5, atlas, r.pos) } }
 end
 
-local function full_btn(label, fn, colour)
-    return {
-        n = G.UIT.R, config = { align = 'cm', minw = 6, padding = 0.1, r = 0.1, hover = true,
-            colour = colour or G.C.ORANGE, button = fn, shadow = true },
-        nodes = { { n = G.UIT.T, config = { text = label, scale = 0.5, colour = G.C.WHITE } } } }
-end
-
 -- (atlas, pos) for a brew-content's small icon: water/awkward -> the resource icon atlas; a finished
 -- potion or a *_pre intermediate -> the potion icon atlas (a *_pre shows its TARGET potion's icon).
 -- The potion icon shares its source sprite with the potion CARD (gen_potion_icons / gen_potion_cards).
@@ -150,113 +143,160 @@ local function glyph(t)
         { n = G.UIT.T, config = { text = t, scale = 0.3, colour = G.C.UI.TEXT_INACTIVE } } } }
 end
 
+local GUIDE_ICON = 0.5    -- recipe-row icon square (bigger than the old 0.32)
+
 -- One guide row: [ing] + [from] = [to] (+ optional modifier label), a hoverable box w/ name tooltip.
 local function guide_row(ing, from_content, to_content, label, name)
     local cells = {
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.015 }, nodes = { res_icon(ing, 0.32) } },
+        { n = G.UIT.C, config = { align = 'cm', padding = 0.02 }, nodes = { res_icon(ing, GUIDE_ICON) } },
         glyph('+'),
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.015 }, nodes = { content_icon_node(from_content, 0.32) } },
+        { n = G.UIT.C, config = { align = 'cm', padding = 0.02 }, nodes = { content_icon_node(from_content, GUIDE_ICON) } },
         glyph('='),
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.015 }, nodes = { content_icon_node(to_content, 0.32) } },
+        { n = G.UIT.C, config = { align = 'cm', padding = 0.02 }, nodes = { content_icon_node(to_content, GUIDE_ICON) } },
     }
     if label then
-        cells[#cells + 1] = { n = G.UIT.C, config = { align = 'cm', padding = 0.015 }, nodes = {
-            { n = G.UIT.T, config = { text = label, scale = 0.26, colour = G.C.ORANGE } } } }
+        cells[#cells + 1] = { n = G.UIT.C, config = { align = 'cm', padding = 0.02 }, nodes = {
+            { n = G.UIT.T, config = { text = label, scale = 0.32, colour = G.C.ORANGE } } } }
     end
-    return { n = G.UIT.C, config = { align = 'cm', padding = 0.02 }, nodes = { {
-        n = G.UIT.R, config = { align = 'cm', padding = 0.04, r = 0.05, minw = 1.9, minh = 0.46,
+    return { n = G.UIT.R, config = { align = 'cm', padding = 0.03 }, nodes = { {
+        n = G.UIT.R, config = { align = 'cm', padding = 0.06, r = 0.07, minw = 3.0, minh = 0.62,
             colour = G.C.UI.TRANSPARENT_DARK, hover = name ~= nil,
             tooltip = name and { text = { name } } or nil },
         nodes = cells } } }
 end
 
--- The left recipe-guide panel: a 2-column grid of all guide rows (bottle steps + modifier rows).
-local function brew_recipe_panel()
+-- ---- recipe-guide pagination ----
+-- All guide rows in display order (bottle steps then modifier rows), built once.
+local function brew_guide_rows()
     local all = {}
     for _, s in ipairs(BREW_GUIDE) do all[#all + 1] = { s[1], s[2], s[3], nil, content_name(s[3]) } end
     for _, m in ipairs(BREW_MODS_GUIDE) do all[#all + 1] = { m[1], m[3], m[3], m[2], m[4] } end
-    local rows, row = {}, nil
-    for i, s in ipairs(all) do
-        if (i - 1) % 2 == 0 then
-            row = { n = G.UIT.R, config = { align = 'cm', padding = 0.01 }, nodes = {} }
-            rows[#rows + 1] = row
-        end
-        row.nodes[#row.nodes + 1] = guide_row(s[1], s[2], s[3], s[4], s[5])
-    end
-    return { n = G.UIT.C, config = { align = 'tm', padding = 0.06, r = 0.1, colour = G.C.BLACK }, nodes = {
-        text_row('Recipes', 0.42, G.C.UI.TEXT_LIGHT),
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.01 }, nodes = rows },
-    } }
+    return all
 end
 
--- ---- modal ----
-function PB_UTIL.build_brewing_modal()
-    -- Apparatus column: fuel slot + gauge (left), ingredient -> arrow -> bottle (centre), Brew (right).
-    -- Slot nodes are each wrapped in a UIT.R (a UIT.C nested directly in a UIT.C lays out side-by-side).
+local BREW_ROWS_PER_PAGE = 3   -- rows per recipe page (left box); 14 recipes -> 5 pages
+PB_UTIL.brew_recipe_page = PB_UTIL.brew_recipe_page or 1
+
+-- Total recipe-guide pages (>= 1).
+function PB_UTIL.brew_recipe_page_count()
+    return math.max(1, math.ceil(#brew_guide_rows() / BREW_ROWS_PER_PAGE))
+end
+
+-- A small page button (mirrors the inventory pager's look).
+local function brew_page_btn(label, fn, enabled)
+    return { n = G.UIT.C, config = {
+        align = 'cm', padding = 0.06, r = 0.08, minw = 0.5, minh = 0.4,
+        colour = enabled and G.C.BLUE or G.C.UI.TRANSPARENT_DARK,
+        button = enabled and fn or nil, hover = enabled, shadow = true },
+        nodes = { { n = G.UIT.T, config = { text = label, scale = 0.4, colour = G.C.UI.TEXT_LIGHT } } } }
+end
+
+-- The left recipe-guide panel: one column of BREW_ROWS_PER_PAGE rows for the current page, with a
+-- "[<] Page p/N [>]" nav row at the bottom. No black box (the shell already provides the container).
+local function brew_recipe_panel()
+    local all = brew_guide_rows()
+    local pages = PB_UTIL.brew_recipe_page_count()
+    local page = math.max(1, math.min(pages, PB_UTIL.brew_recipe_page or 1))
+    PB_UTIL.brew_recipe_page = page
+
+    local rows = {}
+    local first = (page - 1) * BREW_ROWS_PER_PAGE + 1
+    for i = first, math.min(first + BREW_ROWS_PER_PAGE - 1, #all) do
+        local s = all[i]
+        rows[#rows + 1] = guide_row(s[1], s[2], s[3], s[4], s[5])
+    end
+
+    -- The page nav, appended as the LAST node so it sits UNDER the recipe rows. Everything here must be a
+    -- UIT.R (rows + nav) so they stack VERTICALLY -- a UIT.C child would lay out horizontally instead,
+    -- which is exactly what pushed the nav off to the side before.
+    local nav = { n = G.UIT.R, config = { align = 'cm', padding = 0.03 }, nodes = {
+        brew_page_btn('<', 'bc_brew_recipe_prev', page > 1),
+        { n = G.UIT.C, config = { align = 'cm', padding = 0.06, minw = 1.4 }, nodes = {
+            { n = G.UIT.T, config = { text = 'Page ' .. page .. '/' .. pages, scale = 0.32,
+                colour = G.C.UI.TEXT_LIGHT } } } },
+        brew_page_btn('>', 'bc_brew_recipe_next', page < pages),
+    } }
+    rows[#rows + 1] = nav
+
+    return { n = G.UIT.C, config = { align = 'cm', padding = 0.04 }, nodes = rows }
+end
+
+-- Flip the recipe-guide page by `delta`, clamped to [1, pages], then rebuild the overlay in place.
+function PB_UTIL.change_brew_recipe_page(delta)
+    local pages = PB_UTIL.brew_recipe_page_count()
+    local p = math.max(1, math.min(pages, (PB_UTIL.brew_recipe_page or 1) + delta))
+    if p == (PB_UTIL.brew_recipe_page or 1) then return end
+    PB_UTIL.brew_recipe_page = p
+    play_sound('cardSlide1')
+    if PB_UTIL.rebuild_inv_overlay then PB_UTIL.rebuild_inv_overlay() end
+end
+G.FUNCS.bc_brew_recipe_prev = function(e) PB_UTIL.change_brew_recipe_page(-1) end
+G.FUNCS.bc_brew_recipe_next = function(e) PB_UTIL.change_brew_recipe_page(1) end
+
+-- A subtly bordered sub-container (returns a UIT.C so two of them sit SIDE BY SIDE -- C children lay out
+-- horizontally). Fixed w/h so the two Brewing boxes are equal-sized and fill the panel, like the sketch.
+local BREW_BOX_W, BREW_BOX_H = 4.5, 3.0
+local function brew_box(content)
+    return { n = G.UIT.C, config = { align = 'cm', padding = 0.1, r = 0.1, colour = G.C.UI.TRANSPARENT_DARK,
+        minw = BREW_BOX_W, minh = BREW_BOX_H }, nodes = { content } }
+end
+
+-- ---- in-frame station content ----
+-- The Brewing Stand's interactive content, as an embeddable node for the unified modal's station area.
+-- Laid out as TWO SIDE-BY-SIDE containers (matching the user's sketch, like the Crafting Table split):
+--   * LEFT  box = the recipe guide rows + the "[<] Page p/N [>]" nav (the page nav sits UNDER the recipes).
+--   * RIGHT box = the brewing station: a Fuel slot (left) | ingredient / v / bottle (centre) | Brew (right),
+--                 with Collect Potion spanning the bottom.
+-- Ingredients are dragged up from the shared Inventory; the bottle persists across closing
+-- (G.GAME.balacraft.brew_bottle).
+function PB_UTIL.brewing_station_content()
+    -- Fuel slot + gauge (left of the apparatus).
     local fuel_col = { n = G.UIT.C, config = { align = 'cm', padding = 0.06 }, nodes = {
         { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.furnace_slot_node(PB_UTIL.brew_fuel_area) } },
-        { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = {
-            res_icon('blaze_powder', 0.34),
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = {
+            res_icon('blaze_powder', 0.28),
             { n = G.UIT.T, config = { id = 'bc_brew_fuel_label', ref_table = PB_UTIL.brew_state,
-                ref_value = 'fuel_label', scale = 0.32, colour = G.C.ORANGE } },
+                ref_value = 'fuel_label', scale = 0.28, colour = G.C.ORANGE } },
         } },
     } }
 
+    -- Centre: ingredient slot ABOVE the bottle (the potion brews IN the bottle), with a 'v' between them.
     local center_col = { n = G.UIT.C, config = { align = 'cm', padding = 0.04 }, nodes = {
         { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.furnace_slot_node(PB_UTIL.brew_ingredient_area) } },
-        { n = G.UIT.R, config = { align = 'cm', padding = 0.02 }, nodes = {
-            { n = G.UIT.T, config = { text = 'v', scale = 0.5, colour = G.C.UI.TEXT_INACTIVE } } } },
+        { n = G.UIT.R, config = { align = 'cm', padding = 0.01 }, nodes = {
+            { n = G.UIT.T, config = { text = 'v', scale = 0.45, colour = G.C.UI.TEXT_INACTIVE } } } },
         { n = G.UIT.R, config = { align = 'cm' }, nodes = { brew_bottle_node() } },
     } }
 
     local brew_btn = { n = G.UIT.C, config = { align = 'cm' }, nodes = { {
         n = G.UIT.R, config = { id = 'bc_brew_button', align = 'cm', padding = 0.1, r = 0.1,
-            minw = 1.6, minh = BREW_CELL, colour = G.C.UI.TRANSPARENT_LIGHT,
+            minw = 1.4, minh = BREW_CELL, colour = G.C.UI.TRANSPARENT_LIGHT,
             button = 'bc_brew_do', func = 'bc_brew_can_btn', hover = true, shadow = true },
-        nodes = { { n = G.UIT.T, config = { text = 'Brew', scale = 0.45, colour = G.C.UI.TEXT_LIGHT } } },
+        nodes = { { n = G.UIT.T, config = { text = 'Brew', scale = 0.42, colour = G.C.UI.TEXT_LIGHT } } },
     } } }
 
-    local apparatus = { n = G.UIT.R, config = { align = 'cm', padding = 0.06 },
+    -- Fuel | (ingredient / v / bottle) | Brew, vertically centred (fuel + Brew sit at the bottle's level).
+    local apparatus = { n = G.UIT.R, config = { align = 'cm', padding = 0.04 },
         nodes = { fuel_col, center_col, brew_btn } }
 
-    -- Collect: green/enabled (per-frame) when a finished potion sits in the bottle and there is room.
-    local collect_btn = { n = G.UIT.R, config = { id = 'bc_brew_collect_btn', align = 'cm', minw = 4,
-        padding = 0.1, r = 0.1, hover = true, colour = G.C.UI.TRANSPARENT_LIGHT,
+    -- Collect: spans the bottom of the box; green/enabled (per-frame) when a finished potion sits in the
+    -- bottle and there is room.
+    local collect_btn = { n = G.UIT.R, config = { id = 'bc_brew_collect_btn', align = 'cm', minw = 4.0,
+        padding = 0.08, r = 0.1, hover = true, colour = G.C.UI.TRANSPARENT_LIGHT,
         button = 'bc_brew_collect', func = 'bc_brew_can_collect_btn', shadow = true },
-        nodes = { { n = G.UIT.T, config = { text = 'Collect Potion', scale = 0.45, colour = G.C.UI.TEXT_LIGHT } } } }
+        nodes = { { n = G.UIT.T, config = { text = 'Collect Potion', scale = 0.42, colour = G.C.UI.TEXT_LIGHT } } } }
 
-    -- RIGHT panel = the apparatus + Collect; LEFT panel = the recipe guide. Two columns side by side.
-    local right_panel = { n = G.UIT.C, config = { align = 'cm', padding = 0.06, r = 0.1, colour = G.C.BLACK }, nodes = {
+    local station_content = { n = G.UIT.C, config = { align = 'cm', padding = 0.04 }, nodes = {
         { n = G.UIT.R, config = { align = 'cm' }, nodes = { apparatus } },
         { n = G.UIT.R, config = { align = 'cm', padding = 0.04 }, nodes = { collect_btn } },
     } }
-    local two_col = { n = G.UIT.R, config = { align = 'cm', padding = 0.06 },
-        nodes = { brew_recipe_panel(), right_panel } }
 
-    return { n = G.UIT.ROOT,
-        config = { align = 'cm', padding = 0.12, r = 0.1, colour = G.C.GREY, minw = 9, minh = 6 },
-        nodes = {
-            text_row('Brewing Stand', 0.6, G.C.PURPLE or G.C.ORANGE),
-            two_col,
-            { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }, nodes = {} },
-            { n = G.UIT.R, config = { align = 'cm' }, nodes = {
-                { n = G.UIT.T, config = { text = 'Inventory', scale = 0.38, colour = G.C.UI.TEXT_LIGHT } } } },
-            { n = G.UIT.R, config = { align = 'cm' }, nodes = { PB_UTIL.build_inventory_node() } },
-            { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }, nodes = {} },
-            full_btn('Back', 'bc_brewing_back'),
-        } }
-end
-
-function PB_UTIL.open_brewing()
-    PB_UTIL.brew_state = PB_UTIL.brew_state or { fuel_label = '', can_brew = false, can_collect = false }
-    PB_UTIL.brew_state.fuel_label = 'Fuel: ' .. PB_UTIL.get_brew_fuel()
-    PB_UTIL.brew_state.can_brew = false
-    PB_UTIL.brew_state.can_collect = false
-    PB_UTIL.brew_bottle_state()                              -- ensure the persistent bottle is seeded
-    PB_UTIL.build_brew_cells()                               -- fuel + ingredient drop slots
-    PB_UTIL.build_inventory()                                -- shared draggable source grid
-    PB_UTIL.furnace_on_change = PB_UTIL.update_brew_modal    -- drag/right-click -> immediate refresh
-    PB_UTIL.refresh_overlay(PB_UTIL.build_brewing_modal())   -- swap in place (no fly-in)
+    -- LEFT recipes box | RIGHT station box, side by side (two C children of one R -> horizontal).
+    return { n = G.UIT.C, config = { align = 'cm' }, nodes = { {
+        n = G.UIT.R, config = { align = 'cm', padding = 0.06 }, nodes = {
+            brew_box(brew_recipe_panel()),
+            brew_box(station_content),
+        } } } }
 end
 
 -- Per-frame maintenance (called from update_crafting_modal in crafting_ui.lua). Inert unless the
@@ -283,8 +323,6 @@ function PB_UTIL.update_brew_modal()
 end
 
 -- ---- callbacks ----
-G.FUNCS.bc_open_brewing = function(e) PB_UTIL.open_brewing() end
-
 -- Colour-only per-frame funcs (mirror bc_furnace_can_smelt_btn). The callbacks self-guard, so the
 -- buttons stay clickable and validity is enforced inside brew_step / brew_collect.
 G.FUNCS.bc_brew_can_btn = function(e)
@@ -307,7 +345,8 @@ G.FUNCS.bc_brew_do = function(e)
 end
 
 G.FUNCS.bc_brew_collect = function(e)
-    if PB_UTIL.brew_collect() then
+    local ok = PB_UTIL.brew_collect()
+    if ok then
         play_sound('chips1', 1, 0.6)
         if G.GAME and G.GAME.balacraft then G.GAME.balacraft._panel_dirty = true end
     else
@@ -315,29 +354,15 @@ G.FUNCS.bc_brew_collect = function(e)
     end
     PB_UTIL.update_brew_modal()
     PB_UTIL.update_inventory()
-end
-
-G.FUNCS.bc_brewing_back = function(e)
-    if PB_UTIL.brew_cells then
-        PB_UTIL.destroy_brew_cells()        -- credit reserved fuel/ingredient tiles (bottle persists)
-        PB_UTIL.furnace_on_change = nil
-    end
-    if PB_UTIL.open_base then PB_UTIL.open_base() else G.FUNCS.exit_overlay_menu(e) end
-end
-
--- Tear down the brew slots on ANY overlay close path (Close/ESC). Stacks above the crafting/furnace
--- exit wraps (brewing_ui loads last); only one station's cells are ever live, so each wrap self-guards.
-if not PB_UTIL._brew_exit_hooked then
-    PB_UTIL._brew_exit_hooked = true
-    local _orig_exit = G.FUNCS.exit_overlay_menu
-    G.FUNCS.exit_overlay_menu = function(...)
-        if PB_UTIL.brew_cells then
-            PB_UTIL.destroy_brew_cells()
-            PB_UTIL.furnace_on_change = nil
-        end
-        return _orig_exit(...)
+    -- On a successful collect, a potion that couldn't auto-equip (both slots full) is now stored in the
+    -- unified inventory (routed synchronously by brew_potion). Rebuild the modal in place so it appears
+    -- immediately -- reuses the live brew + inventory CardAreas, so placed fuel/ingredient tiles are
+    -- untouched (the same in-place swap station switching uses).
+    if ok and PB_UTIL.rebuild_inv_overlay then
+        PB_UTIL.rebuild_inv_overlay()
     end
 end
 
--- The Brewing Stand is wired into the live Base modal picker (PICKER_STATIONS in crafting_ui.lua),
--- where it opens this overlay (bc_open_brewing) once the station is crafted -- parallel to the Anvil.
+-- The Brewing Stand renders in-frame in the unified modal (PICKER_STATIONS in crafting_ui.lua); its
+-- cells are built by open_inventory('brewing_stand') and torn down on station switch / Close (which
+-- credits reserved fuel/ingredient tiles -- the bottle persists). No standalone overlay or exit wrap.

@@ -28,7 +28,7 @@ Cards within one pack don't repeat. The Torch can show up at any ante and is nev
 ## Enchantments
 When the [[Enchanting Books|enchanting system]] is active, each tool slot has a small chance to be **pre-enchanted** — no voucher needed:
 - **Chance** rises with the ante: ~5% at ante 1, up to a 25% cap.
-- **Type** is always valid for the tool: [[Sharpness]] or [[Durability]] on a Sword; [[Fortune]] or [[Durability]] on a Pickaxe/Shovel.
+- **Type** is always valid for the tool: [[Enchanting Books/Sharpness|Sharpness]] or [[Durability]] on a Sword; [[Fortune]] or [[Durability]] on a Pickaxe/Shovel.
 - **Tier** is almost always **I**; **II** can appear from ante 4 and **III** from ante 7.
 
 [[Booster Packs|← Back to Booster Packs]]

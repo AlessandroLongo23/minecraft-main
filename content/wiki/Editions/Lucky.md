@@ -3,8 +3,8 @@
 | Attribute | Value |
 | --- | --- |
 | Lane | Loot |
-| Applied by | the dual-target [[Enchanting Books/Fortune\|Fortune book]] (highlight a card in hand + the book → **Enchant Card**) |
-| Apply cost | `book tier + 1` [[Experience\|levels]] (I = 2, II = 3, III = 4) |
+| Applied by | the dual-target [[Enchanting Books/Fortune\|Fortune book]] (highlight a card in hand + the book → **Enchant**) |
+| Apply cost | **free** — the cost is paid at the [[Enchanting Table]] when you generate the book |
 | Internal key | `e_balacraft_lucky_1` / `_2` / `_3` |
 
 ## Effect
@@ -22,10 +22,10 @@ The MC Fortune enchantment (more drops), turned into a card edition — a steady
 you play often.
 
 ## Notes
-- Applied via the [[Enchanting]] flow: select the card + the Fortune book, click **Enchant Card**,
-  spend levels. Gated by the [[Enchanting Table]] voucher.
+- Applied via the [[Enchanting]] flow: select the card + the Fortune book and click **Enchant** —
+  applying is free, since the cost was paid forging the book at the [[Enchanting Table]].
 - The applier is the **dual-target [[Enchanting Books/Fortune|Fortune book]]**: on a **tool** it adds
-  bonus loot, on a **card** it applies this Lucky edition. One book, two targets.
+  bonus loot (at the [[Anvil]]), on a **card** it applies this Lucky edition. One book, two targets.
 - Editions are mutually exclusive — a card holds one of Sharpness / Unbreaking / Lucky at a time.
 
 [[Editions|← Back to Editions]]

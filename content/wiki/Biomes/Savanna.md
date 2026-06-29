@@ -1,6 +1,6 @@
 *Overworld biome*
 
-![[biome_savanna.png|130]]
+![[biome_savanna.png|105]]
 
 | Attribute | Value |
 | --- | --- |

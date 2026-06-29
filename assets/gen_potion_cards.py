@@ -38,6 +38,7 @@ W, H = 71, 95
 IX0, IX1 = 10, 60        # interior the bubble pattern may occupy
 IY0, IY1 = 6, 72
 SPRITE_SCALE = int(os.environ.get("POTION_SCALE", "3"))
+SPRITE_DY = 2        # nudge the potion sprite down a touch from the interior centre
 NAMEPLATE = (13, 76, 57, 85)   # interior rect to centre the label in (recomputed in main)
 
 # Each potion is one ROW; the four columns are the (Level, Lasts-more) combinations:
@@ -291,7 +292,8 @@ def make_card(blank, pool, bold, thin, pid, label, seed):
         sp = sp.resize((sp.width * SPRITE_SCALE, sp.height * SPRITE_SCALE), Image.NEAREST)
         bb = sp.getbbox(); bw, bh = bb[2] - bb[0], bb[3] - bb[1]
         cx, cy = (IX0 + IX1) / 2, (IY0 + IY1) / 2
-        ox, oy = round(cx - (bb[0] + bw / 2)), round(cy - (bb[1] + bh / 2))
+        ox = round(cx - (bb[0] + bw / 2))
+        oy = round(cy - (bb[1] + bh / 2)) + SPRITE_DY
         sprite, sxy = sp, (ox, oy)
         sbbox = (ox + bb[0], oy + bb[1], ox + bb[2] - 1, oy + bb[3] - 1)
     # 2) bubbles around (and clipped to body), avoiding the sprite; 3) sprite on top; 4) name.
@@ -309,27 +311,37 @@ def make_card(blank, pool, bold, thin, pid, label, seed):
 
 def main():
     global NAMEPLATE
-    t1 = Image.open(os.path.join(OUT1, "potion_template_1_clock.png")).convert("RGBA")     # Lvl I + clock
-    t2 = Image.open(os.path.join(OUT1, "potion_template_2_no_clock.png")).convert("RGBA")  # Lvl II, no clock
-    bases = build_bases(t1, t2)                              # {(potency, lasts): badged template}
-    blanks = {k: blank_card(v) for k, v in bases.items()}   # bubbles removed, badges kept
-    pool = bubble_pool(t1)                                   # the 3 hand-drawn bubbles
-    NAMEPLATE = nameplate_box(blanks[(False, False)])
+    t1 = Image.open(os.path.join(OUT1, "potion_template_1_clock.png")).convert("RGBA")      # Lvl I + clock
+    t2 = Image.open(os.path.join(OUT1, "potion_template_2_no_clock.png")).convert("RGBA")   # Lvl II, no clock
+    ts = Image.open(os.path.join(OUT1, "potion_template_single_level.png")).convert("RGBA") # single orb, no clock
+
+    # Two-level set (potions that take Glowstone): 1-of-2 pips / 2-of-2 pips, +/- clock.
+    two_level = build_bases(t1, t2)
+    # Single-level set (potions with no Level II): one orb, +/- clock (clock copied from t1).
+    x0, y0, x1, y1 = clock_region(t1, t2)
+    single = {(False, False): ts.copy(), (False, True): ts.copy()}
+    single[(False, True)].paste(t1.crop((x0, y0, x1 + 1, y1 + 1)), (x0, y0))
+
+    two_blanks = {k: blank_card(v) for k, v in two_level.items()}     # bubbles removed, badges kept
+    single_blanks = {k: blank_card(v) for k, v in single.items()}
+    pool = bubble_pool(t1)                                            # the 3 hand-drawn bubbles
+    NAMEPLATE = nameplate_box(two_blanks[(False, False)])
 
     bold = load_glyphs(BOLDDIR, NAME)
     thin = load_glyphs(THINDIR, NAME)
-    for ch, g in bold.items():                              # complete the thin alphabet from narrowed bold
+    for ch, gph in bold.items():                                      # complete the thin alphabet from bold
         if ch not in thin:
-            thin[ch] = narrow(g)
-    bold['.'] = period_glyph(NAME); thin['.'] = period_glyph(NAME)   # for 'INST. HEALTH'
+            thin[ch] = narrow(gph)
+    bold['.'] = period_glyph(NAME); thin['.'] = period_glyph(NAME)    # for 'INST. HEALTH'
 
     cols, rows = len(COMBOS), len(POTIONS)
     sheet = Image.new("RGBA", (cols * W, rows * H), (0, 0, 0, 0))
     made = 0
     for row, (pid, label, accepts_pot, accepts_las) in enumerate(POTIONS):
+        blanks = two_blanks if accepts_pot else single_blanks        # single-orb art for one-level potions
         for col, (pot, las) in enumerate(COMBOS):
             if (pot and not accepts_pot) or (las and not accepts_las):
-                continue                                    # this combo doesn't exist for this potion
+                continue                                             # this combo doesn't exist for this potion
             card = make_card(blanks[(pot, las)], pool, bold, thin, pid, label, seed=1000 + row * 4 + col)
             sheet.alpha_composite(card, (col * W, row * H))
             made += 1

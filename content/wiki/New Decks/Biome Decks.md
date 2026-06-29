@@ -21,6 +21,6 @@ Each deck calls "start in biome X," which sets your dimension to the Overworld a
 > **Plains Deck** additionally starts you with **2 Torches** — this is a dev/testing convenience (handy for trying out [[Crafting]] and the [[Torch]]) and may be removed.
 
 ## Unlock
-Each biome deck unlocks after you **win 10 antes (boss blinds) in that biome**, counted cumulatively across all runs. Nether and End biomes don't have their own decks — reach those via the [[Nether Deck]] / [[End Deck]] or the portal [[New Vouchers|vouchers]].
+Each biome deck unlocks after you **win 10 antes (boss blinds) in that biome**, counted cumulatively across all runs. Nether and End biomes don't have their own decks — reach those via the [[Nether Deck]] / [[End Deck]], or mid-run through the structure-based [[Dimensions]] travel.
 
 [[New Decks|← Back to Decks]]

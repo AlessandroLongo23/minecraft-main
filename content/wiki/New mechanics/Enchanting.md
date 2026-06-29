@@ -1,15 +1,41 @@
 *Mechanic*
 
-**Enchanting** lets you permanently upgrade your [[Tools]] with **[[Enchanting Books]]**, Minecraft-style. Unlock it with the [[Enchanting Table]] voucher; books then appear in the shop and in [[Enchanting Pack|Enchanting Packs]]. Applying a book **costs [[Experience|levels]] *and* [[Lapis Lazuli]]** — not money.
+**Enchanting** is a two-station loop, faithful to Minecraft: the **Enchanting Table** *generates* [[Enchanting Books]] by spending [[Experience|levels]] + [[Lapis Lazuli|Lapis]], and the **[[Anvil]]** *applies* a book to a [[Tools|tool]] — for **free** (the cost was already paid making the book). Books are also dual-target: you can apply one to a **playing card** for an [[Editions|edition]] instead.
 
-> **Enchanting cards:** **all three books are dual-target.** Highlight a card **in your hand** + a book, then **Enchant Card** to apply its [[Editions|edition]]: Sharpness → [[Editions/Sharpness|Sharpness]] (+Mult), Durability → [[Editions/Unbreaking|Unbreaking]] (anti-debuff), Fortune → [[Editions/Lucky|Lucky]] (Emeralds on score). A card holds one edition at a time.
+## Getting books — two ways
+1. **Buy / find them.** The **[[Enchanting Table]]** voucher ($10) makes [[Enchanting Books]] appear in the shop and unlocks the **[[Enchanting Pack]]** booster (and a +1 consumable slot). The **[[Sorcerer's Tome]]** voucher upgrades that pool (more books, Tier III, packs favour higher tiers, another +1 slot). A [[Villager Trading|Librarian]] villager also sells books for [[Emerald|emeralds]].
+2. **Generate them at the Enchanting Table station.** Craft the Enchanting Table (1 Book + 2 [[Diamond]] + 4 [[Obsidian]]) — see [[Crafting]] / [[The Base]] — then open it. It shows **three offers**, one per tier, like the MC enchanting screen. Taking offer *N* spends:
+   - **the required [[Experience|level]]** (Lv 7 / 18 / 30 for tier I / II / III),
+   - **N [[Lapis Lazuli|Lapis]]** (1 / 2 / 3),
+   - **1 Book** (the crafted resource),
+   and creates that enchant book in your Minecraft consumable area. The offers re-roll each shop and after each take.
 
-## Unlocking it
-- Buy the **[[Enchanting Table]]** voucher ($10): [[Enchanting Books]] + the [[Enchanting Pack]] start appearing in the shop, and you gain **+1 consumable slot**.
-- Buy the **[[Sorcerer's Tome]]** voucher ($12, needs the Enchanting Table first): books appear more often, **Tier III** unlocks, packs favour higher tiers, and you gain **another +1 consumable slot**.
+## Applying a book to a tool — at the [[Anvil]]
+Tools are enchanted at the **[[Anvil]]**, on its **Enchant** tab:
+1. Equip the tool and have the matching book in your Minecraft consumable slots.
+2. Open the Anvil, pick the tool and the book.
+3. Apply — it's **free**, consumes the book, and the tool keeps the enchantment for the rest of the run (or until it breaks). Higher-tier books **upgrade** that type; you can't downgrade or stack the same type twice.
 
-## Durability — tools now have Uses
-With this system tools stop being single-use. Every tool has a **Uses** budget set by its material, can be used **once per Blind**, and **breaks** (disappears) when it runs out.
+The Anvil also **combines** two same-type tools (pooling enchants + uses) and **upgrades** Diamond tools to Netherite — see [[Anvil]].
+
+## The three enchantments
+A tool can hold **one of each type** at once; different types combine.
+
+| Enchantment | Applies to | Tier I | Tier II | Tier III |
+| --- | --- | --- | --- | --- |
+| [[Enchanting Books/Sharpness\|Sharpness]] | Sword (or card) | ×1.25 | ×1.5 | ×1.75 |
+| [[Durability]] | All tools | ×1.25 uses | ×1.5 uses | ×2 uses |
+| [[Fortune]] | Pickaxe, Shovel | up to +1 | up to +2 | up to +3 |
+
+- **[[Enchanting Books/Sharpness\|Sharpness]]** multiplies the Sword's ×Mult on top of its material value — or, on a **card**, gives the [[Editions/Sharpness\|Sharpness edition]] (+Mult).
+- **[[Durability]]** multiplies a tool's max **Uses** (rounded up) and grants the extra uses immediately — or, on a **card**, the flat [[Editions/Unbreaking\|Unbreaking edition]] (anti-debuff + Glass-safe).
+- **[[Fortune]]** adds a random **0…tier** bonus to the Pickaxe's ore each use, or raises the Shovel's find odds — or, on a **card**, the [[Editions/Lucky\|Lucky edition]] (drops Emeralds on score).
+
+## Enchanting a playing card (the card path)
+Every book is **dual-target**. To enchant a card: highlight **one playing card in your hand** and **one book** in the consumable area, then click the floating **Enchant Card** button. This is **free** too (the cost was paid generating the book). The book maps to a card [[Editions|edition]]: Sharpness → [[Editions/Sharpness|Sharpness]], Durability → [[Editions/Unbreaking|Unbreaking]], Fortune → [[Editions/Lucky|Lucky]]. A card holds one edition at a time; you can only re-apply the same type at a strictly higher tier.
+
+## Durability — tools have Uses
+Tools are multi-use. Each has a **Uses** budget set by its material, can be used **once per blind**, and **breaks** when it runs out (Durability raises the budget).
 
 | Material | Base Uses |
 | --- | --- |
@@ -18,31 +44,11 @@ With this system tools stop being single-use. Every tool has a **Uses** budget s
 | Iron | 3 |
 | Golden | 3 |
 | Diamond | 4 |
+| Netherite | 5 |
 
-> A Wooden tool (1 use) still behaves like the old single-use card; a Diamond tool now lasts **4 blinds**. You can't use the same tool twice in one blind — so no stacking a Diamond Sword's ×8 with itself.
+> Enchanted tools show a purple **glint** (the enchant shader, palette-coded by type and scaled by tier) plus a roman-numeral summary in the [[Anvil]] list. Costs and book prices are still placeholder balance.
 
-## The three enchantments
-A tool can hold **one of each type at once**; applying a higher tier **upgrades** that type. You can't downgrade, or stack the same type twice.
-
-| Enchantment | Applies to | Tier I | Tier II | Tier III |
-| --- | --- | --- | --- | --- |
-| [[Enchanting Books/Sharpness\|Sharpness]] | Sword (or card) | ×1.25 | ×1.5 | ×1.75 |
-| [[Durability]] | All tools | ×1.25 Uses | ×1.5 Uses | ×2 Uses |
-| [[Fortune]] | Pickaxe, Shovel | up to +1 | up to +2 | up to +3 |
-
-- **[[Enchanting Books/Sharpness\|Sharpness]]** multiplies the Sword's ×Mult on top of the material value — or, applied to a **playing card**, gives the [[Editions/Sharpness\|Sharpness edition]] (+10 / +15 / +20 Mult by tier, doubled vs boss).
-- **[[Durability]]** multiplies max Uses (rounded up) and grants the extra uses immediately — or, on a **playing card**, gives the [[Editions/Unbreaking\|Unbreaking edition]] (flat: anti-debuff + Glass-safe).
-- **[[Fortune]]** adds a random **0…tier** bonus to the Pickaxe's ore / Shovel's $ each use — or, on a **playing card**, gives the [[Editions/Lucky\|Lucky edition]] (drops Emeralds on score).
-
-## Applying a book
-1. Have a tool and a matching book in your consumable slots.
-2. **Select both** — click the tool *and* the book; an **Enchant** button appears above the consumable area.
-3. Click it. It **spends levels and [[Lapis Lazuli]]**, consumes the book, and the tool keeps the enchantment for the rest of the run (or until it breaks).
-
-**Level cost** scales with the book tier and the tool material: `book tier + (material tier − 1)`. So a Tier I book on a Wooden tool costs **1 level**, a Tier III book on a Diamond tool costs **7**.
-
-**[[Lapis Lazuli]] cost** is paid on top of the levels, scaling with the **book tier**: **1 / 2 / 3** Lapis for a Tier I / II / III book (the flat **Unbreaking** card edition costs **1**). The Enchant button greys out unless you can afford **both** the levels and the Lapis — the bar shows the Lapis cost beneath the level cost.
-
-> Enchanted tools show their enchantments on a swapped sprite (a purple glint + tier pips) and in the tooltip. Books have dedicated art (a tinted enchanted-book card per type, tier in the corner); level costs and book prices are still placeholder balance.
+## See also
+[[Experience]] (the levels you spend) · [[Lapis Lazuli]] (the reagent) · [[Anvil]] (where tools are enchanted) · [[The Base]] · [[Enchanting Books]] · [[Editions]]
 
 [[New mechanics|← Back to mechanics]]

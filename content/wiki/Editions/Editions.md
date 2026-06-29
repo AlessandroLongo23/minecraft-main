@@ -11,7 +11,7 @@ The base game's editions still work normally; these are **added** alongside them
 
 | Edition | Effect |
 | --- | --- |
-| [[Sharpness]] | +Mult (scales with book tier), doubled against boss blinds |
+| [[Editions/Sharpness|Sharpness]] | +Mult (scales with book tier), doubled against boss blinds |
 | [[Unbreaking]] | can't be debuffed by bosses; Glass-type cards won't break |
 | [[Lucky]] | drops Emeralds each time the card scores (scales with book tier) |
 
@@ -19,18 +19,19 @@ The base game's editions still work normally; these are **added** alongside them
 deferred; Negative has no vanilla analog on playing cards.)*
 
 ## Applying editions — card Enchanting Books
-Editions are applied like tool enchants: you get a card-targeting **[[Enchanting Books|Enchanting
-Book]]**, then **select a card + the book** and click **Enchant Card**. It **spends
-[[Experience|levels]]** (Sharpness / Lucky: `book tier + 1`; Unbreaking: flat 2), not money, and the
-card keeps the edition for the rest of the run. A card holds **one edition at a time** — applying a
-different one is rejected (only a higher-tier same-type book upgrades in place).
+Editions are applied with the mod's **[[Enchanting Books|Enchanting Books]]**. You **generate** a book at
+the crafted **[[Enchanting Table]]** (that's where the cost is paid — [[Experience|levels]] + Lapis + a
+Book), then to apply it you **highlight a card in hand + the book** and click **Enchant** — which is now
+**free** (the cost was already spent forging the book). The card keeps the edition for the rest of the run.
 
-- Card-edition books appear in the **shop** and the **[[Enchanting Pack]]**, both unlocked by the
-  **[[Enchanting Table]]** voucher — the same gate as the tool books.
-- This is why editions live next to [[Enchanting]]: they're the card branch of the same system.
+A card holds **one edition at a time** — applying a different type is rejected; only a **higher-tier book
+of the same type** upgrades it in place.
+
+- This is why editions live next to [[Enchanting]]: they're the card branch of the same Enchanting
+  Books system that enchants [[Tools]] (tools are enchanted at the [[Anvil]] instead).
 
 ## Status
-- [x] **[[Sharpness]]** — Combat lane (Sharpness book → card)
+- [x] **[[Editions/Sharpness|Sharpness]]** — Combat lane (Sharpness book → card)
 - [x] **[[Unbreaking]]** — Protection lane (Durability book → card)
 - [x] **[[Lucky]]** — Loot lane (Fortune book → card)
 - [ ] **Ender** (deferred)

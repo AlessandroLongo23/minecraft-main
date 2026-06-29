@@ -4,14 +4,14 @@
 
 | Attribute | Value |
 | --- | --- |
-| Effect | Start the run in a random **End** biome |
-| Unlock | Buy the [[End Portal]] voucher **10 times** (lifetime, across all runs) |
+| Effect | Start the run in **The End** |
+| Unlock | **Enter the End 10 times** (lifetime, across all runs) |
 | Internal key | `b_balacraft_end` |
 
 ## Effect
-The run begins in the **End** dimension — you start in a random End biome (Central End, End Highlands, End Midlands, or End Barrens) with that dimension's biome pool, ore biases and exclusive boss. See [[Biomes]].
+The run begins in **[[The End]]** — the End now has a single biome, watched by the [[Ender Sentinel]], with its own ore biases and exclusive boss instead of the Overworld. See [[Biomes]].
 
 ## Unlock
-Redeem the [[End Portal]] voucher a cumulative **10 times** across your runs. (The End Portal voucher itself only appears after you've redeemed a Nether Portal that run, so this is a deeper unlock than the Nether Deck.)
+**Enter the End a cumulative 10 times across your runs.** You reach the End mid-run by completing the **Eye-of-Ender trail** — using an [[Eye of Ender]] across consecutive antes to follow the marked path to the Stronghold (see [[Dimensions]]). Each entry ticks a persistent counter; hitting 10 permanently unlocks this deck. (The portal *vouchers* that used to feed this unlock were removed.)
 
 [[New Decks|← Back to Decks]]

@@ -1,22 +1,50 @@
----
+*Mechanic — [[The Base]] station*
 
-The **Brewing Stand** is a [[Your Base|Base]] station (craft **1 Blaze Rod over 3 Cobblestone** at the Crafting Table to unlock it). It turns brewing ingredients into [[Potions]], the Minecraft way.
+The **Brewing Stand** turns dimension ingredients into [[Potions]], the Minecraft way. Craft it (**1 Blaze Rod over 3 [[Cobblestone]]** at the [[Crafting]] Table) to unlock it in [[The Base]], then open it.
 
 ## Fuel
-Brewing burns **Blaze Powder**: load one for **3 brew charges**, and each brew spends one charge. Blaze Powder drops in the Nether (Blaze blind) or crafts from a **Blaze Rod**.
+Brewing burns **Blaze Powder**: load 1 for **3 brew charges**, and each brew step spends one charge. Blaze Powder drops in the Nether (the Blaze boss + a Nether trickle) or crafts from a **Blaze Rod** (1 → 2).
 
-## The chain
-Most of the work is sub-crafting at the **Crafting Table**; the bottle-fill and the potion brews happen at the **Brewing Stand**:
+## How brewing works — one ingredient at a time
+The stand holds **one in-progress bottle** (its progress persists across closing the stand). You drag a starting **bottle** into the bottle slot and **one ingredient at a time** into the ingredient slot, then press **Brew** to advance it — Minecraft's sequential order. Finished potions are **collected** out into your consumable area.
 
-1. Smelt **Sand → Glass** (Furnace), then craft a **Glass Bottle** (3 Glass).
-2. Brew **Glass Bottle → Water Bottle**.
-3. Brew **Water Bottle + Nether Wart → Awkward Potion** — the base for every effect potion.
-4. Brew **Awkward Potion + an effect ingredient → a [[Potions|potion]]**.
+The sub-crafts feed the stand from the [[Crafting]] Table; the brews happen here:
 
-Throwable potions (Poison, Harming) also need **Gunpowder** (they become Splash potions). The corruption potions (Invisibility, Harming) use **Fermented Spider Eye** (crafted from Spider Eye + Sugar + Brown Mushroom).
+1. Smelt **Sand → Glass** (Furnace, [[Smelting]]), then craft a **Water Bottle** (3 Glass).
+2. Brew **Water Bottle + Nether Wart → Awkward Potion** — the base for every effect potion. *(You can also drop an Awkward Potion straight into the bottle slot to skip ahead.)*
+3. Brew **Awkward Potion + an effect ingredient → a [[Potions|potion]]:**
 
-## Ingredients
-Brewing raws drop based on the **dimension** you're in (one per blind win): the Overworld gives Sugar Cane / Carrot / Melon / Brown Mushroom; the **Nether** gives Nether Wart / Blaze Rod / Ghast Tear / Glowstone Dust; the **End** gives Dragon's Breath. The rest are sub-crafted (Sugar, Glistering Melon, Golden Carrot, …).
+| Ingredient | Potion |
+| --- | --- |
+| Sugar | [[Swiftness]] |
+| Blaze Powder | [[Strength]] |
+| Glistering Melon | [[Instant Health]] |
+| Ghast Tear | [[Healing]] |
+| Golden Carrot | [[Night Vision]] |
+| Spider Eye → then Gunpowder | [[Poison]] (Splash) |
+| Fermented Spider Eye → then Gunpowder | [[Harming]] (Splash) |
+| Night Vision → then Fermented Spider Eye | [[Invisibility]] |
+
+The throwables (Poison, Harming) brew through a two-step intermediate finished with **Gunpowder** (making them Splash potions); **Fermented Spider Eye** (Spider Eye + Sugar + Brown Mushroom) is the corruption reagent.
 
 ## Modifiers
-At the stand, each recipe offers extra buttons when you hold the ingredient: **+II** (Glowstone Dust, stronger), **+Long** (Redstone, drinkables last more blinds), **+Linger** (Dragon's Breath, throwables carry into the next blind).
+On a finished potion you can brew in one extra ingredient to modify it (when the potion supports it):
+- **+II** — **Glowstone Dust** (stronger effect)
+- **+Long** — **Redstone** (drinkables last more blinds)
+- **+Linger** — **Dragon's Breath** (throwables carry into the next blind)
+
+## Ingredients
+Brewing raws drop based on the **[[Dimensions|dimension]]** you're in — **one per blind win** while Potions are enabled:
+
+| Dimension | Drops |
+| --- | --- |
+| Overworld | Sugar Cane, [[Resources/Carrot\|Carrot]], Melon Slice, Brown Mushroom |
+| Nether | Nether Wart, Blaze Rod, Ghast Tear, Glowstone Dust |
+| End | Dragon's Breath |
+
+The rest are sub-crafted at the Crafting Table (Sugar, Water Bottle, Glistering Melon, Golden Carrot, Fermented Spider Eye, Blaze Powder). See [[Resource Drops]] for the drop detail.
+
+## See also
+[[Potions]] · [[Crafting]] · [[Smelting]] · [[The Base]] · [[Dimensions]]
+
+[[New mechanics|← Back to mechanics]]

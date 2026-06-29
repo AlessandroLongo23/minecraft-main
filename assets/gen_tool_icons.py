@@ -61,8 +61,14 @@ EXTRAS = [
     ("crossbow",       3, 3, 2,           False),
     ("arrow",          4, 3, 2,           False),
     ("bone_meal",      5, 3, 2,           False),
-    ("tnt",            0, 4, 2,           False),  # explosives cluster -> row 4
+    ("tnt",            0, 4, 1,           False),  # explosives -> row 4; genuine 32x32 iso TNT-block render (like glass), scale 1
     ("firework_rocket",1, 4, 2,           False),
+    # These three used to fall back to full card art in the recipe list (no tool icon). Now icons;
+    # (col,row) MUST match the tool_icon_pos entries in ender_eye.lua / flint_and_steel.lua /
+    # content/sheets/sheet_consumabletype.lua.
+    ("ender_eye",      2, 4, 2,           False),  # Eye of Ender item sprite (16x16 -> x2)
+    ("flint_and_steel",3, 4, 2,           True),   # thin diagonal item -> tight crop
+    ("glass",          4, 4, 1,           False),  # Glass Sheet -> genuine 32x32 iso glass-block render
 ]
 
 

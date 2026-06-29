@@ -13,12 +13,12 @@ A Minecraft-style **hunger bar** of **10 drumsticks (20 points)** — 2 points =
 Skipping is hungrier than playing, so blitzing through skips will starve you faster.
 
 ## Eating
-[[Food]] cards restore hunger by their listed value (e.g. [[Cooked Porkchop]] = 8 points / 4 drumsticks). You **can't eat at full hunger** — the game won't let you waste a card.
+[[Food]] cards restore hunger by their listed value (e.g. [[Cooked Porkchop]] = 8 points / 4 drumsticks). Anything you eat **past a full bar** overflows into **saturation** ("gold drumsticks", capped at 10) — so you can keep eating to bank a buffer. You can only **not** eat when **both** hunger *and* saturation are full (the game won't let you waste a card then).
 
 ## Interaction with [[Health]]
-- **Well-fed** (hunger **≥ 14**, i.e. 7+ drumsticks): heal **1 HP per blind**.
-- **Starving** (hunger **at 0**): take **2 HP damage per blind** instead of draining further.
+- **Over-eat to heal:** banked saturation converts to [[Health]] each blind (~2 saturation → ½ heart), but only while you're below max HP. See [[Health]].
+- **Starving** (hunger at 0): each blind costs **2 HP (1 heart)** instead of draining further.
 
-So hunger is the dial between slowly healing and slowly dying — keep it above the well-fed line when you can.
+So hunger is the dial between healing and dying: stay fed, over-eat when you can to bank saturation, and never sit at 0.
 
 [[New mechanics|← Back to mechanics]]
