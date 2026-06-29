@@ -8,7 +8,7 @@ The Axe is **dual-purpose** — what it does depends on what you have highlighte
 - **On Wood Ore Blocks** (one or more highlighted): it **chops wood**, harvesting extra wood per card (scales with material). The Axe is the *only* tool that breaks Wood Ore Blocks — the [[Pickaxe]] can't. See [[Mining]].
 - **Used alone** (no wood selected): it's a **weapon** — arms a hybrid bonus for the rest of this Blind, adding **+Chips** *and* a **×Mult** to your hands.
 
-Like the Pickaxe it carries a mining level, but it only ever mines wood. It's a **persistent, multi-use** tool: usable **once per Blind**, it spends one **Use** each time and **breaks** when it runs out. At most **one Axe** per Blind (you can still pair it with a [[Sword]], [[Pickaxe]] and [[Shovel]]).
+Like the Pickaxe it carries a mining level, but it only ever mines wood. It's a **persistent, multi-use** tool that spends one **Use** each time and **breaks** when it runs out. **Chopping wood is multi-use** within a blind (like the [[Pickaxe]]) — keep chopping until it breaks. Its **weapon** mode is **once per Blind** (at most one Axe-as-weapon per Blind, like the [[Sword]] and [[Shovel]]). You can still pair it with a Sword, Pickaxe and Shovel.
 
 **Enchantable:** [[Enchanting Books/Durability\|Durability]] raises its Uses. See [[Enchanting]].
 

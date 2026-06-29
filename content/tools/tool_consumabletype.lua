@@ -2,10 +2,14 @@
 -- Tools are CRAFT-ONLY (shop_rate = 0) but DO appear in the collection (no_collection = false).
 --
 -- PERSISTENT, MULTI-USE items (not single-use): each tool has a durability budget
--- (ability.extra.uses_left/max_uses, base by material in registry.lua). Using a tool spends
--- one use and locks it for the rest of the blind (used_this_blind); at 0 uses it breaks
--- (start_dissolve). keep_on_use=true stops the engine from auto-consuming it. Per-tool state
--- lives on card.ability.extra (deep-copied per card, serialized natively -- no custom save/load).
+-- (ability.extra.uses_left/max_uses, base by material in registry.lua). Using a tool always
+-- spends one durability use; at 0 uses it breaks (start_dissolve). keep_on_use=true stops the
+-- engine from auto-consuming it. Per-tool state lives on card.ability.extra (deep-copied per
+-- card, serialized natively -- no custom save/load).
+--   Once-per-blind lock: the sword, the shovel and the axe-as-WEAPON set used_this_blind and a
+--   per-type lock so only one of each can act per blind. MINING actions are exempt and MULTI-USE
+--   per blind -- the pickaxe (always) and the axe when chopping highlighted wood (is_mine_mode):
+--   they still spend durability but never take the locks, so you can keep mining/chopping all blind.
 --
 -- Each card's use() writes per-blind / pending state onto G.GAME.balacraft (seeded in the
 -- init_game_object wrapper in utilities/resources.lua):
@@ -240,6 +244,16 @@ local function highlighted_wood_count()
     return n
 end
 
+-- True when this Use is a MINING action: the pickaxe (always mines) or the axe while wood is
+-- highlighted (chopping). Mining actions are multi-use per blind -- they spend durability but
+-- skip the once-per-blind locks. NB: evaluate this BEFORE acting, since take_ore reverts the
+-- highlighted ore-blocks (so highlighted_wood_count would read 0 afterwards).
+local function is_mine_mode(t)
+    if t.tool == 'pickaxe' then return true end
+    if t.tool == 'axe' then return highlighted_wood_count() > 0 end
+    return false
+end
+
 -- Pickaxe: mine every highlighted ore-block this tier can break. Wood is rejected (use an Axe),
 -- too-hard ores flash "Need a better pickaxe". Yields 1 + Fortune each. Returns true iff anything
 -- was actually mined (so a wasted click -- nothing valid selected -- does NOT spend a use).
@@ -347,17 +361,22 @@ for _, tool in ipairs(PB_UTIL.TOOLS) do
             return true
         end,
 
-        -- Usable once per blind, only while selecting a hand, and only if it has uses left.
-        -- One tool PER TYPE per blind: if any sword/pickaxe/shovel of this kind was already
-        -- used this blind (tool_type_used[t.tool]), block the rest -- you can still mix one of
-        -- each type. (The per-card used_this_blind below also blocks re-using this same card.)
+        -- Usable only while selecting a hand and only if it has uses left. Mining actions
+        -- (pickaxe, or axe with wood highlighted) are MULTI-USE per blind -- they skip the
+        -- locks below. For the sword/shovel/axe-as-weapon it's once per blind, PER TYPE: if
+        -- one of this kind already acted this blind (tool_type_used[t.tool]) the rest are
+        -- blocked (you can still mix one of each type); the per-card used_this_blind also
+        -- blocks re-using this same card.
         can_use = function(self, card)
             local e = card.ability and card.ability.extra
             if not e or (e.uses_left or 0) <= 0 then return false end
-            if e.used_this_blind then return false end
-            local bc = G.GAME and G.GAME.balacraft
-            if bc and bc.tool_type_used and bc.tool_type_used[t.tool] then return false end
-            return G.STATE == G.STATES.SELECTING_HAND
+            if G.STATE ~= G.STATES.SELECTING_HAND then return false end
+            if not is_mine_mode(t) then
+                if e.used_this_blind then return false end
+                local bc = G.GAME and G.GAME.balacraft
+                if bc and bc.tool_type_used and bc.tool_type_used[t.tool] then return false end
+            end
+            return true
         end,
 
         use = function(self, card, area, copier)
@@ -365,6 +384,10 @@ for _, tool in ipairs(PB_UTIL.TOOLS) do
             local e  = card.ability and card.ability.extra
             if not bc or not e then return end
             local ench = e.enchants or {}
+            -- Capture the mode BEFORE acting: mining reverts the highlighted ore-blocks, so for the
+            -- axe `is_mine_mode` (which reads the highlight) must be sampled now. Drives both the
+            -- axe chop-vs-weapon branch and the once-per-blind lock below.
+            local mine_mode = is_mine_mode(t)
             -- Whether the use actually DID something. Mining a no-op selection (no valid ore) leaves
             -- this false so the click doesn't waste a durability use / lock the tool for the blind.
             local did_act = true
@@ -387,7 +410,7 @@ for _, tool in ipairs(PB_UTIL.TOOLS) do
                 -- Mine the highlighted ore-block cards this tier can break (1 + Fortune each).
                 did_act = mine_with_pickaxe(card, t)
             elseif t.tool == 'axe' then
-                if highlighted_wood_count() > 0 then
+                if mine_mode then
                     -- Wood selected -> chop it (more than bare hand, scaled by tier; multi-card).
                     did_act = chop_wood_with_axe(t)
                 else
@@ -415,11 +438,15 @@ for _, tool in ipairs(PB_UTIL.TOOLS) do
             -- A no-op mining click (nothing valid selected) doesn't lock or spend the tool.
             if not did_act then return end
 
-            -- Once-per-blind lock (this card) + the per-TYPE lock (blocks other tools of the
-            -- same kind this blind) + spend a durability use.
-            e.used_this_blind = true
-            bc.tool_type_used = bc.tool_type_used or {}
-            bc.tool_type_used[t.tool] = true
+            -- Mining actions (pickaxe / axe chopping wood) are multi-use per blind: spend a
+            -- durability use but DON'T take the locks. Sword / shovel / axe-as-weapon set the
+            -- once-per-blind lock (this card) + the per-TYPE lock (blocks other tools of the
+            -- same kind this blind).
+            if not mine_mode then
+                e.used_this_blind = true
+                bc.tool_type_used = bc.tool_type_used or {}
+                bc.tool_type_used[t.tool] = true
+            end
             e.uses_left = (e.uses_left or 1) - 1
             if e.uses_left <= 0 then
                 -- Break. Defer the dissolve one tick: SMODS' keep_on_use re-emplaces this

@@ -15,6 +15,14 @@ SMODS.ConsumableType {
     collection_rows = { 4, 4 },
     shop_rate = 0,                       -- brew-only + Potion pack; never in the shop reroll
     default = 'c_balacraft_potion_healing',
+    -- Picking a potion from the Potion pack ADDS it to the consumable area to drink/throw later,
+    -- instead of using it on the spot. Without this, the pack falls through to the default
+    -- consumable path and shows the Drink/Throw button -- but a potion's can_use is gated on being
+    -- in/out of a blind, so picking it from the pack would waste it (or be impossible). SMODS reads
+    -- select_card in card_select_area -> the pick emplaces into 'consumeables', and
+    -- PB_UTIL.reconcile_mc_consumables() then routes it into the MC area (or inventory if full).
+    -- Mirrors balacraft_tool / balacraft_enchant.
+    select_card = 'consumeables',
     loc_txt = { name = 'Potion', collection = 'Potions' },
 }
 

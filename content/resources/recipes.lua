@@ -5,7 +5,7 @@ PB_UTIL.RECIPES = {
     {
         key = 'sticks',
         name = 'Sticks',
-        output = { type = 'resource', id = 'sticks', amount = 2 },
+        output = { type = 'resource', id = 'sticks', amount = 4 },
         pattern = {
             { false, 'wood',  false },
             { false, 'wood',  false },

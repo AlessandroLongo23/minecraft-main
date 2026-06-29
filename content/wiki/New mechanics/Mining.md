@@ -16,7 +16,7 @@ An Ore Block keeps the card's normal rank and suit — it adds no scoring effect
 2. **Use** a [[Pickaxe]] (its Use button works on the selected cards, just like applying a Tarot).
 3. Each block this pickaxe can break yields its ore, pops a "+N" message, and the card **reverts to a normal card**.
 
-A tool can be used **once per blind per type** and spends one durability use. A no-op click (nothing valid selected) is free — it won't waste a use.
+Mining is **multi-use** within a blind — you can keep mining with a [[Pickaxe]] (and chopping wood with an [[Axe]]) as many times as you like, each spending one durability use, until the tool breaks. (The [[Sword]], [[Shovel]] and the Axe's **weapon** mode are the once-per-blind ones.) A no-op click (nothing valid selected) is free — it won't waste a use.
 
 ### Wood is special
 Wood blocks are **not** pickaxe-mineable. Chop them with an [[Axe]] (which can take several wood cards at once and yields more per card), or **play a single Wood block by hand** as a one-card hand for **+1 Wood**.

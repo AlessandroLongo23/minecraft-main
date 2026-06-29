@@ -433,9 +433,16 @@ local function titled_panel(title, content, w, h)
     return { n = G.UIT.C, config = { align = 'tm', padding = 0.04, no_overflow = 'h', w = w }, nodes = {
         { n = G.UIT.R, config = { align = 'cm', padding = 0.04, no_overflow = 'h', w = w }, nodes = {
             { n = G.UIT.T, config = { text = title, scale = 0.36, colour = G.C.UI.TEXT_LIGHT } } } },
-        { n = G.UIT.C, config = { align = 'cm', padding = 0.1, r = 0.1, colour = G.C.BLACK,
-            minw = w, minh = h, w = w, h = h, no_overflow = 'hv' },
-          nodes = { content } },
+        -- The black box MUST be wrapped in a UIT.R: a bare UIT.C sibling of the title R lays out
+        -- HORIZONTALLY (ui.lua:188-203), so the outer C's content_dimensions.w summed to ~2w while
+        -- no_overflow pinned its T.w to w -- and set_alignments (ui.lua:638) then shifted every child
+        -- by 0.5*(w-2w) = -0.5w, yanking the title + grid half a column LEFT (clipped titles, empty
+        -- middle). Wrapping in an R makes the width MAX(title_w, box_w)=w, so the offset is ~0.
+        { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+            { n = G.UIT.C, config = { align = 'cm', padding = 0.1, r = 0.1, colour = G.C.BLACK,
+                minw = w, minh = h, w = w, h = h, no_overflow = 'hv' },
+              nodes = { content } },
+        } },
     } }
 end
 
