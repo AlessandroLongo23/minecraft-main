@@ -10,23 +10,23 @@ These are the **currently-enabled** jokers — the only ones loaded in the prese
 *All enabled jokers currently share this placeholder sprite — dedicated art is a follow-up.*
 
 ## In the game now
-| Joker | Rarity | Cost | Effect (short) |
-| --- | --- | --- | --- |
-| [[Menace]] | Uncommon | $3 | +×0.25 Mult per High Card played (permanent) |
-| [[Waterdrop]] | Uncommon | $4 | +×0.10 Mult per Small/Big blind, +×0.25 per Boss, beaten in one hand |
-| [[Elytra]] | Rare | $3 | Sell to instantly beat the current blind |
-| [[It's Home]] | Common | $3 | ×1.5 Mult if the played hand has ≤ 2 cards |
-| [[Cracked Knuckles]] | Common | $3 | Gains +50 Chips & +5 Mult per Small Blind beaten |
-| [[0.164%]] | Rare | $3 | A joke rarity card; sells for $64 |
+| Joker                | Rarity   | Cost | Effect (short)                                                       |
+| -------------------- | -------- | ---- | -------------------------------------------------------------------- |
+| [[Menace]]           | Uncommon | $3   | +×0.25 Mult per High Card played (permanent)                         |
+| [[Waterdrop]]        | Uncommon | $4   | +×0.10 Mult per Small/Big blind, +×0.25 per Boss, beaten in one hand |
+| [[Elytra]]           | Rare     | $3   | Sell to instantly beat the current blind                             |
+| [[It's Home]]        | Common   | $3   | ×1.5 Mult if the played hand has ≤ 2 cards                           |
+| [[Cracked Knuckles]] | Common   | $3   | Gains +50 Chips & +5 Mult per Small Blind beaten                     |
+| [[0.164%]]           | Rare     | $3   | A joke rarity card; sells for $64                                    |
 
 ## Craftable jokers (Archery)
 Made on the [[Crafting]] grid from [[Resources]] rather than bought in shops. See each page for the full recipe.
 
-| Joker | Rarity | Cost | Crafted from | Effect (short) |
-| --- | --- | --- | --- | --- |
-| [[Bow]] | Uncommon | $6 | 3× [[Sticks]] + 3× [[String]] | +×0.25 Mult at end of round if you played exactly one hand |
-| [[Fishing Rod]] | Uncommon | $6 | 3× [[Sticks]] + 2× [[String]] | Each cash-out reels in an ore, $4, or a mob drop |
-| [[Crossbow]] | Rare | $8 | 3× [[String]] + 2× [[Sticks]] + 1× [[Iron]] (needs a [[Bow]]) | Every other scored hand fires for ×3 Mult |
+| Joker           | Rarity   | Cost | Crafted from                                                  | Effect (short)                                             |
+| --------------- | -------- | ---- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| [[Bow]]         | Uncommon | $6   | 3× [[Sticks]] + 3× [[String]]                                 | +×0.25 Mult at end of round if you played exactly one hand |
+| [[Fishing Rod]] | Uncommon | $6   | 3× [[Sticks]] + 2× [[String]]                                 | Each cash-out reels in an ore, $4, or a mob drop           |
+| [[Crossbow]]    | Rare     | $8   | 3× [[String]] + 2× [[Sticks]] + 1× [[Iron]] (needs a [[Bow]]) | Every other scored hand fires for ×3 Mult                  |
 
 ## Planned / not yet enabled
 These exist as design or as inert files on disk but are **not loaded** in the current build:
