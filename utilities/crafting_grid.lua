@@ -51,6 +51,15 @@ local INV_ROWS  = 3                       -- rows shown per page (the rest are p
 local PER_PAGE  = INV_COLS * INV_ROWS     -- 27 cells per page
 local function inv_slot_count() return PER_PAGE end
 
+-- A cell whose global index exceeds the current inv_capacity (utilities/inventory_model.lua -- e.g. the
+-- 9 slots the Chest station unlocks) is LOCKED: not yet usable. It's drawn as a solid, muted "blocked"
+-- square with a dim label so a locked slot never reads the same as an available EMPTY well (the faint
+-- G.C.UI.TRANSPARENT_DARK). {r,g,b,a} literals are valid UIT colours; kept G.C-free so it's safe at load.
+-- Locked cells (index beyond the current inv_capacity) recede entirely: a fully-transparent well so a
+-- not-yet-unlocked slot is invisible -- the grid just ends at the last unlocked slot, visually. No label.
+-- (The cell still reserves its layout space, so alignment is unchanged.) G.C-free literal (load-safe).
+local SLOT_LOCKED_COL = { 0, 0, 0, 0 }
+
 PB_UTIL.inv_page = PB_UTIL.inv_page or 1
 
 -- The two ordered item groups the inventory pages through: owned resource KINDS (count > 0, registry
@@ -196,7 +205,10 @@ function PB_UTIL.inventory_owned_signature()
     local stored = (G.GAME.balacraft and G.GAME.balacraft.inv and G.GAME.balacraft.inv.stored) or {}
     local sc = {}
     for _, s in ipairs(stored) do
-        sc[#sc + 1] = (s.save_fields and s.save_fields.center) or '?'
+        -- center + count so the grid also reflows when a stack's count changes (not just add/remove).
+        local center = (PB_UTIL.stored_entry_center and PB_UTIL.stored_entry_center(s)) or '?'
+        local count  = (PB_UTIL.stored_entry_count and PB_UTIL.stored_entry_count(s)) or 1
+        sc[#sc + 1] = center .. 'x' .. count
     end
     return table.concat(owned, ',') .. '|' .. table.concat(sc, ',')
 end
@@ -303,18 +315,21 @@ function PB_UTIL.build_inventory_node()
     local cset = PB_UTIL._inv_consumable_set or {}   -- page-local cell k -> stored-list index
     local editable = PB_UTIL.inv_editable and PB_UTIL.inv_editable() or false
 
-    -- A resource slot: the live CardArea source + its 'xN' count label.
-    local function resource_slot_node(entry)
+    -- A resource slot: the live CardArea source + its 'xN' count label. `locked` (index beyond the
+    -- current inv_capacity) only dims the well to a barely-there ghost so the slot recedes; a locked
+    -- cell is always empty (populate_inventory only fills indices <= owned count <= capacity), so its
+    -- count label is blank anyway -- no special-casing needed beyond the well colour.
+    local function resource_slot_node(entry, locked)
+        local well_col = locked and SLOT_LOCKED_COL or G.C.UI.TRANSPARENT_DARK
         return {
             n = G.UIT.C, config = { align = 'cm', padding = 0.03, minw = INV_SLOT_W },
             nodes = {
                 { n = G.UIT.R, config = { align = 'cm', padding = 0.02,
                     minw = CELL_W + 0.06, minh = CELL_H + 0.06,
-                    r = 0.05, colour = G.C.UI.TRANSPARENT_DARK },
+                    r = 0.05, colour = well_col },
                   nodes = { { n = G.UIT.O, config = { object = entry.area } } } },
                 { n = G.UIT.R, config = { align = 'cm', minh = 0.32 }, nodes = {
-                    { n = G.UIT.T, config = {
-                        ref_table = entry.label_ref, ref_value = 'count',
+                    { n = G.UIT.T, config = { ref_table = entry.label_ref, ref_value = 'count',
                         scale = 0.28, colour = G.C.WHITE } },
                 } },
             },
@@ -323,9 +338,17 @@ function PB_UTIL.build_inventory_node()
 
     -- A stored-consumable slot: the item's icon + a clickable square that equips it (bc_inv_equip).
     -- Editable only outside a blind (matches the equip/un-equip rules); otherwise it's view-only.
-    local function consumable_slot_node(saved, stored_index)
+    -- `entry` is a stored list entry ({ saved, count } or a legacy bare save). A stack (count > 1)
+    -- shows "xN" in the bottom row (matching the resource cells' count line, so consumable and
+    -- resource cells keep the same 2-row height); a single item shows the equip/stored affordance.
+    local function consumable_slot_node(entry, stored_index)
+        local saved  = (PB_UTIL.stored_entry_saved and PB_UTIL.stored_entry_saved(entry)) or entry
+        local count  = (PB_UTIL.stored_entry_count and PB_UTIL.stored_entry_count(entry)) or 1
         local center = saved and saved.save_fields and G.P_CENTERS[saved.save_fields.center]
         local spr = center and PB_UTIL.consumable_inv_icon and PB_UTIL.consumable_inv_icon(center, 0.5)
+        local label_text  = (count > 1) and ('x' .. count) or (editable and 'equip' or 'stored')
+        local label_scale = (count > 1) and 0.30 or 0.24
+        local label_col   = (count > 1) and G.C.WHITE or G.C.UI.TEXT_LIGHT
         return {
             n = G.UIT.C, config = { align = 'cm', padding = 0.03, minw = INV_SLOT_W },
             nodes = {
@@ -337,12 +360,16 @@ function PB_UTIL.build_inventory_node()
                     hover = editable, shadow = true },
                   nodes = spr and { { n = G.UIT.O, config = { object = spr } } } or {} },
                 { n = G.UIT.R, config = { align = 'cm', minh = 0.32 }, nodes = {
-                    { n = G.UIT.T, config = { text = editable and 'equip' or 'stored',
-                        scale = 0.24, colour = G.C.UI.TEXT_LIGHT } },
+                    { n = G.UIT.T, config = { text = label_text, scale = label_scale, colour = label_col } },
                 } },
             },
         }
     end
+
+    -- Cells past the current capacity are locked (index-based; capacity grows when the Chest is built).
+    -- Consumable cells are always within capacity (stored count <= capacity), so only resource cells lock.
+    local cap    = (PB_UTIL.inv_capacity and PB_UTIL.inv_capacity()) or PER_PAGE
+    local offset = inv_page_offset()
 
     local rows = {}
     for i = 1, PER_PAGE, INV_COLS do
@@ -351,7 +378,7 @@ function PB_UTIL.build_inventory_node()
             if cset[k] then
                 row.nodes[#row.nodes + 1] = consumable_slot_node(stored[cset[k]], cset[k])
             else
-                row.nodes[#row.nodes + 1] = resource_slot_node(PB_UTIL.inv_cells[k])
+                row.nodes[#row.nodes + 1] = resource_slot_node(PB_UTIL.inv_cells[k], (offset + k) > cap)
             end
         end
         rows[#rows + 1] = row
@@ -582,17 +609,26 @@ if not PB_UTIL._craft_release_hooked then
             if PB_UTIL.anvil_on_change then PB_UTIL.anvil_on_change() end
             return _orig_lrelease(self, x, y)
         end
-        -- Composter input slot (display-only node id 'bc_composter_input'). Drop a valid organic SOURCE
-        -- to compost it: composter_add consumes 1 + advances the bin (-> Bone Meal at the threshold). No
-        -- tile is placed (like the brew bottle). Invalid organics are immovable (inv_drag_allowed) so
-        -- only valid ones reach here; gate defensively. The source snaps home; a successful add flags a
+        -- Composter input slot (display-only node id 'bc_composter_input'). Compost a valid organic SOURCE
+        -- two ways: DROP it on the input slot, OR just CLICK it (press+release without dragging it away --
+        -- the fast bulk-feed path). composter_add consumes 1 + advances the bin (-> Bone Meal at the
+        -- threshold). No tile is placed (like the brew bottle). Invalid organics are immovable
+        -- (inv_drag_allowed) so only valid ones reach here; gate defensively. A drag that releases anywhere
+        -- ELSE (not on the slot, and far enough to be a real drag) just snaps home without composting, so
+        -- picking a card up to inspect it stays safe. The source snaps home; a successful add flags a
         -- DEFERRED rebuild (update_crafting_modal) -- never rebuild the overlay inside cursor-release.
         if PB_UTIL.active_station == 'composter' and dropped and dropped.is and dropped:is(Card)
            and dropped.bc_source and PB_UTIL.tile_resource(dropped) then
             local rid = PB_UTIL.tile_resource(dropped)
             local bn = G.OVERLAY_MENU and G.OVERLAY_MENU.get_UIE_by_ID
                        and G.OVERLAY_MENU:get_UIE_by_ID('bc_composter_input')
-            if bn and bn:collides_with_point(G.CURSOR.T)
+            local on_slot = bn and bn:collides_with_point(G.CURSOR.T)
+            -- A "click" is a release that landed ~where the press did (same test the base controller uses
+            -- to distinguish a click from a drag, controller.lua:342). cursor_down.T is set on press; the
+            -- release point is the live cursor (G.CURSOR.T), since _orig_lrelease hasn't run yet.
+            local is_click = self.cursor_down and self.cursor_down.T and G.MIN_CLICK_DIST
+                             and Vector_Dist(self.cursor_down.T, G.CURSOR.T) < G.MIN_CLICK_DIST
+            if (on_slot or is_click)
                and PB_UTIL.inv_drag_allowed(rid) and PB_UTIL.composter_add then
                 if PB_UTIL.composter_add(rid) then play_sound('timpani', 1.0); PB_UTIL._composter_dirty = true
                 else play_sound('cancel') end

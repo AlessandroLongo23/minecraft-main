@@ -14,7 +14,17 @@ PB_UTIL.HUNGER_STATES = {
     [G.STATES.SHOP]           = true,
     [G.STATES.BLIND_SELECT]   = true,
     [G.STATES.ROUND_EVAL]     = true,
+    -- Booster-pack states (mirrors resource_ui.lua's PACK_STATES): keep the drumsticks on screen while
+    -- choosing a pack card, so the player can decide to eat first. Bonds to G.jokers (visible in packs).
+    [G.STATES.TAROT_PACK]     = true,
+    [G.STATES.PLANET_PACK]    = true,
+    [G.STATES.SPECTRAL_PACK]  = true,
+    [G.STATES.STANDARD_PACK]  = true,
+    [G.STATES.BUFFOON_PACK]   = true,
 }
+if G.STATES.SMODS_BOOSTER_OPENED ~= nil then   -- modded packs (incl. BalaCraft's own Toolbox/Potion packs)
+    PB_UTIL.HUNGER_STATES[G.STATES.SMODS_BOOSTER_OPENED] = true
+end
 
 local MAX_SZ    = 0.34
 local SIDE_FRAC = 0.46    -- drumsticks occupy at most this fraction of the joker-row width

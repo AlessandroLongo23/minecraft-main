@@ -53,10 +53,15 @@ end
 -- highlighted MC consumable automatically (Card:highlight gates on ability.consumeable, not on the
 -- specific area), and so a card here behaves exactly like one in the vanilla area when used.
 --
--- align_buttons=true is REQUIRED for the Use/Sell buttons to sit to the RIGHT of the card ("cr" in
--- Card:highlight) like vanilla consumables. Without it they fall back to "bmi" -- Use below the card,
--- Sell hidden behind it. The base game sets this flag directly on G.jokers/G.consumeables in
--- Game:start_run (game.lua) but only on its own areas, so our custom area must set it itself.
+-- Two config flags make this area behave like the vanilla consumable tray rather than a generic
+-- joker stack (both are re-asserted every frame in sync_mc_consumable_area, since CardArea:load
+-- replaces the whole config on run-continue):
+--   align_buttons=true -- Use/Sell buttons sit to the RIGHT of the card ("cr" in Card:highlight);
+--     without it they fall back to "bmi" (Use below the card, Sell hidden behind it). The base game
+--     sets this on G.jokers/G.consumeables in Game:start_run but only on its own areas.
+--   spread=true        -- CardArea:align_cards' joker layout SPREADS cards across the full width
+--     only for G.consumeables OR when config.spread is set; without it our 2 slots take the
+--     overlap ("squeeze") path meant for a stack of many jokers and the two cards crowd together.
 local _prev_custom_areas = SMODS.current_mod.custom_card_areas
 SMODS.current_mod.custom_card_areas = function(game)
     if _prev_custom_areas then _prev_custom_areas(game) end
@@ -64,7 +69,7 @@ SMODS.current_mod.custom_card_areas = function(game)
     local h = (game.consumeables and game.consumeables.T.h) or (0.95 * G.CARD_H)
     game.bc_mc_consumeables = CardArea(0, 0, w, h, {
         card_limit = PB_UTIL.MC_SLOTS, type = 'joker', highlight_limit = 1,
-        negative_info = 'consumable', align_buttons = true,
+        negative_info = 'consumable', align_buttons = true, spread = true,
     })
 end
 
@@ -79,10 +84,15 @@ function PB_UTIL.store_consumable_card(card)
     local bcs = G.GAME and G.GAME.balacraft
     if not (bcs and bcs.inv) then return false end
     bcs.inv.stored = bcs.inv.stored or {}
-    bcs.inv.stored[#bcs.inv.stored + 1] = card:save()
+    -- Merge fungible consumables into a matching non-full stack (else append a fresh entry). Reads
+    -- the card's set + center key; the merge is a no-op decision for non-stackables. See inventory_model.
+    local set = card.ability and card.ability.set
+    local key = card.config and card.config.center_key
+    PB_UTIL.stored_merge_add(bcs.inv.stored, card:save(), set, key)
     if card.area then card.area:remove_card(card) end
     card:remove()
     bcs._panel_dirty = true
+    bcs._inv_overlay_dirty = true   -- refresh the inventory modal (new cell / updated "xN") if it's open
     return true
 end
 
@@ -120,8 +130,12 @@ function PB_UTIL.reconcile_mc_consumables()
             if PB_UTIL.is_mc_consumable_card(c) then
                 if PB_UTIL.mc_has_room() then
                     van:remove_card(c); mc:emplace(c)
-                elseif PB_UTIL.inv_can_fit_consumable and PB_UTIL.inv_can_fit_consumable() then
-                    PB_UTIL.store_consumable_card(c)
+                else
+                    local set = c.ability and c.ability.set
+                    local key = c.config and c.config.center_key
+                    if PB_UTIL.inv_can_fit_consumable and PB_UTIL.inv_can_fit_consumable(set, key) then
+                        PB_UTIL.store_consumable_card(c)
+                    end
                 end
             end
         end
@@ -131,8 +145,11 @@ function PB_UTIL.reconcile_mc_consumables()
     local guard = 0
     while #mc.cards > limit and guard < 8 do
         guard = guard + 1
-        if not (PB_UTIL.inv_can_fit_consumable and PB_UTIL.inv_can_fit_consumable()) then break end
-        PB_UTIL.store_consumable_card(mc.cards[#mc.cards])
+        local c = mc.cards[#mc.cards]
+        local set = c.ability and c.ability.set
+        local key = c.config and c.config.center_key
+        if not (PB_UTIL.inv_can_fit_consumable and PB_UTIL.inv_can_fit_consumable(set, key)) then break end
+        PB_UTIL.store_consumable_card(c)
     end
 end
 
@@ -141,22 +158,33 @@ end
 function PB_UTIL.equip_stored_consumable(index)
     local bcs = G.GAME and G.GAME.balacraft
     local stored = bcs and bcs.inv and bcs.inv.stored
-    if not (stored and stored[index]) then return false end
+    local entry = stored and stored[index]
+    if not entry then return false end
     if not PB_UTIL.mc_has_room() then return false end
-    local card = PB_UTIL.materialize_stored_consumable(stored[index])
+    -- Materialize a fresh copy from the stack's saved template (materialize copy_table's it, so the
+    -- template is never mutated and the remaining stack copies stay valid).
+    local card = PB_UTIL.materialize_stored_consumable(PB_UTIL.stored_entry_saved(entry))
     if not card then return false end
     card.added_to_deck = true
-    table.remove(stored, index)
+    if PB_UTIL.stored_entry_count(entry) > 1 then
+        entry.count = PB_UTIL.stored_entry_count(entry) - 1   -- entry is new-format when count > 1
+    else
+        table.remove(stored, index)
+    end
     G.bc_mc_consumeables:emplace(card)
     bcs._panel_dirty = true
     return true
 end
 
 -- Un-equip a live MC consumable card (serialize it back into the inventory). Thin wrapper over
--- store_consumable_card with an inventory-capacity guard. Used by the Inventory modal.
+-- store_consumable_card with an inventory-capacity guard. Passes the card's set + center key so a
+-- stackable un-equips into an existing non-full stack even at 0 free slots (store_consumable_card
+-- merges it -- no new slot). Used by the Inventory modal.
 function PB_UTIL.unequip_mc_consumable(card)
     if not card then return false end
-    if not (PB_UTIL.inv_can_fit_consumable and PB_UTIL.inv_can_fit_consumable()) then return false end
+    local set = card.ability and card.ability.set
+    local key = card.config and card.config.center_key
+    if not (PB_UTIL.inv_can_fit_consumable and PB_UTIL.inv_can_fit_consumable(set, key)) then return false end
     return PB_UTIL.store_consumable_card(card)
 end
 
@@ -169,15 +197,45 @@ function PB_UTIL.center_icon_sprite(center, sz)
     return Sprite(0, 0, sz or 0.5, sz or 0.5, atlas, center.pos)
 end
 
--- An ICON sprite for a stored consumable in the small inventory slot. Tools/books/etc. have a dedicated
--- small icon (bc_tool_icons, keyed by center key in PB_UTIL.tool_icon_pos); use THAT rather than squishing
--- the full card face (center.atlas) into the tiny slot. Falls back to the card face for anything without
--- a registered icon.
+-- Resolve a stored consumable center's dedicated FRAMELESS icon (34x34) to (atlas, pos). Each MC
+-- consumable SET keeps its own icon atlas + per-item cell -- tools (incl. the one-shots + bow/crossbow/
+-- fishing_rod) are keyed by center key in tool_icon_pos; food/potion/sheet/enchant-book key their
+-- registry entry by the '<set>_<id>' suffix of the center key. nil if unresolved. Resolved at CALL time
+-- because the content registries (FOOD_BY_ID, POTION_BY_ID, ...) load AFTER this file.
+local function consumable_icon_atlas_pos(center)
+    local key = center.key
+    if not key then return nil end
+    -- Tools + anything explicitly registered in tool_icon_pos (e.g. the Glass Sheet's recipe icon).
+    local tpos = PB_UTIL.tool_icon_pos and PB_UTIL.tool_icon_pos[key]
+    if tpos then
+        local atlas = PB_UTIL.tool_icon_atlas and G.ASSET_ATLAS[PB_UTIL.tool_icon_atlas.key]
+        if atlas then return atlas, tpos end
+    end
+    -- Non-tool categories: (center-key prefix, id->entry map, entry's icon-cell field, icon atlas obj).
+    local SPECS = {
+        balacraft_food    = { pre = 'c_balacraft_food_',    by = PB_UTIL.FOOD_BY_ID,         field = 'pos',      atl = PB_UTIL.food_icon_atlas },
+        balacraft_potion  = { pre = 'c_balacraft_potion_',   by = PB_UTIL.POTION_BY_ID,       field = 'icon_pos', atl = PB_UTIL.potion_icon_atlas },
+        balacraft_sheet   = { pre = 'c_balacraft_sheet_',    by = PB_UTIL.SHEET_BY_ID,        field = 'icon',     atl = PB_UTIL.sheet_icon_atlas },
+        balacraft_enchant = { pre = 'c_balacraft_enchant_',  by = PB_UTIL.ENCHANT_BOOK_BY_ID, field = 'pos',      atl = PB_UTIL.enchant_icon_atlas },
+    }
+    local spec = center.set and SPECS[center.set]
+    if spec and spec.by and spec.atl and key:sub(1, #spec.pre) == spec.pre then
+        local entry = spec.by[key:sub(#spec.pre + 1)]
+        local pos   = entry and entry[spec.field]
+        local atlas = G.ASSET_ATLAS[spec.atl.key]
+        if pos and atlas then return atlas, pos end
+    end
+    return nil
+end
+
+-- An ICON sprite for a stored consumable in the small inventory slot. Uses the SET's dedicated frameless
+-- icon (bc_tool_icons / bc_food_icons / bc_potion_icons / bc_sheet_icons / bc_enchant_icons) rather than
+-- squishing the full 71x95 card face into the tiny slot. Falls back to the card face only if no frameless
+-- icon can be resolved (e.g. a content type whose icon atlas isn't loaded).
 function PB_UTIL.consumable_inv_icon(center, sz)
     if not center then return nil end
-    local pos   = center.key and PB_UTIL.tool_icon_pos and PB_UTIL.tool_icon_pos[center.key]
-    local atlas = PB_UTIL.tool_icon_atlas and G.ASSET_ATLAS[PB_UTIL.tool_icon_atlas.key]
-    if pos and atlas then return Sprite(0, 0, sz or 0.5, sz or 0.5, atlas, pos) end
+    local atlas, pos = consumable_icon_atlas_pos(center)
+    if atlas and pos then return Sprite(0, 0, sz or 0.5, sz or 0.5, atlas, pos) end
     return PB_UTIL.center_icon_sprite(center, sz)
 end
 
@@ -206,12 +264,18 @@ end
 function PB_UTIL.sync_mc_consumable_area()
     local mc, cons = G.bc_mc_consumeables, G.consumeables
     if not (mc and cons) then return end
-    -- Re-assert align_buttons every frame (before the geometry early-return so it always runs).
-    -- Card:highlight reads self.area.config.align_buttons to place the Use/Sell buttons to the RIGHT
-    -- ("cr") instead of below the card ("bmi"); the base game sets this on G.consumeables but never on
-    -- our custom area. Mirror the codebase pattern of re-asserting MC-area config each run (the area is
-    -- rebuilt per run) so the right-aligned buttons survive even if construction order ever drops it.
-    if mc.config and not mc.config.align_buttons then mc.config.align_buttons = true end
+    -- Re-assert our tray-style config every frame (before the geometry early-return so it always
+    -- runs). CardArea:load REPLACES the whole config table with the saved one on run-continue, which
+    -- drops any flag a save predates -- so reapply both here rather than only at construction:
+    --   align_buttons -> Card:highlight places the Use/Sell buttons to the RIGHT ("cr") of the card
+    --                    instead of below it ("bmi").
+    --   spread        -> CardArea:align_cards spreads the 2 cards across the full width instead of
+    --                    overlapping them (the joker-stack "squeeze").
+    -- The base game sets align_buttons on G.consumeables but never on our custom area.
+    if mc.config then
+        mc.config.align_buttons = true
+        mc.config.spread = true
+    end
     local t = cons.T
     if mc.T.x == t.x and mc.T.y == t.y and mc.T.w == t.w and mc.T.h == t.h then return end
     mc.T.x, mc.T.y, mc.T.w, mc.T.h = t.x, t.y, t.w, t.h

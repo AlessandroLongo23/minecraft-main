@@ -19,7 +19,18 @@ PB_UTIL.HEALTH_STATES = {
     [G.STATES.SHOP]           = true,
     [G.STATES.BLIND_SELECT]   = true,
     [G.STATES.ROUND_EVAL]     = true,
+    -- Booster-pack states (mirrors resource_ui.lua's PACK_STATES): keep the hearts on screen while
+    -- choosing a pack card, so the player can decide to eat/heal first. The bar bonds to G.jokers,
+    -- which stays visible during packs, so positioning is unaffected.
+    [G.STATES.TAROT_PACK]     = true,
+    [G.STATES.PLANET_PACK]    = true,
+    [G.STATES.SPECTRAL_PACK]  = true,
+    [G.STATES.STANDARD_PACK]  = true,
+    [G.STATES.BUFFOON_PACK]   = true,
 }
+if G.STATES.SMODS_BOOSTER_OPENED ~= nil then   -- modded packs (incl. BalaCraft's own Toolbox/Potion packs)
+    PB_UTIL.HEALTH_STATES[G.STATES.SMODS_BOOSTER_OPENED] = true
+end
 
 -- Tunables (tune in-game).
 local MAX_SZ   = 0.34   -- max world-units per 16x16 heart sprite

@@ -29,7 +29,18 @@ PB_UTIL.XP_BAR_STATES = {
     [G.STATES.SELECTING_HAND] = true,
     [G.STATES.DRAW_TO_HAND]   = true,
     [G.STATES.HAND_PLAYED]    = true,
+    -- Booster-pack states (mirrors resource_ui.lua's PACK_STATES): keep the XP bar visible while
+    -- choosing a pack card, so level info can inform the pick. The bar bonds to G.hand, so it sits
+    -- wherever the hand is during the pack (present when a pack opens mid-blind).
+    [G.STATES.TAROT_PACK]     = true,
+    [G.STATES.PLANET_PACK]    = true,
+    [G.STATES.SPECTRAL_PACK]  = true,
+    [G.STATES.STANDARD_PACK]  = true,
+    [G.STATES.BUFFOON_PACK]   = true,
 }
+if G.STATES.SMODS_BOOSTER_OPENED ~= nil then   -- modded packs (incl. BalaCraft's own Toolbox/Potion packs)
+    PB_UTIL.XP_BAR_STATES[G.STATES.SMODS_BOOSTER_OPENED] = true
+end
 
 -- Tunables (tune in-game, like the resource_ui offsets).
 local BAR_W    = 11.0   -- fallback width; the bar otherwise spans the hand area (way longer)

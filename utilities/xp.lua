@@ -88,7 +88,11 @@ function PB_UTIL.add_xp(amount)
     end
     if leveled then
         b._xp_levelup = true
-        pcall(play_sound, 'gong', 1.0, 0.6)  -- placeholder MC-ish chime (tunable)
+        -- Bright shimmer for a level-up. Deliberately NOT 'gong': that is the Plasma Deck's chips/mult
+        -- "balance" sting, and because XP is granted on buys/sells/crafts (earning hooks below), a gong
+        -- here made those ordinary actions sound like a Plasma balance. (An authentic MC level-up .ogg
+        -- registered via SMODS.Sound would be the ideal fit -- drop one in and swap this call.)
+        pcall(play_sound, 'holo1', 1.15, 0.6)
     end
 end
 
@@ -111,7 +115,9 @@ function PB_UTIL.spend_level(n)
     local need = PB_UTIL.xp_to_next(b.xp_level)
     if b.xp >= need then b.xp = need - 1 end
     if b.xp < 0 then b.xp = 0 end
-    pcall(play_sound, 'gong', 1.0, 0.4)
+    -- Softer, lower-pitched twin of the level-up chime for SPENDING levels (enchanting). Also avoids
+    -- 'gong' (the Plasma Deck balance sting) -- see add_xp.
+    pcall(play_sound, 'holo1', 0.85, 0.45)
     return true
 end
 

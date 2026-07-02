@@ -254,6 +254,19 @@ local function is_mine_mode(t)
     return false
 end
 
+-- The game states in which MINING is allowed. Mining reads G.hand.highlighted, so it works
+-- wherever your deck cards are drawn to hand and can be highlighted: a normal blind
+-- (SELECTING_HAND) AND the booster packs that draw a hand -- Arcana/Tarot, Spectral, and modded
+-- packs (SMODS_BOOSTER_OPENED) -- exactly like applying a Tarot to selected cards mid-pack. (The
+-- base game's own can_use_consumeable allows these same states.) Planet/Standard/Buffoon packs
+-- draw no such hand, so they're excluded.
+local function mining_state()
+    return G.STATE == G.STATES.SELECTING_HAND
+        or G.STATE == G.STATES.TAROT_PACK
+        or G.STATE == G.STATES.SPECTRAL_PACK
+        or (G.STATES.SMODS_BOOSTER_OPENED ~= nil and G.STATE == G.STATES.SMODS_BOOSTER_OPENED)
+end
+
 -- Pickaxe: mine every highlighted ore-block this tier can break. Wood is rejected (use an Axe),
 -- too-hard ores flash "Need a better pickaxe". Yields 1 + Fortune each. Returns true iff anything
 -- was actually mined (so a wasted click -- nothing valid selected -- does NOT spend a use).
@@ -361,21 +374,24 @@ for _, tool in ipairs(PB_UTIL.TOOLS) do
             return true
         end,
 
-        -- Usable only while selecting a hand and only if it has uses left. Mining actions
-        -- (pickaxe, or axe with wood highlighted) are MULTI-USE per blind -- they skip the
-        -- locks below. For the sword/shovel/axe-as-weapon it's once per blind, PER TYPE: if
-        -- one of this kind already acted this blind (tool_type_used[t.tool]) the rest are
-        -- blocked (you can still mix one of each type); the per-card used_this_blind also
-        -- blocks re-using this same card.
+        -- Needs uses left, then splits by action kind:
+        --   MINING (pickaxe always; axe while wood is highlighted) is MULTI-USE per blind and
+        --   works in any mining_state() -- a blind OR a booster pack that drew a hand -- so an
+        --   ore block drawn during an Arcana/Spectral pack can be mined on the spot. No locks.
+        --   SWORD / SHOVEL / AXE-as-weapon arm a per-blind effect, so they need an actual blind
+        --   (SELECTING_HAND) and are once per blind PER TYPE: if one of this kind already acted
+        --   this blind (tool_type_used[t.tool]) the rest are blocked (you can still mix one of
+        --   each type); the per-card used_this_blind also blocks re-using this same card.
         can_use = function(self, card)
             local e = card.ability and card.ability.extra
             if not e or (e.uses_left or 0) <= 0 then return false end
-            if G.STATE ~= G.STATES.SELECTING_HAND then return false end
-            if not is_mine_mode(t) then
-                if e.used_this_blind then return false end
-                local bc = G.GAME and G.GAME.balacraft
-                if bc and bc.tool_type_used and bc.tool_type_used[t.tool] then return false end
+            if is_mine_mode(t) then
+                return mining_state()
             end
+            if G.STATE ~= G.STATES.SELECTING_HAND then return false end
+            if e.used_this_blind then return false end
+            local bc = G.GAME and G.GAME.balacraft
+            if bc and bc.tool_type_used and bc.tool_type_used[t.tool] then return false end
             return true
         end,
 

@@ -192,6 +192,15 @@ function PB_UTIL.update_crafting_modal()
         PB_UTIL._composter_dirty = nil
         if PB_UTIL.rebuild_inv_overlay then PB_UTIL.rebuild_inv_overlay() end
     end
+    -- A stored consumable was acquired/merged (store_consumable_card set _inv_overlay_dirty): refresh
+    -- the open inventory modal so a new cell or an updated "xN" shows. GUARD on the modal being open
+    -- (PB_UTIL.inv_cells, the same "open" signal update_inventory uses) -- rebuild_inv_overlay OPENS a
+    -- closed modal via inv_overlay_rebuild, so firing it while closed would pop the inventory open.
+    local bcs = G.GAME and G.GAME.balacraft
+    if bcs and bcs._inv_overlay_dirty then
+        bcs._inv_overlay_dirty = nil
+        if PB_UTIL.inv_cells and PB_UTIL.rebuild_inv_overlay then PB_UTIL.rebuild_inv_overlay() end
+    end
 end
 
 -- One state table living for the modal's lifetime. output_label is ALWAYS a string
@@ -799,22 +808,44 @@ G.FUNCS.bc_autofill = function(e)
     PB_UTIL.refresh_craft_state()
 end
 
--- THE single overlay-close teardown (Close / ESC): return every reserved tile and restore the Anvil's
--- tools/books whenever a station's cells are live, BEFORE _orig_exit runs G.OVERLAY_MENU:remove()
--- (which would area:remove the cells with no credit). Each destroyer self-guards on its own cells, and
--- only one station is ever active, so listing all four is safe. (Replaces the old per-station exit
--- wraps in furnace.lua / brewing_ui.lua.) Forward whatever args are received (exit_overlay_menu ignores them).
+-- THE single overlay-close teardown: return every reserved tile and restore the Anvil's tools/books
+-- whenever a station's cells are live, BEFORE the open overlay's UIBox is :remove()'d (which would
+-- area:remove the cells with NO credit -- losing the reserved resources). Each destroyer self-guards
+-- on its own cells, and only one station is ever active, so listing all four is safe. (Replaces the
+-- old per-station exit wraps in furnace.lua / brewing_ui.lua.)
+function PB_UTIL.credit_open_station_cells()
+    if PB_UTIL.craft_cells   then PB_UTIL.destroy_craft_cells()   end
+    if PB_UTIL.furnace_cells then PB_UTIL.destroy_furnace_cells() end
+    if PB_UTIL.brew_cells    then PB_UTIL.destroy_brew_cells()    end
+    if PB_UTIL.anvil_unified_cells or PB_UTIL.anvil_src_area then PB_UTIL.destroy_anvil_cells() end
+    PB_UTIL.craft_on_change   = nil
+    PB_UTIL.furnace_on_change = nil
+    PB_UTIL.anvil_on_change   = nil
+end
+
+-- Teardown path 1 -- Close button / ESC: exit_overlay_menu runs G.OVERLAY_MENU:remove(). Credit first.
+-- Forward whatever args are received (exit_overlay_menu ignores them).
 if not PB_UTIL._craft_exit_hooked then
     PB_UTIL._craft_exit_hooked = true
     local _orig_exit = G.FUNCS.exit_overlay_menu
     G.FUNCS.exit_overlay_menu = function(...)
-        if PB_UTIL.craft_cells   then PB_UTIL.destroy_craft_cells()   end
-        if PB_UTIL.furnace_cells then PB_UTIL.destroy_furnace_cells() end
-        if PB_UTIL.brew_cells    then PB_UTIL.destroy_brew_cells()    end
-        if PB_UTIL.anvil_unified_cells or PB_UTIL.anvil_src_area then PB_UTIL.destroy_anvil_cells() end
-        PB_UTIL.craft_on_change   = nil
-        PB_UTIL.furnace_on_change = nil
-        PB_UTIL.anvil_on_change   = nil
+        PB_UTIL.credit_open_station_cells()
         return _orig_exit(...)
+    end
+end
+
+-- Teardown path 2 -- opening ANOTHER overlay directly over ours. Base overlay_menu (button_callbacks.lua)
+-- does `if G.OVERLAY_MENU then G.OVERLAY_MENU:remove() end` WITHOUT ever calling exit_overlay_menu -- so
+-- clicking the deck (G.FUNCS.deck_info -> overlay_menu), or opening your_collection / run_info while a
+-- station modal is up, would :remove() our grid and destroy its reserved tiles with no credit, and the
+-- "selected" recipe resources vanish. Credit them here too. Guard on G.OVERLAY_MENU being SET: it means
+-- an existing overlay is being replaced. On our OWN first open it is nil (refresh_overlay only routes to
+-- overlay_menu when no overlay is up), so freshly built (empty) cells are never torn down before display.
+if not PB_UTIL._craft_overlay_hooked then
+    PB_UTIL._craft_overlay_hooked = true
+    local _orig_overlay = G.FUNCS.overlay_menu
+    G.FUNCS.overlay_menu = function(args)
+        if G.OVERLAY_MENU then PB_UTIL.credit_open_station_cells() end
+        return _orig_overlay(args)
     end
 end
