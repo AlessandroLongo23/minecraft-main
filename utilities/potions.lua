@@ -137,10 +137,15 @@ function PB_UTIL.potion_poison_tick()
 end
 
 -- Wrap hand-played: a poison tick per played hand (composes with health.lua's own wrap).
+-- Game:update_hand_played runs EVERY FRAME while the HAND_PLAYED state is active (dump/game.lua:2700);
+-- only its first call per hand sees G.STATE_COMPLETE == false (the engine's own one-shot latch,
+-- dump/game.lua:3391). Capture that before calling the original -- same gate as health.lua's wrap --
+-- or the tick fires per frame and melts the blind requirement to ~0.
 local _update_hand_played = Game.update_hand_played
 function Game:update_hand_played(dt)
+    local first_frame = not G.STATE_COMPLETE
     _update_hand_played(self, dt)
-    pcall(PB_UTIL.potion_poison_tick)
+    if first_frame then pcall(PB_UTIL.potion_poison_tick) end
 end
 
 -- Wrap discard: a poison tick per discard (composes with the drowned lovely patch, which returns
